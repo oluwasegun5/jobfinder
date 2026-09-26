@@ -313,7 +313,7 @@ Unattended bulk auto-submission on third-party sites is intentionally excluded (
 
 | Stage | Setup |
 |---|---|
-| Local | `docker compose up` runs Postgres+pgvector, Redis, RabbitMQ, MinIO, Mailpit, core-api, ai-service, web |
+| Local | `docker compose up` runs Postgres+pgvector, Redis, RabbitMQ, S3Mock (S3-compatible object storage), Mailpit, core-api, ai-service, web |
 | Staging/Prod v1 | Managed Postgres (with pgvector), managed Redis, CloudAMQP or self-hosted RabbitMQ, Cloudflare R2; services as containers on Fly.io / Railway / Render or a single VM with Docker Compose + Caddy. Web on Vercel. |
 | Scale-up | Kubernetes only when traffic or team size justifies it |
 

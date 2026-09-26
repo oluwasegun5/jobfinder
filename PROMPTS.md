@@ -11,7 +11,7 @@ Review every PR (especially migrations and API contracts) before running the nex
 ## Phase 0 — Foundations
 
 ### P0.1 Monorepo + local stack
-Create the monorepo layout from PLAN.md §4. Add `infra/docker-compose.yml` with Postgres 16 + pgvector, Redis, RabbitMQ (management UI), MinIO (bucket auto-created), Mailpit. Add a root `Makefile` (`up`, `down`, `logs`, `test`, `fmt`) and `.env.example`. Add `.gitignore`, `.editorconfig`, README with setup steps.
+Create the monorepo layout from PLAN.md §4. Add `infra/docker-compose.yml` with Postgres 16 + pgvector, Redis, RabbitMQ (management UI), S3-compatible object storage (Adobe S3Mock, bucket auto-created — see ADR 0009), Mailpit. Add a root `Makefile` (`up`, `down`, `logs`, `test`, `fmt`) and `.env.example`. Add `.gitignore`, `.editorconfig`, README with setup steps.
 **Done when:** `make up` starts all infra containers healthy.
 
 ### P0.2 core-api skeleton
@@ -48,7 +48,7 @@ Signup, login, verify-email, forgot/reset password, Google button, protected rou
 
 ### P1.4 CV upload + storage
 `profile` module: profiles, preferences, resumes, resume_versions migrations. Upload endpoint (PDF/DOCX, ≤ 5 MB, content-type sniffing) to object storage with private keys; pre-signed download URLs. List/delete/set-primary. Deletion handler for UserDeletionRequested (DB + storage).
-**Done when:** upload/download/delete tested with MinIO via Testcontainers.
+**Done when:** upload/download/delete tested against S3Mock via Testcontainers (S3MockContainer).
 
 ### P1.5 CV parsing
 ai-service: `/parse-resume` — extract text (pdfplumber, python-docx), LLM to strict Pydantic schema (PLAN.md §7), prompt v1, record usage. core-api calls it async via RabbitMQ after upload, stores structured JSON in resume_versions, updates parse_status. Include 5 synthetic CV fixtures + tests with the fake provider, and an eval script for real-provider runs.
