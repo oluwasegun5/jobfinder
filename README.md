@@ -24,7 +24,7 @@ docs/runbooks/         operational runbooks
 
 ## Local development setup
 
-Prerequisites: [Docker Desktop](https://www.docker.com/products/docker-desktop/) (with Compose v2) and `make`. To run ai-service tests and linters outside Docker you also need [uv](https://docs.astral.sh/uv/).
+Prerequisites: [Docker Desktop](https://www.docker.com/products/docker-desktop/) (with Compose v2) and `make`. To run tests and linters outside Docker you also need [uv](https://docs.astral.sh/uv/) (ai-service) and Node.js 22+ (web; run `npm install` at the repo root once).
 
 > **Windows:** `make` isn't included by default. Install it with `winget install ezwinports.make`, or use WSL, where it's usually already available.
 
@@ -51,13 +51,15 @@ Prerequisites: [Docker Desktop](https://www.docker.com/products/docker-desktop/)
    | `make logs` | Tail logs for all containers |
    | `make test` | Run tests for every service |
    | `make fmt` | Format/lint every service |
+   | `make contract` | Regenerate the TS API client from a running core-api (see [packages/api-contract](packages/api-contract/README.md)) |
 
 4. Service UIs once the stack is up:
 
    | Service | URL | Credentials |
    |---|---|---|
+   | Web app | http://localhost:3000 | — |
    | RabbitMQ management | http://localhost:15672 | from `.env` (`RABBITMQ_USER` / `RABBITMQ_PASSWORD`) |
    | Object storage (S3-compatible) | http://localhost:9000 | none (local dev only, see [ADR 0009](docs/adr/0009-local-object-storage.md)) |
    | Mailpit (caught emails) | http://localhost:8025 | — |
 
-The `web` app is added to the compose stack in P0.4. `ai-service` is internal only: it listens on `127.0.0.1:8000` and every route, `/health` included, requires the `X-Service-Token` header (see [services/ai-service/README.md](services/ai-service/README.md)).
+The web app reaches core-api only through `/api/core/*` on its own origin, proxied by Next.js (see [ADR 0011](docs/adr/0011-web-core-api-access.md)). For hot reload run `npm run web:dev` against the compose core-api. `ai-service` is internal only: it listens on `127.0.0.1:8000` and every route, `/health` included, requires the `X-Service-Token` header (see [services/ai-service/README.md](services/ai-service/README.md)).
