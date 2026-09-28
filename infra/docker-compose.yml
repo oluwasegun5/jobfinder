@@ -91,6 +91,29 @@ services:
       timeout: 5s
       retries: 10
 
+  core-api:
+    build:
+      context: ../services/core-api
+      dockerfile: ../../infra/docker/core-api.Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-jobfinder}
+      POSTGRES_USER: ${POSTGRES_USER:-jobfinder}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jobfinder}
+      SERVER_PORT: 8080
+    ports:
+      - "${CORE_API_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
 volumes:
   postgres_data:
   redis_data:

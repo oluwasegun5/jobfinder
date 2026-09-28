@@ -12,7 +12,8 @@ logs:
 	$(COMPOSE) logs -f
 
 test:
-	@echo "No service tests yet - added per service starting P0.2 (core-api), P0.3 (ai-service), P0.4 (web)."
+	cd services/core-api && ./mvnw test
+	@echo "ai-service and web tests land in P0.3 and P0.4."
 
 fmt:
 	@echo "No formatters configured yet - added per service starting P0.2 (core-api), P0.3 (ai-service), P0.4 (web)."
