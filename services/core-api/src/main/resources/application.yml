@@ -18,6 +18,10 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 
+springdoc:
+  # Include actuator endpoints (health) in /v3/api-docs so the web client is generated for them.
+  show-actuator: true
+
 management:
   endpoints:
     web:
