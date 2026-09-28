@@ -1,0 +1,49 @@
+name: ai-service
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/ai-service/**"
+      - ".github/workflows/ai-service.yml"
+  pull_request:
+    paths:
+      - "services/ai-service/**"
+      - ".github/workflows/ai-service.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: services/ai-service
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: services/ai-service/uv.lock
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Ruff format
+        run: uv run ruff format --check .
+
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      - name: Mypy
+        run: uv run mypy
+
+      - name: Pytest
+        run: uv run pytest
