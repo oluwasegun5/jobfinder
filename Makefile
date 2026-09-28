@@ -1,6 +1,6 @@
 COMPOSE := docker compose -f infra/docker-compose.yml --env-file .env
 
-.PHONY: up down logs test fmt
+.PHONY: up down logs test fmt lint
 
 up:
 	$(COMPOSE) up -d --wait
@@ -13,7 +13,11 @@ logs:
 
 test:
 	cd services/core-api && ./mvnw test
-	@echo "ai-service and web tests land in P0.3 and P0.4."
+	cd services/ai-service && uv run pytest
+	@echo "web tests land in P0.4."
 
 fmt:
-	@echo "No formatters configured yet - added per service starting P0.2 (core-api), P0.3 (ai-service), P0.4 (web)."
+	cd services/ai-service && uv run ruff format . && uv run ruff check --fix .
+
+lint:
+	cd services/ai-service && uv run ruff format --check . && uv run ruff check . && uv run mypy
