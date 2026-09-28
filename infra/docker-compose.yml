@@ -114,6 +114,27 @@ services:
       retries: 10
       start_period: 60s
 
+  ai-service:
+    build:
+      context: ../services/ai-service
+      dockerfile: ../../infra/docker/ai-service.Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:?set AI_SERVICE_TOKEN in .env (see .env.example)}
+      LLM_PROVIDER: ${LLM_PROVIDER:-anthropic}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LLM_MODEL_FAST: ${LLM_MODEL_FAST:-claude-haiku-4-5}
+      LLM_MODEL_STRONG: ${LLM_MODEL_STRONG:-claude-sonnet-5}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-jobfinder}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-jobfinder}
+    # Internal only (PLAN.md §3): published on localhost for local debugging, never publicly.
+    ports:
+      - "127.0.0.1:${AI_SERVICE_PORT:-8000}:8000"
+
 volumes:
   postgres_data:
   redis_data:

@@ -24,7 +24,7 @@ docs/runbooks/         operational runbooks
 
 ## Local development setup
 
-Prerequisites: [Docker Desktop](https://www.docker.com/products/docker-desktop/) (with Compose v2) and `make`.
+Prerequisites: [Docker Desktop](https://www.docker.com/products/docker-desktop/) (with Compose v2) and `make`. To run ai-service tests and linters outside Docker you also need [uv](https://docs.astral.sh/uv/).
 
 > **Windows:** `make` isn't included by default. Install it with `winget install ezwinports.make`, or use WSL, where it's usually already available.
 
@@ -60,4 +60,4 @@ Prerequisites: [Docker Desktop](https://www.docker.com/products/docker-desktop/)
    | Object storage (S3-compatible) | http://localhost:9000 | none (local dev only, see [ADR 0009](docs/adr/0009-local-object-storage.md)) |
    | Mailpit (caught emails) | http://localhost:8025 | — |
 
-Application services (`core-api`, `ai-service`, `web`) are added to the compose stack in later Phase 0 tasks (P0.2–P0.4).
+The `web` app is added to the compose stack in P0.4. `ai-service` is internal only: it listens on `127.0.0.1:8000` and every route, `/health` included, requires the `X-Service-Token` header (see [services/ai-service/README.md](services/ai-service/README.md)).
