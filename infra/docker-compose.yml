@@ -135,6 +135,19 @@ services:
     ports:
       - "127.0.0.1:${AI_SERVICE_PORT:-8000}:8000"
 
+  web:
+    build:
+      context: ..
+      dockerfile: infra/docker/web.Dockerfile
+      args:
+        # The Next server proxies /api/core/* here; baked in at build (docs/adr/0011-web-core-api-access.md).
+        CORE_API_URL: http://core-api:8080
+    depends_on:
+      core-api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+
 volumes:
   postgres_data:
   redis_data:

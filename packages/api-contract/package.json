@@ -1,0 +1,22 @@
+{
+  "name": "@jobfinder/api-contract",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "fetch-spec": "node scripts/fetch-spec.mjs",
+    "codegen": "openapi-typescript openapi.json -o src/schema.d.ts",
+    "generate": "npm run fetch-spec && npm run codegen",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "openapi-fetch": "0.17.0"
+  },
+  "devDependencies": {
+    "openapi-typescript": "7.13.0",
+    "typescript": "^5"
+  }
+}

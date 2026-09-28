@@ -1,0 +1,13 @@
+# Build context for images built from the repo root (currently: web).
+**/node_modules
+**/.next
+**/.env
+**/.env.*
+.git
+.idea
+.vscode
+services
+infra/deploy
+docs
+extension
+**/*.tsbuildinfo
