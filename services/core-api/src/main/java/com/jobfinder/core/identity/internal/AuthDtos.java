@@ -21,6 +21,9 @@ final class AuthDtos {
             @NotBlank @Size(max = 72) String password) {
     }
 
+    record GoogleLoginRequest(@NotBlank @Size(max = 4096) String idToken) {
+    }
+
     record EmailRequest(@NotBlank @Email @Size(max = 254) String email) {
     }
 
