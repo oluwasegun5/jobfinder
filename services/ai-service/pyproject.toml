@@ -6,8 +6,10 @@ dependencies = [
     "aio-pika>=10.1.0",
     "anthropic>=1.8",
     "fastapi>=0.115",
+    "pdfplumber>=0.11",
     "pydantic>=2.9",
     "pydantic-settings>=2.15.0",
+    "python-docx>=1.1",
     "uvicorn[standard]>=0.54.0",
 ]
 
@@ -33,7 +35,7 @@ select = ["E", "F", "W", "I", "B", "UP", "N", "S", "ASYNC", "RUF", "SIM"]
 [tool.mypy]
 python_version = "3.12"
 plugins = ["pydantic.mypy"]
-files = ["app", "tests"]
+files = ["app", "tests", "evals"]
 
 [[tool.mypy.overrides]]
 module = "app.*"
