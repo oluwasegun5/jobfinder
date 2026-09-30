@@ -11,6 +11,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.jobfinder.core.identity.UserDeletionRequested;
+
 /**
  * The auth flows. Deliberately not {@code @Transactional} as a whole: password hashing is
  * slow and must not hold a database connection, so each flow opens short transactions
@@ -30,6 +32,8 @@ class AuthService {
     }
 
     private final UserRepository users;
+    private final OAuthAccountRepository oauthAccounts;
+    private final GoogleTokenVerifier google;
     private final RefreshTokenService refreshTokens;
     private final EmailTokenService emailTokens;
     private final JwtService jwt;
@@ -42,10 +46,13 @@ class AuthService {
     /** Compared against when the email is unknown so both paths spend the same time hashing. */
     private final String dummyHash;
 
-    AuthService(UserRepository users, RefreshTokenService refreshTokens, EmailTokenService emailTokens,
+    AuthService(UserRepository users, OAuthAccountRepository oauthAccounts, GoogleTokenVerifier google,
+            RefreshTokenService refreshTokens, EmailTokenService emailTokens,
             JwtService jwt, RateLimiter rateLimiter, PasswordEncoder passwordEncoder,
             ApplicationEventPublisher events, TransactionTemplate tx, AuthProperties properties, Clock clock) {
         this.users = users;
+        this.oauthAccounts = oauthAccounts;
+        this.google = google;
         this.refreshTokens = refreshTokens;
         this.emailTokens = emailTokens;
         this.jwt = jwt;
@@ -124,6 +131,62 @@ class AuthService {
             throw AuthException.emailNotVerified();
         }
         return new Session(jwt.issue(user), refreshTokens.startFamily(user.getId()));
+    }
+
+    /**
+     * Signs in with a Google ID token. The Google account is matched by its stable {@code sub}; failing
+     * that, by verified email to an existing account, which is then linked. A new verified user is created
+     * if neither exists. An email Google has not verified is never trusted.
+     */
+    Session googleLogin(String idToken, String ip) {
+        rateLimiter.check(RateLimitRule.GOOGLE_IP, ip);
+        GoogleTokenVerifier.GoogleIdentity identity = google.verify(idToken);
+        if (!identity.emailVerified()) {
+            throw AuthException.invalidGoogleToken();
+        }
+        String email = normalize(identity.email());
+
+        User user;
+        try {
+            user = tx.execute(status -> findOrLinkGoogleUser(identity.subject(), email));
+        } catch (DataIntegrityViolationException e) {
+            // Lost a race with a concurrent first sign-in for the same Google account or email.
+            user = tx.execute(status -> findOrLinkGoogleUser(identity.subject(), email));
+        }
+        if (user == null || !user.canAuthenticate()) {
+            throw AuthException.invalidCredentials();
+        }
+        return new Session(jwt.issue(user), refreshTokens.startFamily(user.getId()));
+    }
+
+    private User findOrLinkGoogleUser(String subject, String email) {
+        var linked = oauthAccounts.findByProviderAndProviderUserId(OAuthAccount.GOOGLE, subject);
+        if (linked.isPresent()) {
+            return users.findById(linked.get().getUserId()).orElse(null);
+        }
+        User user = users.findByEmail(email).orElse(null);
+        if (user == null) {
+            user = new User(email, null);
+            user.markEmailVerified(clock.instant());
+            users.saveAndFlush(user);
+        } else if (!user.isEmailVerified()) {
+            // Someone may have pre-registered this address with a password they chose. Google has proven
+            // the real owner, so verify the account and drop that password and any sessions it created.
+            user.markEmailVerified(clock.instant());
+            user.setPasswordHash(null);
+            users.save(user);
+            refreshTokens.revokeAllForUser(user.getId());
+        }
+        oauthAccounts.saveAndFlush(new OAuthAccount(user.getId(), OAuthAccount.GOOGLE, subject));
+        return user;
+    }
+
+    /** Erases the account: listeners purge their data in this transaction, then the user row goes. */
+    void deleteAccount(UUID userId) {
+        tx.executeWithoutResult(status -> {
+            events.publishEvent(new UserDeletionRequested(userId, clock.instant()));
+            users.deleteById(userId);
+        });
     }
 
     Session refresh(String refreshToken, String ip) {
