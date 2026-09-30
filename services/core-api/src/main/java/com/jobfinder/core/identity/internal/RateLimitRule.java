@@ -10,6 +10,7 @@ enum RateLimitRule {
     SIGNUP_IP(5, Duration.ofHours(1)),
     LOGIN_IP(20, Duration.ofMinutes(15)),
     LOGIN_EMAIL(10, Duration.ofMinutes(15)),
+    GOOGLE_IP(20, Duration.ofMinutes(15)),
     REFRESH_IP(60, Duration.ofMinutes(1)),
     VERIFY_EMAIL_IP(10, Duration.ofHours(1)),
     RESEND_VERIFICATION_IP(5, Duration.ofHours(1)),
