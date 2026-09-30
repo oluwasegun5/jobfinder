@@ -49,7 +49,7 @@ class SecurityConfig {
 
     private static final String[] PUBLIC_AUTH_POSTS = {
             "/auth/signup", "/auth/verify-email", "/auth/resend-verification", "/auth/login",
-            "/auth/refresh", "/auth/logout", "/auth/forgot-password", "/auth/reset-password" };
+            "/auth/google", "/auth/refresh", "/auth/logout", "/auth/forgot-password", "/auth/reset-password" };
 
     // The API docs and health are part of the local/CI contract flow. Gate the docs before production (ADR 0011).
     private static final String[] PUBLIC_OPERATIONAL = {
