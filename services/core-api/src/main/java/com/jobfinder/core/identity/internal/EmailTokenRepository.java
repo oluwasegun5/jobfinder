@@ -21,4 +21,8 @@ interface EmailTokenRepository extends JpaRepository<EmailToken, UUID> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update EmailToken t set t.usedAt = :now, t.updatedAt = :now where t.userId = :userId and t.type = :type and t.usedAt is null")
     int invalidateOutstanding(@Param("userId") UUID userId, @Param("type") EmailTokenType type, @Param("now") Instant now);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("delete from EmailToken t where t.userId = :userId")
+    int deleteAllForUser(@Param("userId") UUID userId);
 }

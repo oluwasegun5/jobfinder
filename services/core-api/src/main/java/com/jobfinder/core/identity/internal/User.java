@@ -90,6 +90,10 @@ class User {
         return role;
     }
 
+    void promoteToAdmin() {
+        this.role = Role.ADMIN;
+    }
+
     boolean canAuthenticate() {
         return status == UserStatus.ACTIVE && deletedAt == null;
     }

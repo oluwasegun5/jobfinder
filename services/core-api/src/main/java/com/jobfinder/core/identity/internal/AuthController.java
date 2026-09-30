@@ -15,6 +15,7 @@ import org.springframework.web.util.WebUtils;
 import com.jobfinder.core.identity.CurrentUser;
 import com.jobfinder.core.identity.internal.AuthDtos.AuthResponse;
 import com.jobfinder.core.identity.internal.AuthDtos.EmailRequest;
+import com.jobfinder.core.identity.internal.AuthDtos.GoogleLoginRequest;
 import com.jobfinder.core.identity.internal.AuthDtos.LoginRequest;
 import com.jobfinder.core.identity.internal.AuthDtos.MeResponse;
 import com.jobfinder.core.identity.internal.AuthDtos.ResetPasswordRequest;
@@ -67,6 +68,11 @@ class AuthController {
     @PostMapping("/login")
     ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
         return respond(auth.login(request.email(), request.password(), http.getRemoteAddr()));
+    }
+
+    @PostMapping("/google")
+    ResponseEntity<AuthResponse> google(@Valid @RequestBody GoogleLoginRequest request, HttpServletRequest http) {
+        return respond(auth.googleLogin(request.idToken(), http.getRemoteAddr()));
     }
 
     @PostMapping("/refresh")

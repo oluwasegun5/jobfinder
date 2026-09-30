@@ -27,6 +27,13 @@ app:
       # No default on purpose: startup fails unless JWT_SECRET (>= 32 chars) is set.
       secret: ${JWT_SECRET:}
     web-base-url: ${WEB_BASE_URL:http://localhost:3000}
+    google:
+      # OAuth client ID of the web app. Blank disables POST /auth/google (503).
+      client-id: ${GOOGLE_CLIENT_ID:}
+    admin:
+      # Optional bootstrap admin: promoted if the account exists, created (verified) if a password is given.
+      email: ${ADMIN_EMAIL:}
+      password: ${ADMIN_PASSWORD:}
     refresh-cookie:
       # Secure cookies are still accepted on http://localhost by browsers; only turn off for odd setups.
       secure: ${AUTH_COOKIE_SECURE:true}

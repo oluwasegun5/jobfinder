@@ -24,7 +24,20 @@ record AuthProperties(
         @DefaultValue("12") @Min(4) @Max(31) int bcryptStrength,
         @DefaultValue("http://localhost:3000") @NotBlank String webBaseUrl,
         @DefaultValue("no-reply@jobfinder.local") @NotBlank String mailFrom,
-        @Valid @DefaultValue RefreshCookie refreshCookie) {
+        @Valid @DefaultValue RefreshCookie refreshCookie,
+        @Valid @DefaultValue Google google,
+        @Valid @DefaultValue Admin admin) {
+
+    /** OAuth client ID of the web app; blank disables Google sign-in ({@code GOOGLE_CLIENT_ID}). */
+    record Google(@DefaultValue("") String clientId) {
+    }
+
+    /**
+     * Optional bootstrap admin ({@code ADMIN_EMAIL}, {@code ADMIN_PASSWORD}). The email is promoted to
+     * ADMIN if it exists; the account is created (pre-verified) only when a password is also given.
+     */
+    record Admin(String email, String password) {
+    }
 
     record Jwt(
             @NotBlank @Size(min = 32, message = "must be at least 32 characters (set JWT_SECRET)") String secret,

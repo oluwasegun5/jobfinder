@@ -170,6 +170,36 @@
         }
       }
     },
+    "/auth/google": {
+      "post": {
+        "tags": [
+          "auth-controller"
+        ],
+        "operationId": "google",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/forgot-password": {
       "post": {
         "tags": [
@@ -323,6 +353,19 @@
           }
         }
       }
+    },
+    "/me": {
+      "delete": {
+        "tags": [
+          "account-controller"
+        ],
+        "operationId": "deleteMe",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -426,6 +469,19 @@
         "required": [
           "email",
           "password"
+        ]
+      },
+      "GoogleLoginRequest": {
+        "type": "object",
+        "properties": {
+          "idToken": {
+            "type": "string",
+            "maxLength": 4096,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "idToken"
         ]
       },
       "MeResponse": {
