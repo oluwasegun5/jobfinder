@@ -14,7 +14,9 @@ COPY packages/api-contract packages/api-contract
 COPY apps/web apps/web
 # next.config.ts is serialized at build time, so the /api/core rewrite target is baked in here.
 ARG CORE_API_URL=http://core-api:8080
-RUN CORE_API_URL=$CORE_API_URL npm run build -w web
+# NEXT_PUBLIC_* values are inlined into the browser bundle at build time. Blank hides the Google button.
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID=
+RUN CORE_API_URL=$CORE_API_URL NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID npm run build -w web
 
 FROM node:24-alpine
 WORKDIR /app
