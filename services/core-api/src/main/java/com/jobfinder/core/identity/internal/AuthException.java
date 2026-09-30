@@ -29,6 +29,16 @@ class AuthException extends ApiException {
         return new AuthException(HttpStatus.BAD_REQUEST, "invalid_token", "Token is invalid or has expired.");
     }
 
+    static AuthException invalidGoogleToken() {
+        return new AuthException(HttpStatus.UNAUTHORIZED, "invalid_google_token",
+                "Google sign-in could not be verified.");
+    }
+
+    static AuthException googleNotConfigured() {
+        return new AuthException(HttpStatus.SERVICE_UNAVAILABLE, "google_not_configured",
+                "Google sign-in is not available.");
+    }
+
     static AuthException weakPassword(String detail) {
         return new AuthException(HttpStatus.BAD_REQUEST, "weak_password", detail);
     }
