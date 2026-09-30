@@ -8,6 +8,9 @@ interface ObjectStorage {
 
     void put(String key, byte[] content, String contentType);
 
+    /** Reads a whole object. Throws {@link ObjectNotFoundException} if it does not exist. */
+    byte[] get(String key);
+
     /** A time-limited URL that downloads the object as an attachment named {@code filename}. */
     URI presignDownload(String key, String filename, Duration ttl);
 
