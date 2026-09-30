@@ -9,6 +9,7 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -18,7 +19,7 @@ import com.jobfinder.core.profile.internal.ResumeDtos.ResumeResponse;
 import com.jobfinder.core.shared.ApiException;
 
 /**
- * CV upload, listing, download links, primary selection and deletion. Every method takes the
+ * CV upload (which queues parsing), listing, download links, primary selection and deletion. Every method takes the
  * caller's user ID and scopes by it: someone else's resume is reported as not found.
  *
  * <p>Deliberately not {@code @Transactional} as a whole: object storage is not part of the
@@ -36,15 +37,17 @@ class ResumeService {
     private final ResumeProperties properties;
     private final TransactionTemplate tx;
     private final Clock clock;
+    private final ApplicationEventPublisher events;
 
     ResumeService(ResumeRepository resumes, ResumeVersionRepository versions, ObjectStorage storage,
-            ResumeProperties properties, TransactionTemplate tx, Clock clock) {
+            ResumeProperties properties, TransactionTemplate tx, Clock clock, ApplicationEventPublisher events) {
         this.resumes = resumes;
         this.versions = versions;
         this.storage = storage;
         this.properties = properties;
         this.tx = tx;
         this.clock = clock;
+        this.events = events;
     }
 
     /** Where a user's files live; deleting this prefix removes everything stored for them. */
@@ -77,6 +80,8 @@ class ResumeService {
                 Resume resume = resumes.save(
                         new Resume(id, userId, label(requestedLabel, originalFilename), key, format, content.length, first));
                 versions.save(new ResumeVersion(id, 1, ResumeVersion.Source.UPLOAD));
+                // Parsing is queued after this transaction commits (ResumeParseDispatcher).
+                events.publishEvent(new ResumeUploaded(id, userId, 1));
                 return resume;
             });
             return ResumeResponse.from(saved);
