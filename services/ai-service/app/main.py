@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
 
-from app.api import diagnostics, health
+from app.api import diagnostics, health, parse_resume
 from app.api.errors import register_error_handlers
 from app.config import Settings, get_settings
 from app.llm import LLMProvider, build_provider
@@ -61,4 +61,5 @@ def create_app(
     register_error_handlers(app)
     app.include_router(health.router)
     app.include_router(diagnostics.router)
+    app.include_router(parse_resume.router)
     return app
