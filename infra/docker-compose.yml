@@ -102,6 +102,8 @@ services:
         condition: service_healthy
       mailpit:
         condition: service_healthy
+      object-storage-init:
+        condition: service_completed_successfully
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
@@ -112,6 +114,13 @@ services:
       REDIS_PORT: 6379
       MAIL_HOST: mailpit
       MAIL_PORT: 1025
+      # core-api talks to the object store over the compose network; browsers get pre-signed URLs
+      # that point at the published port instead.
+      OBJECT_STORAGE_ENDPOINT: http://object-storage:9090
+      OBJECT_STORAGE_PUBLIC_ENDPOINT: http://localhost:${OBJECT_STORAGE_PORT:-9000}
+      OBJECT_STORAGE_BUCKET: ${OBJECT_STORAGE_BUCKET:-jobfinder}
+      OBJECT_STORAGE_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY:-local}
+      OBJECT_STORAGE_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY:-local}
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env (see .env.example)}
       WEB_BASE_URL: ${WEB_BASE_URL:-http://localhost:3000}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
