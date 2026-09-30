@@ -28,14 +28,19 @@ import tools.jackson.databind.json.JsonMapper;
 @Component
 class AiServiceResumeParser {
 
-    /** The stored form of a parse: opaque JSON plus what produced it. */
-    record Parsed(String structuredJson, String model, String promptVersion) {
+    /**
+     * The stored form of a parse: opaque JSON plus what produced it. {@code warningsJson} is a JSON array of
+     * {@code {path, code}} grounding warnings (possibly empty), already reduced to that shape.
+     */
+    record Parsed(String structuredJson, String warningsJson, String model, String promptVersion) {
     }
 
     private static final Logger log = LoggerFactory.getLogger(AiServiceResumeParser.class);
     private static final int MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
     private static final int MAX_STRUCTURED_CHARS = 256 * 1024;
     private static final int SUPPORTED_SCHEMA_VERSION = 1;
+    private static final int MAX_WARNINGS = 200;
+    private static final int MAX_WARNING_FIELD_CHARS = 100;
 
     private final RestClient client;
     private final JsonMapper json;
@@ -92,8 +97,34 @@ class AiServiceResumeParser {
         if (structuredJson.length() > MAX_STRUCTURED_CHARS || model == null) {
             throw invalidResponse();
         }
+        String warningsJson;
+        try {
+            warningsJson = json.writeValueAsString(warnings(response.get("warnings")));
+        } catch (JacksonException e) {
+            throw invalidResponse();
+        }
         logUsage(response.get("usage"));
-        return new Parsed(structuredJson, model, promptVersion);
+        return new Parsed(structuredJson, warningsJson, model, promptVersion);
+    }
+
+    /**
+     * Keeps only well-formed {@code {path, code}} string pairs. Warnings are advisory and shown to the user, so a
+     * malformed one is dropped rather than failing an otherwise good parse.
+     */
+    private static List<Map<String, String>> warnings(Object raw) {
+        if (!(raw instanceof List<?> items)) {
+            return List.of();
+        }
+        return items.stream()
+                .filter(item -> item instanceof Map<?, ?> m && shortString(m.get("path")) && shortString(m.get("code")))
+                .limit(MAX_WARNINGS)
+                .map(item -> Map.of("path", (String) ((Map<?, ?>) item).get("path"), "code",
+                        (String) ((Map<?, ?>) item).get("code")))
+                .toList();
+    }
+
+    private static boolean shortString(Object value) {
+        return value instanceof String s && !s.isBlank() && s.length() <= MAX_WARNING_FIELD_CHARS;
     }
 
     private Parsed failure(int status, byte[] body) {
