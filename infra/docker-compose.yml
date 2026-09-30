@@ -155,6 +155,7 @@ services:
       args:
         # The Next server proxies /api/core/* here; baked in at build (docs/adr/0011-web-core-api-access.md).
         CORE_API_URL: http://core-api:8080
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     depends_on:
       core-api:
         condition: service_healthy
