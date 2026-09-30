@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -34,6 +35,15 @@ class S3ObjectStorage implements ObjectStorage {
     public void put(String key, byte[] content, String contentType) {
         s3.putObject(PutObjectRequest.builder().bucket(bucket).key(key).contentType(contentType)
                 .contentDisposition("attachment").build(), RequestBody.fromBytes(content));
+    }
+
+    @Override
+    public byte[] get(String key) {
+        try {
+            return s3.getObjectAsBytes(GetObjectRequest.builder().bucket(bucket).key(key).build()).asByteArray();
+        } catch (NoSuchKeyException e) {
+            throw new ObjectNotFoundException(key, e);
+        }
     }
 
     @Override
