@@ -17,6 +17,12 @@ spring:
   mail:
     host: ${MAIL_HOST:localhost}
     port: ${MAIL_PORT:1025}
+  servlet:
+    multipart:
+      # Headroom over app.resumes.max-size so oversized CVs get our own 413 with a clear message;
+      # this only bounds what the container will buffer.
+      max-file-size: 6MB
+      max-request-size: 7MB
 
 server:
   port: ${SERVER_PORT:8080}
@@ -39,6 +45,21 @@ app:
       secure: ${AUTH_COOKIE_SECURE:true}
   rate-limit:
     redis-uri: redis://${REDIS_HOST:localhost}:${REDIS_PORT:6379}
+  storage:
+    # S3-compatible: S3Mock locally, Cloudflare R2 in production. No key defaults on purpose:
+    # startup fails unless OBJECT_STORAGE_ACCESS_KEY / OBJECT_STORAGE_SECRET_KEY are set.
+    endpoint: ${OBJECT_STORAGE_ENDPOINT:http://localhost:9000}
+    # Host browsers use in pre-signed URLs, when it differs from the endpoint core-api talks to.
+    public-endpoint: ${OBJECT_STORAGE_PUBLIC_ENDPOINT:}
+    region: ${OBJECT_STORAGE_REGION:us-east-1}
+    bucket: ${OBJECT_STORAGE_BUCKET:jobfinder}
+    access-key: ${OBJECT_STORAGE_ACCESS_KEY:}
+    secret-key: ${OBJECT_STORAGE_SECRET_KEY:}
+    path-style: ${OBJECT_STORAGE_PATH_STYLE:true}
+  resumes:
+    max-size: 5MB
+    max-per-user: 10
+    download-url-ttl: 5m
 
 springdoc:
   # Include actuator endpoints (health) in /v3/api-docs so the web client is generated for them.
