@@ -2,11 +2,15 @@ package com.jobfinder.core.shared;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
@@ -27,6 +31,24 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(ex.status(), ex.getMessage());
         problem.setProperty("code", ex.code());
         return ResponseEntity.status(ex.status()).headers(ex.headers()).body(problem);
+    }
+
+    /**
+     * Bean-validation failures keep Spring's 400 problem detail and add {@code code: validation_failed} and an
+     * {@code errors} list of {@code {field, message}}, so clients can point at the offending input. Only the
+     * constraint message is echoed, never the rejected value.
+     */
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+                "Some fields are invalid.");
+        problem.setProperty("code", "validation_failed");
+        problem.setProperty("errors", ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> java.util.Map.of("field", error.getField(), "message",
+                        String.valueOf(error.getDefaultMessage())))
+                .toList());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).headers(headers).body(problem);
     }
 
     @ExceptionHandler(AccessDeniedException.class)

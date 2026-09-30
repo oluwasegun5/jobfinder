@@ -20,6 +20,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/resumes/{id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["content"];
+        put: operations["saveContent"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["profile"];
+        put: operations["saveProfile"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["preferences"];
+        put: operations["savePreferences"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/resumes": {
         parameters: {
             query?: never;
@@ -314,6 +362,124 @@ export interface components {
             /** Format: date-time */
             createdAt?: string;
         };
+        Certification: {
+            name: string;
+            issuer?: string;
+            date?: string;
+        };
+        Contact: {
+            full_name?: string;
+            email?: string;
+            phone?: string;
+            location?: string;
+            links?: components["schemas"]["Link"][];
+        };
+        Education: {
+            institution: string;
+            degree?: string;
+            field_of_study?: string;
+            start_date?: string;
+            end_date?: string;
+        };
+        Experience: {
+            company: string;
+            title: string;
+            location?: string;
+            start_date?: string;
+            end_date?: string;
+            is_current?: boolean;
+            bullets?: string[];
+        };
+        Link: {
+            label?: string;
+            url: string;
+        };
+        Project: {
+            name: string;
+            description?: string;
+            url?: string;
+            technologies?: string[];
+        };
+        ResumeContent: {
+            /** Format: int32 */
+            schema_version?: number;
+            contact?: components["schemas"]["Contact"];
+            headline?: string;
+            summary?: string;
+            experience?: components["schemas"]["Experience"][];
+            education?: components["schemas"]["Education"][];
+            skills?: string[];
+            projects?: components["schemas"]["Project"][];
+            certifications?: components["schemas"]["Certification"][];
+        };
+        ParseWarning: {
+            path?: string;
+            code?: string;
+        };
+        ResumeContentResponse: {
+            /** Format: uuid */
+            resumeId?: string;
+            /** @enum {string} */
+            parseStatus?: "PENDING" | "PARSED" | "FAILED";
+            parseError?: string;
+            /** Format: int32 */
+            versionNumber?: number;
+            /** @enum {string} */
+            source?: "UPLOAD" | "EDIT" | "TAILORED";
+            content?: components["schemas"]["ResumeContent"];
+            warnings?: components["schemas"]["ParseWarning"][];
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        ProfileRequest: {
+            fullName?: string;
+            headline?: string;
+            location?: string;
+            phone?: string;
+            links?: components["schemas"]["Link"][];
+            /** Format: int32 */
+            yearsExperience?: number;
+            /** @enum {string} */
+            seniority?: "INTERN" | "JUNIOR" | "MID" | "SENIOR" | "LEAD" | "EXECUTIVE";
+        };
+        ProfileResponse: {
+            fullName?: string;
+            headline?: string;
+            location?: string;
+            phone?: string;
+            links?: components["schemas"]["Link"][];
+            /** Format: int32 */
+            yearsExperience?: number;
+            /** @enum {string} */
+            seniority?: "INTERN" | "JUNIOR" | "MID" | "SENIOR" | "LEAD" | "EXECUTIVE";
+            onboardingCompleted?: boolean;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        PreferencesRequest: {
+            targetTitles?: string[];
+            locations?: string[];
+            workModes?: ("REMOTE" | "HYBRID" | "ONSITE")[];
+            /** Format: int32 */
+            minSalary?: number;
+            currency?: string;
+            needsSponsorship?: boolean;
+            excludedCompanies?: string[];
+            excludedIndustries?: string[];
+        };
+        PreferencesResponse: {
+            targetTitles?: string[];
+            locations?: string[];
+            workModes?: ("REMOTE" | "HYBRID" | "ONSITE")[];
+            /** Format: int32 */
+            minSalary?: number;
+            currency?: string;
+            needsSponsorship?: boolean;
+            excludedCompanies?: string[];
+            excludedIndustries?: string[];
+            /** Format: date-time */
+            updatedAt?: string;
+        };
         TokenRequest: {
             token: string;
         };
@@ -356,10 +522,6 @@ export interface components {
             role?: string;
             emailVerified?: boolean;
         };
-        Link: {
-            href?: string;
-            templated?: boolean;
-        };
     };
     responses: never;
     parameters: never;
@@ -387,6 +549,142 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ResumeResponse"];
+                };
+            };
+        };
+    };
+    content: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResumeContentResponse"];
+                };
+            };
+        };
+    };
+    saveContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResumeContent"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResumeContentResponse"];
+                };
+            };
+        };
+    };
+    profile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProfileResponse"];
+                };
+            };
+        };
+    };
+    saveProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProfileResponse"];
+                };
+            };
+        };
+    };
+    preferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PreferencesResponse"];
+                };
+            };
+        };
+    };
+    savePreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreferencesRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PreferencesResponse"];
                 };
             };
         };

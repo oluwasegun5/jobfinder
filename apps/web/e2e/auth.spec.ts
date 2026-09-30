@@ -1,22 +1,7 @@
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 import { waitForEmailLink } from "./mailpit";
-
-/**
- * Fills an input and confirms the value stuck. Under `next dev` the page can hydrate after the
- * first keystrokes, wiping them, so retry until the value survives.
- */
-async function fill(input: Locator, value: string) {
-  await expect(async () => {
-    await input.fill(value);
-    await expect(input).toHaveValue(value, { timeout: 500 });
-  }).toPass();
-}
-
-const password = "correct-horse-battery";
-
-// Synthetic address, unique per run so the suite can be re-run against a long-lived database.
-const uniqueEmail = (tag: string) => `e2e-${tag}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.test`;
+import { fill, password, uniqueEmail } from "./support";
 
 test("signup → verify email → login → protected page → logout", async ({ page }) => {
   const email = uniqueEmail("signup");
@@ -49,12 +34,13 @@ test("signup → verify email → login → protected page → logout", async ({
   await fill(page.getByLabel("Password"), password);
   await page.getByRole("button", { name: "Sign in" }).click();
 
-  await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  // A new user has no profile yet, so the app sends them into onboarding (see onboarding.spec.ts).
+  await expect(page).toHaveURL(/\/onboarding\/cv$/);
+  await expect(page.getByRole("heading", { name: "Upload your CV" })).toBeVisible();
 
   // Silent refresh: the access token is memory-only, so a reload proves the cookie restores the session.
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Upload your CV" })).toBeVisible();
 
   await page.getByRole("button", { name: "Sign out" }).first().click();
   await expect(page).toHaveURL(/\/login$/);
@@ -100,5 +86,5 @@ test("forgot password → reset → login with the new password", async ({ page 
   await fill(page.getByLabel("Email"), email);
   await fill(page.getByLabel("Password"), newPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page).toHaveURL(/\/onboarding\/cv$/);
 });

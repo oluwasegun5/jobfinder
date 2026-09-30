@@ -54,7 +54,8 @@ class ResumeParseStore {
      * false, changing nothing, if the resume is gone, is no longer PENDING, or the version already
      * has content.
      */
-    boolean complete(UUID resumeId, int versionNumber, String structuredJson, String model, String promptVersion) {
+    boolean complete(UUID resumeId, int versionNumber, String structuredJson, String warningsJson, String model,
+            String promptVersion) {
         return Boolean.TRUE.equals(tx.execute(status -> {
             int resumes = jdbc.sql("""
                     update resumes set parse_status = 'PARSED', parse_error = null, updated_at = now()
@@ -65,12 +66,13 @@ class ResumeParseStore {
             }
             int versions = jdbc.sql("""
                     update resume_versions
-                    set structured = cast(:structured as jsonb), model = :model, prompt_version = :promptVersion,
-                        updated_at = now()
+                    set structured = cast(:structured as jsonb), parse_warnings = cast(:warnings as jsonb),
+                        model = :model, prompt_version = :promptVersion, updated_at = now()
                     where resume_id = :id and version_number = :versionNumber and source = 'UPLOAD'
                       and structured is null
                     """)
                     .param("structured", structuredJson)
+                    .param("warnings", warningsJson)
                     .param("model", model)
                     .param("promptVersion", promptVersion)
                     .param("id", resumeId)
