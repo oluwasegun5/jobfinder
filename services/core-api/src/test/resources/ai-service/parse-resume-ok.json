@@ -1,0 +1,92 @@
+{
+  "structured": {
+    "schema_version": 1,
+    "contact": {
+      "full_name": "Jordan Reyes",
+      "email": "jordan.reyes@example.test",
+      "phone": "+44 7700 900123",
+      "location": "London, UK",
+      "links": [
+        {
+          "label": null,
+          "url": "https://github.com/jordan-reyes-example"
+        }
+      ]
+    },
+    "headline": "Senior Backend Engineer",
+    "summary": "Backend engineer with 8 years building payment and logistics platforms in Java and Python.",
+    "experience": [
+      {
+        "company": "Northwind Payments",
+        "title": "Senior Backend Engineer",
+        "location": "London, UK",
+        "start_date": "2021-03",
+        "end_date": null,
+        "is_current": true,
+        "bullets": [
+          "Led the migration of the settlement service from a monolith to event-driven services.",
+          "Cut p99 latency of the ledger API from 900 ms to 220 ms."
+        ]
+      },
+      {
+        "company": "Contoso Logistics",
+        "title": "Backend Engineer",
+        "location": "Manchester, UK",
+        "start_date": "2017-06",
+        "end_date": "2021-02",
+        "is_current": false,
+        "bullets": [
+          "Built the route optimisation service used by 400 drivers.",
+          "Introduced contract testing across 12 services."
+        ]
+      },
+      {
+        "company": "Fabrikam Web Studio",
+        "title": "Junior Developer",
+        "location": "Leeds, UK",
+        "start_date": "2015-09",
+        "end_date": "2017-05",
+        "is_current": false,
+        "bullets": [
+          "Delivered client websites with PHP and MySQL."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "institution": "University of Leeds",
+        "degree": "BSc",
+        "field_of_study": "Computer Science",
+        "start_date": "2012",
+        "end_date": "2015"
+      }
+    ],
+    "skills": [
+      "Java",
+      "Spring Boot",
+      "Python",
+      "PostgreSQL",
+      "Kafka",
+      "Docker",
+      "Kubernetes",
+      "Terraform"
+    ],
+    "projects": [],
+    "certifications": []
+  },
+  "warnings": [],
+  "prompt_version": "parse_resume/v1",
+  "usage": [
+    {
+      "user_id": "00000000-0000-4000-8000-000000000001",
+      "feature": "parse_resume",
+      "provider": "fake",
+      "model": "fake-fast",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_usd": "0",
+      "latency_ms": 0,
+      "prompt_version": "parse_resume/v1"
+    }
+  ]
+}
