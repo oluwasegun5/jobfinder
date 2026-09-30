@@ -310,6 +310,7 @@ export interface components {
             primary?: boolean;
             /** @enum {string} */
             parseStatus?: "PENDING" | "PARSED" | "FAILED";
+            parseError?: string;
             /** Format: date-time */
             createdAt?: string;
         };

@@ -17,6 +17,20 @@ spring:
   mail:
     host: ${MAIL_HOST:localhost}
     port: ${MAIL_PORT:1025}
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:jobfinder}
+    password: ${RABBITMQ_PASSWORD:jobfinder}
+    # Uploads publish to the broker; fail fast (the resume is then marked FAILED) instead of hanging.
+    connection-timeout: 3s
+    listener:
+      simple:
+        # A parse takes seconds (LLM call): one message at a time per consumer.
+        prefetch: 1
+        concurrency: 2
+        # A message that blows up is dead-lettered, never redelivered in a loop.
+        default-requeue-rejected: false
   servlet:
     multipart:
       # Headroom over app.resumes.max-size so oversized CVs get our own 413 with a clear message;
@@ -60,6 +74,19 @@ app:
     max-size: 5MB
     max-per-user: 10
     download-url-ttl: 5m
+    parsing:
+      queue: resumes.parse
+      dead-letter-queue: resumes.parse.dlq
+      # Transient failures (ai-service or LLM down) are retried this many times in total, doubling the wait.
+      max-attempts: 3
+      initial-backoff: 2s
+  ai-service:
+    # Internal only (PLAN.md section 3). No token default on purpose: startup fails without AI_SERVICE_TOKEN.
+    base-url: ${AI_SERVICE_URL:http://localhost:8000}
+    token: ${AI_SERVICE_TOKEN:}
+    connect-timeout: 2s
+    # A parse is one LLM call (plus at most one validation retry) on a long CV.
+    read-timeout: 90s
 
 springdoc:
   # Include actuator endpoints (health) in /v3/api-docs so the web client is generated for them.

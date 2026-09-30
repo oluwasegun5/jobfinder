@@ -33,8 +33,14 @@ class Resume {
     @Column(name = "is_primary")
     private boolean primaryFlag;
 
+    // Written only by ResumeParseStore. Never updatable here: a stale entity saved later (say, by
+    // setPrimary) must not revert a result the async parser stored in the meantime.
     @Enumerated(EnumType.STRING)
+    @Column(updatable = false)
     private ParseStatus parseStatus = ParseStatus.PENDING;
+
+    @Column(updatable = false)
+    private String parseError;
 
     private Instant createdAt;
 
@@ -99,6 +105,11 @@ class Resume {
 
     ParseStatus getParseStatus() {
         return parseStatus;
+    }
+
+    /** Reason code when parsing failed, else null. */
+    String getParseError() {
+        return parseError;
     }
 
     Instant getCreatedAt() {

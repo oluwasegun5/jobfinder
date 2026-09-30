@@ -100,10 +100,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
       mailpit:
         condition: service_healthy
       object-storage-init:
         condition: service_completed_successfully
+      # Not needed to start; CV parsing retries until it answers.
+      ai-service:
+        condition: service_started
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
@@ -112,6 +117,12 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jobfinder}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-jobfinder}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-jobfinder}
+      AI_SERVICE_URL: http://ai-service:8000
+      AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:?set AI_SERVICE_TOKEN in .env (see .env.example)}
       MAIL_HOST: mailpit
       MAIL_PORT: 1025
       # core-api talks to the object store over the compose network; browsers get pre-signed URLs

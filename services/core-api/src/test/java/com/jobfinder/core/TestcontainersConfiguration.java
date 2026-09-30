@@ -1,6 +1,8 @@
 package com.jobfinder.core;
 
 import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
@@ -8,9 +10,13 @@ import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.rabbitmq.RabbitMQContainer;
 import org.testcontainers.utility.DockerImageName;
 
-/** Real Postgres, Redis, Mailpit and S3Mock for integration tests (and for {@code TestCoreApiApplication}). */
+/**
+ * Real Postgres, Redis, RabbitMQ, Mailpit and S3Mock for integration tests (and for
+ * {@code TestCoreApiApplication}), plus a WireMock stand-in for ai-service.
+ */
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfiguration {
 
@@ -62,8 +68,29 @@ public class TestcontainersConfiguration {
 	}
 
 	@Bean
-	DynamicPropertyRegistrar testProperties(RedisContainer redis, MailpitContainer mailpit, S3MockContainer s3) {
+	@ServiceConnection
+	RabbitMQContainer rabbitContainer() {
+		// Keep in step with the rabbitmq tag in infra/docker-compose.yml.
+		return new RabbitMQContainer(DockerImageName.parse("rabbitmq:4.3.6-management-alpine"));
+	}
+
+	/** Stands in for the internal ai-service (WireMock: no test talks to a real LLM). */
+	@Bean(destroyMethod = "stop")
+	WireMockServer aiServiceMock() {
+		WireMockServer server = new WireMockServer(WireMockConfiguration.options().dynamicPort());
+		server.start();
+		AiServiceStubs.installDefault(server);
+		return server;
+	}
+
+	@Bean
+	DynamicPropertyRegistrar testProperties(RedisContainer redis, MailpitContainer mailpit, S3MockContainer s3,
+			WireMockServer aiService) {
 		return registry -> {
+			registry.add("app.ai-service.base-url", () -> "http://localhost:" + aiService.port());
+			registry.add("app.ai-service.token", () -> AiServiceStubs.TOKEN);
+			// Short backoff keeps retry tests quick; three attempts as in production.
+			registry.add("app.resumes.parsing.initial-backoff", () -> "20ms");
 			registry.add("app.storage.endpoint", s3::getHttpEndpoint);
 			registry.add("app.storage.bucket", () -> BUCKET);
 			registry.add("app.storage.access-key", () -> "test");
