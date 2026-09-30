@@ -33,9 +33,14 @@ export default function LandingPage() {
     <div className="flex flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
         <span className="text-lg font-semibold tracking-tight">JobFinder</span>
-        <Link href="/dashboard" className={buttonVariants({ variant: "outline" })}>
-          Open app
-        </Link>
+        <nav aria-label="Account" className="flex items-center gap-2">
+          <Link href="/login" className={buttonVariants({ variant: "ghost" })}>
+            Sign in
+          </Link>
+          <Link href="/signup" className={buttonVariants({ variant: "outline" })}>
+            Sign up
+          </Link>
+        </nav>
       </header>
 
       <main className="flex-1">
@@ -47,7 +52,7 @@ export default function LandingPage() {
             JobFinder gathers openings from across the web, ranks them against your profile and
             helps you tailor every application — without inventing a word of your experience.
           </p>
-          <Link href="/dashboard" className={cn(buttonVariants({ size: "lg" }), "px-5")}>
+          <Link href="/signup" className={cn(buttonVariants({ size: "lg" }), "px-5")}>
             Get started
           </Link>
         </section>
