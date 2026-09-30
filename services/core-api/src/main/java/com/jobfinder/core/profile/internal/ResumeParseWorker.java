@@ -86,7 +86,7 @@ class ResumeParseWorker {
         try {
             Parsed parsed = parseWithRetries(target);
             boolean stored = store.complete(target.resumeId(), message.versionNumber(), parsed.structuredJson(),
-                    parsed.model(), parsed.promptVersion());
+                    parsed.warningsJson(), parsed.model(), parsed.promptVersion());
             log.info(stored ? "Parsed resume {}" : "Parsed resume {} but another delivery got there first",
                     target.resumeId());
         } catch (ImmediateRequeueAmqpException e) {
