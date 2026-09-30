@@ -21,7 +21,7 @@ const navItems: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
   { label: "Jobs", icon: Briefcase },
   { label: "Applications", icon: KanbanSquare },
-  { label: "Profile", icon: UserRound },
+  { label: "Profile", icon: UserRound, href: "/profile" },
 ];
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
