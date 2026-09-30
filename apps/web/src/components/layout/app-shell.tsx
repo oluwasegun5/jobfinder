@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useState, type ComponentType, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { UserMenu } from "@/features/auth/user-menu";
 import { ApiStatus } from "@/features/health/api-status";
 import { cn } from "@/lib/utils";
 
@@ -95,7 +96,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         <nav aria-label="Main">
           <NavLinks />
         </nav>
-        <div className="mt-auto">
+        <div className="mt-auto flex flex-col gap-4">
+          <UserMenu />
           <ApiStatus />
         </div>
       </aside>
@@ -117,7 +119,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         {mobileNavOpen && (
           <nav id="mobile-nav" aria-label="Main" className="border-b p-4 md:hidden">
             <NavLinks onNavigate={() => setMobileNavOpen(false)} />
-            <div className="mt-4">
+            <div className="mt-4 flex flex-col gap-4">
+              <UserMenu />
               <ApiStatus />
             </div>
           </nav>

@@ -7,6 +7,7 @@ import { renderWithQueryClient } from "@/test/render";
 import { AppShell } from "./app-shell";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/dashboard" }));
+vi.mock("@/features/auth/user-menu", () => ({ UserMenu: () => null }));
 vi.mock("@/features/health/api-status", () => ({ ApiStatus: () => null }));
 
 describe("AppShell", () => {

@@ -12,6 +12,7 @@
     "contract:generate": "npm run generate -w @jobfinder/api-contract",
     "web:dev": "npm run dev -w web",
     "web:test": "npm run test -w web",
-    "web:lint": "npm run lint -w web && npm run typecheck -w web"
+    "web:lint": "npm run lint -w web && npm run typecheck -w web",
+    "web:e2e": "npm run test:e2e -w web"
   }
 }
