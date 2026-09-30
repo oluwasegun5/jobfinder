@@ -4,6 +4,38 @@
  */
 
 export interface paths {
+    "/resumes/{id}/primary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["setPrimary"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/resumes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list"];
+        put?: never;
+        post: operations["upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/verify-email": {
         parameters: {
             query?: never;
@@ -148,6 +180,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/resumes/{id}/download-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["downloadUrl"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/me": {
         parameters: {
             query?: never;
@@ -215,6 +263,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/resumes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me": {
         parameters: {
             query?: never;
@@ -235,6 +299,20 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ResumeResponse: {
+            /** Format: uuid */
+            id?: string;
+            label?: string;
+            /** @enum {string} */
+            fileType?: "PDF" | "DOCX";
+            /** Format: int64 */
+            sizeBytes?: number;
+            primary?: boolean;
+            /** @enum {string} */
+            parseStatus?: "PENDING" | "PARSED" | "FAILED";
+            /** Format: date-time */
+            createdAt?: string;
+        };
         TokenRequest: {
             token: string;
         };
@@ -265,6 +343,11 @@ export interface components {
         GoogleLoginRequest: {
             idToken: string;
         };
+        DownloadUrlResponse: {
+            url?: string;
+            /** Format: date-time */
+            expiresAt?: string;
+        };
         MeResponse: {
             /** Format: uuid */
             id?: string;
@@ -285,6 +368,77 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    setPrimary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResumeResponse"];
+                };
+            };
+        };
+    };
+    list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResumeResponse"][];
+                };
+            };
+        };
+    };
+    upload: {
+        parameters: {
+            query?: {
+                label?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResumeResponse"];
+                };
+            };
+        };
+    };
     verifyEmail: {
         parameters: {
             query?: never;
@@ -481,6 +635,28 @@ export interface operations {
             };
         };
     };
+    downloadUrl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DownloadUrlResponse"];
+                };
+            };
+        };
+    };
     me: {
         parameters: {
             query?: never;
@@ -576,6 +752,26 @@ export interface operations {
                     "application/vnd.spring-boot.actuator.v2+json": Record<string, never>;
                     "application/json": Record<string, never>;
                 };
+            };
+        };
+    };
+    delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
