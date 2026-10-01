@@ -17,7 +17,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  */
 @ConfigurationProperties("app.ingestion")
 record IngestionProperties(@DefaultValue Scheduler scheduler, @DefaultValue("30m") Duration lockAtMostFor,
-        @DefaultValue Defaults defaults, @DefaultValue Expiry expiry) {
+        @DefaultValue Defaults defaults, @DefaultValue Expiry expiry, @DefaultValue Seed seed) {
 
     IngestionProperties {
         if (lockAtMostFor.isNegative() || lockAtMostFor.isZero()) {
@@ -26,6 +26,14 @@ record IngestionProperties(@DefaultValue Scheduler scheduler, @DefaultValue("30m
     }
 
     record Scheduler(@DefaultValue("true") boolean enabled) {
+    }
+
+    /**
+     * The seed list of source targets (ADR 0020), loaded on startup. Loading only adds targets that are
+     * missing, so it is safe on every start and never undoes an admin's change.
+     */
+    record Seed(@DefaultValue("true") boolean enabled,
+            @DefaultValue("classpath:ingestion/seed-targets.json") String location) {
     }
 
     /**

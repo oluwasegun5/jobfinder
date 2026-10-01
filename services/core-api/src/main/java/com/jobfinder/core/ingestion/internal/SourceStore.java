@@ -64,6 +64,14 @@ class SourceStore {
                 .update();
     }
 
+    /** Merges {@code patch} (a JSON object) into the source's config; keys already set keep their value. */
+    void applyDefaultConfig(String code, String patch) {
+        jdbc.sql("update sources set config = cast(:patch as jsonb) || config, updated_at = now() where code = :code")
+                .param("patch", patch)
+                .param("code", code)
+                .update();
+    }
+
     Optional<SourceRow> findByCode(String code) {
         return jdbc.sql(SELECT + " where code = :code").param("code", code).query(sourceMapper).optional();
     }
