@@ -413,6 +413,37 @@
         }
       }
     },
+    "/resumes/{id}/reparse": {
+      "post": {
+        "tags": [
+          "resume-controller"
+        ],
+        "operationId": "reparse",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/verify-email": {
       "post": {
         "tags": [
@@ -1163,6 +1194,26 @@
         }
       }
     },
+    "/billing/allowance": {
+      "get": {
+        "tags": [
+          "allowance-controller"
+        ],
+        "operationId": "allowance",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllowanceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/me": {
       "get": {
         "tags": [
@@ -1246,6 +1297,46 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/IngestionRunPageResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/billing/costs": {
+      "get": {
+        "tags": [
+          "admin-billing-controller"
+        ],
+        "operationId": "costs",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostReportResponse"
                 }
               }
             }
@@ -2518,6 +2609,27 @@
           }
         }
       },
+      "AllowanceResponse": {
+        "type": "object",
+        "properties": {
+          "dailyCap": {
+            "type": "number"
+          },
+          "used": {
+            "type": "number"
+          },
+          "remaining": {
+            "type": "number"
+          },
+          "resetsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "exhausted": {
+            "type": "boolean"
+          }
+        }
+      },
       "MeResponse": {
         "type": "object",
         "properties": {
@@ -2571,6 +2683,80 @@
           "totalPages": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "CostReportResponse": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date"
+          },
+          "to": {
+            "type": "string",
+            "format": "date"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/CostRowResponse"
+          },
+          "byFeature": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CostRowResponse"
+            }
+          },
+          "byDay": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CostRowResponse"
+            }
+          },
+          "byModel": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CostRowResponse"
+            }
+          },
+          "byDayFeature": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CostRowResponse"
+            }
+          }
+        }
+      },
+      "CostRowResponse": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date"
+          },
+          "feature": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "calls": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "failedCalls": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "inputTokens": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "outputTokens": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "costUsd": {
+            "type": "number"
           }
         }
       }
