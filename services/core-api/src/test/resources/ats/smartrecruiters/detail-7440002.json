@@ -1,0 +1,9 @@
+{
+  "id": "7440002", "name": "Data Annotator",
+  "company": { "identifier": "examplehq", "name": "Example HQ" },
+  "releasedDate": "2026-09-08T09:00:00.000Z",
+  "location": { "city": "Remote", "country": "ng", "remote": true, "hybrid": false, "fullLocation": "Nigeria, Remote" },
+  "typeOfEmployment": { "id": "contract", "label": "Contract" },
+  "postingUrl": "https://jobs.example.test/examplehq/7440002-data-annotator",
+  "jobAd": { "sections": { "jobDescription": { "title": "Job Description", "text": "<p>Label data.</p>" } } }
+}

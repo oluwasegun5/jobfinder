@@ -1,0 +1,14 @@
+{
+  "id": "7440001", "name": "Platform Engineer",
+  "company": { "identifier": "examplehq", "name": "Example HQ" },
+  "releasedDate": "2026-09-09T09:43:26.403Z",
+  "location": { "city": "Lisbon", "region": "Lisboa", "country": "pt", "remote": false, "hybrid": true, "fullLocation": "Lisbon, Lisboa, Portugal" },
+  "typeOfEmployment": { "id": "permanent", "label": "Full-time" },
+  "postingUrl": "https://jobs.example.test/examplehq/7440001-platform-engineer",
+  "applyUrl": "https://jobs.example.test/examplehq/7440001-platform-engineer?oga=true",
+  "jobAd": { "sections": {
+    "companyDescription": { "title": "Company Description", "text": "<p>We build things.</p>" },
+    "jobDescription": { "title": "Job Description", "text": "<p>Run the platform.</p>" },
+    "qualifications": { "title": "Qualifications", "text": "<ul><li>Kubernetes</li></ul>" }
+  } }
+}
