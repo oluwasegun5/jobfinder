@@ -3,6 +3,7 @@ package com.jobfinder.core.profile.internal;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import com.jobfinder.core.profile.internal.ResumeContentDtos.Experience;
 import com.jobfinder.core.profile.internal.ResumeContentDtos.ParseWarning;
 import com.jobfinder.core.profile.internal.ResumeContentDtos.ResumeContent;
 import com.jobfinder.core.profile.internal.ResumeContentDtos.ResumeContentResponse;
+import com.jobfinder.core.profile.ResumeVersionChanged;
 import com.jobfinder.core.shared.ApiException;
 
 import tools.jackson.core.JacksonException;
@@ -38,11 +40,13 @@ class ResumeContentService {
     private final JdbcClient jdbc;
     private final TransactionTemplate tx;
     private final JsonMapper json;
+    private final ApplicationEventPublisher events;
 
-    ResumeContentService(JdbcClient jdbc, TransactionTemplate tx, JsonMapper json) {
+    ResumeContentService(JdbcClient jdbc, TransactionTemplate tx, JsonMapper json, ApplicationEventPublisher events) {
         this.jdbc = jdbc;
         this.tx = tx;
         this.json = json;
+        this.events = events;
     }
 
     ResumeContentResponse get(UUID userId, UUID resumeId) {
@@ -72,12 +76,15 @@ class ResumeContentService {
                         update resume_versions set structured = cast(:structured as jsonb), updated_at = now()
                         where id = :versionId
                         """).param("structured", structured).param("versionId", latest.id()).update();
+                events.publishEvent(new ResumeVersionChanged(latest.id()));
             } else {
+                UUID versionId = UUID.randomUUID();
                 jdbc.sql("""
                         insert into resume_versions (id, resume_id, version_number, structured, source, created_at, updated_at)
                         values (:versionId, :id, :number, cast(:structured as jsonb), 'EDIT', now(), now())
-                        """).param("versionId", UUID.randomUUID()).param("id", resumeId)
+                        """).param("versionId", versionId).param("id", resumeId)
                         .param("number", latest.number() + 1).param("structured", structured).update();
+                events.publishEvent(new ResumeVersionChanged(versionId));
             }
             jdbc.sql("update resumes set updated_at = now() where id = :id").param("id", resumeId).update();
             return read(resumeId);

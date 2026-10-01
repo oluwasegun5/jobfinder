@@ -1,0 +1,19 @@
+{
+  "model": "voyage-4",
+  "dimension": 1024,
+  "inputType": "document",
+  "items": [
+    {
+      "id": "6f1f3f9e-6a0b-4a4e-9a52-0d1a5c0c7e11",
+      "userId": null,
+      "text": "Title: Backend Engineer\nCompany: Acme\n\nBuilds APIs.",
+      "inputHash": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    }
+  ],
+  "skipped": [
+    {
+      "id": "b0f5c2c4-2f1e-4d63-8a07-3c1c7a5e9d22",
+      "reason": "NOT_FOUND"
+    }
+  ]
+}

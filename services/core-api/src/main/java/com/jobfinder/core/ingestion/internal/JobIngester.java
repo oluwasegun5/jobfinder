@@ -6,9 +6,11 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import com.jobfinder.core.ingestion.FetchTarget;
+import com.jobfinder.core.ingestion.JobContentChanged;
 import com.jobfinder.core.ingestion.JobSourceAdapter;
 import com.jobfinder.core.ingestion.NormalizerInput;
 import com.jobfinder.core.ingestion.RawPosting;
@@ -44,11 +46,13 @@ class JobIngester {
     private final JobNormalizer normalizer;
     private final JobStore jobs;
     private final CompanyStore companies;
+    private final ApplicationEventPublisher events;
 
-    JobIngester(JobNormalizer normalizer, JobStore jobs, CompanyStore companies) {
+    JobIngester(JobNormalizer normalizer, JobStore jobs, CompanyStore companies, ApplicationEventPublisher events) {
         this.normalizer = normalizer;
         this.jobs = jobs;
         this.companies = companies;
+        this.events = events;
     }
 
     Result ingest(SourceStore.SourceRow source, SourceStore.TargetRow target, JobSourceAdapter adapter,
@@ -101,6 +105,9 @@ class JobIngester {
             // The listing moved to another job and left its old job with no listing at all.
             jobs.expireJob(link.get().jobId(), now);
         }
+        // Listeners (embeddings) act after this transaction commits and decide for themselves whether the stored
+        // job changed in a way that matters to them.
+        events.publishEvent(new JobContentChanged(jobId));
         return result;
     }
 }

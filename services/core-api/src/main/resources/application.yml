@@ -125,7 +125,15 @@ app:
       jsearch:
         api-key: ${JSEARCH_RAPIDAPI_KEY:}
 
+  embeddings:
+    # The pinned embedding space (docs/adr/0022-embeddings-pipeline.md). ai-service must use the same two values;
+    # the dimension must also match the vector(n) columns of V19. Changing the model makes every stored vector stale.
+    model: ${EMBEDDING_MODEL:voyage-4}
+    dimension: ${EMBEDDING_DIMENSION:1024}
+
 springdoc:
+  # The service-to-service endpoints (service token, not user tokens) are not part of the public API.
+  paths-to-exclude: /internal/**
   # Include actuator endpoints (health) in /v3/api-docs so the web client is generated for them.
   show-actuator: true
 
