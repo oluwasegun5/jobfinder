@@ -62,6 +62,12 @@ class EmbeddingStore {
                 .list();
     }
 
+    /** The stored vector in pgvector's text form, if the version has one. */
+    Optional<String> resumeVector(UUID id) {
+        return jdbc.sql("select embedding::text from resume_versions where id = :id and embedding is not null")
+                .param("id", id).query(String.class).optional();
+    }
+
     Optional<JobRow> job(UUID id) {
         return jobs(List.of(id), false).stream().findFirst();
     }
