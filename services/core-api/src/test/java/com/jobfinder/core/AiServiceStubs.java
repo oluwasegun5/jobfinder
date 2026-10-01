@@ -32,6 +32,12 @@ public final class AiServiceStubs {
         }
     }
 
+    /** The success body with its one usage entry given a call id and a cost (in dollars, as ai-service sends it). */
+    public static String parseOkBody(java.util.UUID callId, String costUsd) {
+        return parseOkBody().replace("00000000-0000-4000-8000-0000000000c1", callId.toString())
+                .replace("\"cost_usd\": \"0\"", "\"cost_usd\": \"" + costUsd + "\"");
+    }
+
     public static MappingBuilder parseRequest() {
         return post(urlPathEqualTo(PARSE_PATH));
     }

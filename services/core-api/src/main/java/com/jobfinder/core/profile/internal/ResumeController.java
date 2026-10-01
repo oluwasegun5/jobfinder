@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -70,6 +71,18 @@ class ResumeController {
     @PutMapping("/resumes/{id}/content")
     ResumeContentResponse saveContent(@PathVariable UUID id, @Valid @RequestBody ResumeContent body) {
         return content.save(CurrentUser.require().id(), id, body);
+    }
+
+    /**
+     * Parses a CV again after it failed because of the daily AI limit or a temporary problem (parseError
+     * {@code ai_daily_cap_reached}, {@code parser_unavailable} or {@code parse_queue_unavailable}). The parse runs in
+     * the background: 202 with the CV now PENDING. 429 {@code ai_daily_cap_reached} (with {@code resetsAt}) while the
+     * limit is still used up; 409 {@code reparse_not_allowed} for any other CV.
+     */
+    @PostMapping("/resumes/{id}/reparse")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    ResumeResponse reparse(@PathVariable UUID id) {
+        return service.reparse(CurrentUser.require().id(), id);
     }
 
     @PutMapping("/resumes/{id}/primary")

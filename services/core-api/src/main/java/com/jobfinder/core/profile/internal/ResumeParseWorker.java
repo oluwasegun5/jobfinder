@@ -10,6 +10,8 @@ import org.springframework.amqp.ImmediateRequeueAmqpException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
+import com.jobfinder.core.billing.AiDailyCapReachedException;
+import com.jobfinder.core.billing.AiUsageGate;
 import com.jobfinder.core.profile.internal.AiServiceResumeParser.Parsed;
 import com.jobfinder.core.profile.internal.ResumeParseStore.Target;
 
@@ -30,6 +32,11 @@ import tools.jackson.databind.json.JsonMapper;
  * nothing changes. Later versions (user edits) are never touched.
  * </ul>
  *
+ * <p><b>Daily cap.</b> Before every call to ai-service the user's daily AI allowance is checked
+ * ({@link AiUsageGate}); a user who has used it up gets the resume marked FAILED with the reason
+ * {@code ai_daily_cap_reached} and no call is made. The user can ask for the parse again after the reset
+ * ({@code POST /resumes/{id}/reparse}).
+ *
  * <p>Every outcome ends in an ack: permanent failures set FAILED with a reason, transient ones are
  * retried with backoff and then set FAILED. Only a malformed message is rejected (to the DLQ).
  */
@@ -43,9 +50,11 @@ class ResumeParseWorker {
     private final AiServiceResumeParser parser;
     private final ResumeParsingProperties properties;
     private final JsonMapper json;
+    private final AiUsageGate gate;
 
     ResumeParseWorker(ResumeParseStore store, ObjectStorage storage, AiServiceResumeParser parser,
-            ResumeParsingProperties properties, JsonMapper json) {
+            ResumeParsingProperties properties, JsonMapper json, AiUsageGate gate) {
+        this.gate = gate;
         this.store = store;
         this.storage = storage;
         this.parser = parser;
@@ -91,6 +100,10 @@ class ResumeParseWorker {
                     target.resumeId());
         } catch (ImmediateRequeueAmqpException e) {
             throw e;
+        } catch (AiDailyCapReachedException e) {
+            log.info("Parsing resume {} blocked: the daily AI cap is reached (resets at {})", target.resumeId(),
+                    e.resetsAt());
+            store.fail(target.resumeId(), ParseFailureReason.AI_DAILY_CAP_REACHED);
         } catch (ParseFailure e) {
             log.warn("Parsing resume {} failed: {} ({})", target.resumeId(), e.reason().code(), e.getMessage());
             store.fail(target.resumeId(), e.reason());
@@ -105,6 +118,8 @@ class ResumeParseWorker {
         Duration backoff = properties.initialBackoff();
         for (int attempt = 1;; attempt++) {
             try {
+                // Checked before every attempt, so a retry after a transient failure cannot cross the cap.
+                gate.requireAllowance(target.userId(), "parse_resume");
                 return parser.parse(target.userId(), read(target));
             } catch (ParseFailure e) {
                 if (!e.retryable() || attempt >= properties.maxAttempts()) {

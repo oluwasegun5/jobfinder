@@ -21,6 +21,8 @@ enum ParseFailureReason {
     INVALID_PARSER_RESPONSE("invalid_parser_response", false),
     FILE_MISSING("file_missing", false),
     QUEUE_UNAVAILABLE("parse_queue_unavailable", false),
+    /** The user used up today's AI allowance before the parse could run; trying again after the reset works. */
+    AI_DAILY_CAP_REACHED("ai_daily_cap_reached", false),
     UNEXPECTED_ERROR("unexpected_error", false);
 
     private final String code;
@@ -33,6 +35,15 @@ enum ParseFailureReason {
 
     String code() {
         return code;
+    }
+
+    /** Whether the user may ask for the parse again: the cause was not their file, and may have passed. */
+    boolean userRetryable() {
+        return this == AI_DAILY_CAP_REACHED || this == PARSER_UNAVAILABLE || this == QUEUE_UNAVAILABLE;
+    }
+
+    static Optional<ParseFailureReason> fromCode(String code) {
+        return Arrays.stream(values()).filter(r -> r.code.equals(code)).findFirst();
     }
 
     /** Maps a {@code code} from an ai-service problem response; unknown codes are not trusted. */
