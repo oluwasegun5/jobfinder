@@ -87,6 +87,27 @@ app:
     connect-timeout: 2s
     # A parse is one LLM call (plus at most one validation retry) on a long CV.
     read-timeout: 90s
+  ingestion:
+    scheduler:
+      # Set false to stop sources being picked up on schedule (manual runs still work).
+      enabled: true
+      # How often the scheduler looks for due sources, and how long it waits after startup.
+      poll-interval-ms: 60000
+      initial-delay-ms: 60000
+    # How long a crashed instance can keep a source locked. Must exceed the longest real run.
+    lock-at-most-for: 30m
+    # Per-source overrides live in sources.config: intervalMinutes, jitterSeconds, requestsPerSecond,
+    # retryMaxAttempts.
+    defaults:
+      interval-minutes: 360
+      jitter-seconds: 900
+      requests-per-second: 2
+      retry-max-attempts: 3
+      retry-initial-backoff: 1s
+      rate-limit-timeout: 30s
+      breaker-failure-rate-threshold: 50
+      breaker-minimum-calls: 5
+      breaker-open-duration: 5m
 
 springdoc:
   # Include actuator endpoints (health) in /v3/api-docs so the web client is generated for them.
