@@ -304,6 +304,52 @@
         }
       }
     },
+    "/jobs/{id}/applied": {
+      "put": {
+        "tags": [
+          "job-controller"
+        ],
+        "operationId": "applied",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "job-controller"
+        ],
+        "operationId": "notApplied",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
     "/admin/ingestion/sources/{code}/enabled": {
       "put": {
         "tags": [
@@ -1218,6 +1264,49 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/MatchResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/feed": {
+      "get": {
+        "tags": [
+          "feed-controller"
+        ],
+        "operationId": "feed",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 50,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 600,
+              "minLength": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedPage"
                 }
               }
             }
@@ -2493,6 +2582,9 @@
           "saved": {
             "type": "boolean"
           },
+          "applied": {
+            "type": "boolean"
+          },
           "similarity": {
             "type": "number",
             "format": "double"
@@ -2618,6 +2710,9 @@
           "hidden": {
             "type": "boolean"
           },
+          "applied": {
+            "type": "boolean"
+          },
           "similarAvailable": {
             "type": "boolean"
           }
@@ -2697,6 +2792,200 @@
           "scoredAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "AdjustmentReason": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "HIDDEN_SAME_COMPANY",
+              "HIDDEN_SIMILAR_TITLE",
+              "SAVED_SAME_COMPANY",
+              "SAVED_SIMILAR_TITLE",
+              "APPLIED_SAME_COMPANY",
+              "APPLIED_SIMILAR_TITLE",
+              "PENALTY_CAPPED",
+              "BOOST_CAPPED"
+            ]
+          },
+          "points": {
+            "type": "number",
+            "format": "double"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "example": {
+            "type": "string"
+          }
+        }
+      },
+      "FeedItem": {
+        "type": "object",
+        "properties": {
+          "job": {
+            "$ref": "#/components/schemas/JobCard"
+          },
+          "matchScore": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scoreSource": {
+            "type": "string",
+            "enum": [
+              "LLM_SCORED",
+              "STAGE2_ONLY"
+            ]
+          },
+          "feedScore": {
+            "type": "number",
+            "format": "double"
+          },
+          "adjustment": {
+            "type": "number",
+            "format": "double"
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdjustmentReason"
+            }
+          },
+          "strengths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "gaps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "fallbackReason": {
+            "type": "string",
+            "enum": [
+              "DAILY_CAP_REACHED",
+              "LLM_UNAVAILABLE",
+              "LLM_FAILED",
+              "JOB_EXPIRED"
+            ]
+          },
+          "model": {
+            "type": "string"
+          },
+          "scoredAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "FeedPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeedItem"
+            }
+          },
+          "nextCursor": {
+            "type": "string"
+          },
+          "emptyReason": {
+            "type": "string",
+            "enum": [
+              "NO_RESUME",
+              "NO_PREFERENCES",
+              "RESUME_PROCESSING",
+              "NO_MATCHES"
+            ]
+          }
+        }
+      },
+      "JobCard": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "company": {
+            "$ref": "#/components/schemas/JobCardCompany"
+          },
+          "location": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "workMode": {
+            "type": "string"
+          },
+          "employmentType": {
+            "type": "string"
+          },
+          "seniority": {
+            "type": "string"
+          },
+          "salary": {
+            "$ref": "#/components/schemas/JobCardSalary"
+          },
+          "postedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "saved": {
+            "type": "boolean"
+          },
+          "applied": {
+            "type": "boolean"
+          }
+        }
+      },
+      "JobCardCompany": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "JobCardSalary": {
+        "type": "object",
+        "properties": {
+          "min": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string"
           }
         }
       },

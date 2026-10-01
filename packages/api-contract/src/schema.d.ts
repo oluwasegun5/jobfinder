@@ -100,6 +100,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/jobs/{id}/applied": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["applied"];
+        post?: never;
+        delete: operations["notApplied"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/ingestion/sources/{code}/enabled": {
         parameters: {
             query?: never;
@@ -412,6 +428,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["match"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["feed"];
         put?: never;
         post?: never;
         delete?: never;
@@ -852,6 +884,7 @@ export interface components {
             status?: string;
             summary?: string;
             saved?: boolean;
+            applied?: boolean;
             /** Format: double */
             similarity?: number;
             /** Format: date-time */
@@ -897,6 +930,7 @@ export interface components {
             listings?: components["schemas"]["Listing"][];
             saved?: boolean;
             hidden?: boolean;
+            applied?: boolean;
             similarAvailable?: boolean;
         };
         Listing: {
@@ -924,6 +958,70 @@ export interface components {
             promptVersion?: string;
             /** Format: date-time */
             scoredAt?: string;
+        };
+        AdjustmentReason: {
+            /** @enum {string} */
+            code?: "HIDDEN_SAME_COMPANY" | "HIDDEN_SIMILAR_TITLE" | "SAVED_SAME_COMPANY" | "SAVED_SIMILAR_TITLE" | "APPLIED_SAME_COMPANY" | "APPLIED_SIMILAR_TITLE" | "PENALTY_CAPPED" | "BOOST_CAPPED";
+            /** Format: double */
+            points?: number;
+            /** Format: int32 */
+            count?: number;
+            example?: string;
+        };
+        FeedItem: {
+            job?: components["schemas"]["JobCard"];
+            /** Format: int32 */
+            matchScore?: number;
+            /** @enum {string} */
+            scoreSource?: "LLM_SCORED" | "STAGE2_ONLY";
+            /** Format: double */
+            feedScore?: number;
+            /** Format: double */
+            adjustment?: number;
+            reasons?: components["schemas"]["AdjustmentReason"][];
+            strengths?: string[];
+            gaps?: string[];
+            /** @enum {string} */
+            fallbackReason?: "DAILY_CAP_REACHED" | "LLM_UNAVAILABLE" | "LLM_FAILED" | "JOB_EXPIRED";
+            model?: string;
+            /** Format: date-time */
+            scoredAt?: string;
+        };
+        FeedPage: {
+            items?: components["schemas"]["FeedItem"][];
+            nextCursor?: string;
+            /** @enum {string} */
+            emptyReason?: "NO_RESUME" | "NO_PREFERENCES" | "RESUME_PROCESSING" | "NO_MATCHES";
+        };
+        JobCard: {
+            /** Format: uuid */
+            id?: string;
+            title?: string;
+            company?: components["schemas"]["JobCardCompany"];
+            location?: string;
+            city?: string;
+            country?: string;
+            workMode?: string;
+            employmentType?: string;
+            seniority?: string;
+            salary?: components["schemas"]["JobCardSalary"];
+            /** Format: date-time */
+            postedAt?: string;
+            status?: string;
+            summary?: string;
+            saved?: boolean;
+            applied?: boolean;
+        };
+        JobCardCompany: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+        };
+        JobCardSalary: {
+            min?: number;
+            max?: number;
+            currency?: string;
+            period?: string;
         };
         AllowanceResponse: {
             dailyCap?: number;
@@ -1208,6 +1306,46 @@ export interface operations {
         };
     };
     unhide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    applied: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    notApplied: {
         parameters: {
             query?: never;
             header?: never;
@@ -1737,6 +1875,29 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MatchResponse"];
+                };
+            };
+        };
+    };
+    feed: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FeedPage"];
                 };
             };
         };
