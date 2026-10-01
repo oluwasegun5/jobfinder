@@ -28,8 +28,9 @@ def build_provider(settings: Settings) -> LLMProvider:
             return AnthropicProvider(settings)
         case ProviderName.FAKE:
             logger.warning(
-                "LLM_PROVIDER=fake: match scores come from a keyword heuristic, not a model. "
-                "For local runs and evals only; CV parsing is unavailable."
+                "LLM_PROVIDER=fake: match scores and resume tailoring come from keyword "
+                "heuristics, not a model. For local runs and evals only; CV parsing is "
+                "unavailable."
             )
             return HeuristicProvider()
 

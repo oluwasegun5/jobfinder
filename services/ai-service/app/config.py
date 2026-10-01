@@ -10,9 +10,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class ProviderName(StrEnum):
     ANTHROPIC = "anthropic"
-    # Deterministic, keyless stand-in for local runs and evals: it only answers match_scoring, from
-    # the overlap between the candidate and the job (docs/adr/0026-matching-engine.md). Never the
-    # default.
+    # Deterministic, keyless stand-in for local runs and evals: it answers match_scoring from the
+    # overlap between the candidate and the job (docs/adr/0026-matching-engine.md) and tailor_resume
+    # by reordering only (docs/adr/0029-resume-tailoring.md). Never the default. It has no switch
+    # that makes it misbehave: tests script bad model output with the in-memory FakeProvider.
     FAKE = "fake"
 
 
@@ -65,6 +66,12 @@ class Settings(BaseSettings):
     score_matches_max_jobs_per_call: int = Field(default=6, gt=0, le=50)
     score_matches_max_input_chars: int = Field(default=24000, ge=2000)
     score_matches_description_chars: int = Field(default=3000, ge=200)
+
+    # Resume tailoring (docs/adr/0029-resume-tailoring.md). The job text is cut to this many
+    # characters (after instruction-like sentences are removed) before the strong model sees it; the
+    # output holds a whole resume plus notes, so it gets its own token budget.
+    tailor_description_chars: int = Field(default=8000, ge=500)
+    tailor_resume_max_tokens: int = Field(default=8000, gt=0)
 
     rabbitmq_enabled: bool = True
     rabbitmq_host: str = "localhost"
