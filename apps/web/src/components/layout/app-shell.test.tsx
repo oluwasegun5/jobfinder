@@ -15,7 +15,9 @@ describe("AppShell", () => {
     renderWithQueryClient(<AppShell>content</AppShell>);
 
     expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
-    expect(screen.queryByRole("link", { name: /Jobs/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Jobs" })).toHaveAttribute("href", "/jobs");
+    expect(screen.getByRole("link", { name: "Saved jobs" })).toHaveAttribute("href", "/saved-jobs");
+    expect(screen.queryByRole("link", { name: /Applications/ })).not.toBeInTheDocument();
     expect(screen.getByText("content")).toBeInTheDocument();
   });
 

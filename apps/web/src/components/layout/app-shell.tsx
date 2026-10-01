@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, KanbanSquare, LayoutDashboard, Menu, UserRound, X } from "lucide-react";
+import { Bookmark, Briefcase, KanbanSquare, LayoutDashboard, Menu, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ComponentType, type ReactNode } from "react";
@@ -19,7 +19,8 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { label: "Jobs", icon: Briefcase },
+  { label: "Jobs", icon: Briefcase, href: "/jobs" },
+  { label: "Saved jobs", icon: Bookmark, href: "/saved-jobs" },
   { label: "Applications", icon: KanbanSquare },
   { label: "Profile", icon: UserRound, href: "/profile" },
 ];
