@@ -280,6 +280,8 @@ export function parseFailureMessage(code: string | undefined): string {
     case "parser_unavailable":
     case "parse_queue_unavailable":
       return "Our CV reader is unavailable right now.";
+    case "ai_daily_cap_reached":
+      return "You've reached today's AI limit, so this CV hasn't been read yet.";
     default:
       return "We couldn't read that file.";
   }

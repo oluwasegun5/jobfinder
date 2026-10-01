@@ -24,15 +24,17 @@ describe("AppShell", () => {
     expect(screen.getByText("content")).toBeInTheDocument();
   });
 
-  it("shows the job sources link to administrators only", () => {
+  it("shows the job sources and AI cost links to administrators only", () => {
     role = "USER";
     const { unmount } = renderWithQueryClient(<AppShell>content</AppShell>);
     expect(screen.queryByRole("link", { name: "Job sources" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "AI cost" })).not.toBeInTheDocument();
     unmount();
 
     role = "ADMIN";
     renderWithQueryClient(<AppShell>content</AppShell>);
     expect(screen.getByRole("link", { name: "Job sources" })).toHaveAttribute("href", "/admin/ingestion");
+    expect(screen.getByRole("link", { name: "AI cost" })).toHaveAttribute("href", "/admin/billing");
     role = undefined;
   });
 

@@ -73,3 +73,13 @@ export const ALERT_LABELS: Record<string, string> = {
   ZERO_JOBS: "No jobs returned",
   ERROR_RATE: "High error rate",
 };
+
+/** Dollars with the precision AI calls need: "$0.000024", "$12.50". */
+export function formatUsd(value: number | undefined): string {
+  return (value ?? 0).toLocaleString("en", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 6 });
+}
+
+/** A count with thousands separators: "1,234,567". */
+export function formatCount(value: number | undefined): string {
+  return (value ?? 0).toLocaleString("en");
+}

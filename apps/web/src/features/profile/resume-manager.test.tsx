@@ -116,6 +116,53 @@ describe("ResumeManager", () => {
     expect(api.callsTo("POST", "/resumes")).toHaveLength(1);
   });
 
+  it("tells a user the daily limit blocked a CV, when it resets, and reads it again once allowed", async () => {
+    const user = userEvent.setup();
+    let blocked = true;
+    const api = setup({
+      "GET /resumes": () =>
+        json([
+          blocked
+            ? resume(A, "Main CV", { parseStatus: "FAILED", parseError: "ai_daily_cap_reached" })
+            : resume(A, "Main CV", { parseStatus: "PENDING" }),
+        ]),
+      "GET /billing/allowance": () =>
+        json({ dailyCap: 500, used: 520, remaining: 0, resetsAt: "2026-10-02T00:00:00Z", exhausted: true }),
+      [`POST /resumes/${A}/reparse`]: () => {
+        if (blocked) {
+          return json(
+            { status: 429, code: "ai_daily_cap_reached", detail: "You have reached today's AI usage limit. It resets at 2026-10-02T00:00:00Z." },
+            429,
+          );
+        }
+        return json(resume(A, "Main CV", { parseStatus: "PENDING" }), 202);
+      },
+    });
+
+    const item = within(await screen.findByRole("list", { name: "Your CVs" })).getByRole("listitem");
+    expect(within(item).getByText(/reached today's AI limit/)).toBeInTheDocument();
+    expect(await within(item).findByText(/You can try again after/)).toBeInTheDocument();
+
+    // Too early: the server's own message (with the reset time) is shown and the CV stays as it was.
+    await user.click(within(item).getByRole("button", { name: "Read Main CV again" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("resets at 2026-10-02T00:00:00Z");
+    expect(within(item).getByText("Couldn't read")).toBeInTheDocument();
+
+    blocked = false;
+    await user.click(within(item).getByRole("button", { name: "Read Main CV again" }));
+    await waitFor(() => expect(within(item).getByText("Reading…")).toBeInTheDocument());
+    expect(api.callsTo("POST", `/resumes/${A}/reparse`)).toHaveLength(2);
+  });
+
+  it("offers no retry for a CV that failed because of the file", async () => {
+    setup({
+      "GET /resumes": () => json([resume(A, "Scan", { parseStatus: "FAILED", parseError: "no_extractable_text" })]),
+    });
+
+    const item = within(await screen.findByRole("list", { name: "Your CVs" })).getByRole("listitem");
+    expect(within(item).queryByRole("button", { name: /again/ })).not.toBeInTheDocument();
+  });
+
   it("rejects an unsupported file before uploading it", async () => {
     const user = userEvent.setup({ applyAccept: false });
     const api = setup({ "GET /resumes": () => json([]) });

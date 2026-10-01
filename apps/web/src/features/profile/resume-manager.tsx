@@ -10,11 +10,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { problemMessage } from "@/features/auth/api-errors";
 import { FormError } from "@/features/auth/form-parts";
 
+import { formatDateTime } from "@/features/admin/format";
+import { useAllowance } from "@/features/billing/queries";
+
 import { parseFailureMessage } from "./content-draft";
 import {
   ApiProblem,
+  REPARSABLE_ERRORS,
   fetchDownloadUrl,
   useDeleteResume,
+  useReparseResume,
   useResumes,
   useSetPrimaryResume,
   type Resume,
@@ -35,7 +40,13 @@ function ResumeRow({ resume, onError }: { resume: Resume; onError: (message: str
   const [confirming, setConfirming] = useState(false);
   const setPrimary = useSetPrimaryResume();
   const remove = useDeleteResume();
+  const reparse = useReparseResume();
   const id = resume.id ?? "";
+  const failed = resume.parseStatus === "FAILED";
+  const capped = failed && resume.parseError === "ai_daily_cap_reached";
+  const canReparse = failed && REPARSABLE_ERRORS.includes(resume.parseError ?? "");
+  // The reset time is only fetched when someone is looking at a CV the daily limit blocked.
+  const allowance = useAllowance({ enabled: capped });
   const label = resume.label ?? "CV";
 
   const fail = (error: unknown, fallback: string) =>
@@ -66,10 +77,29 @@ function ResumeRow({ resume, onError }: { resume: Resume; onError: (message: str
             )}
             <ParseBadge resume={resume} />
           </div>
-          {resume.parseStatus === "FAILED" && (
-            <p className="text-sm text-muted-foreground">{parseFailureMessage(resume.parseError)}</p>
+          {failed && (
+            <p className="text-sm text-muted-foreground">
+              {parseFailureMessage(resume.parseError)}
+              {capped && allowance.data?.resetsAt && (
+                <>
+                  {" "}
+                  You can try again after <time dateTime={allowance.data.resetsAt}>{formatDateTime(allowance.data.resetsAt)}</time>.
+                </>
+              )}
+            </p>
           )}
           <div className="flex flex-wrap gap-2">
+            {canReparse && (
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label={`Read ${label} again`}
+                disabled={reparse.isPending}
+                onClick={() => reparse.mutate(id, { onError: (e) => fail(e, "Could not read this CV again.") })}
+              >
+                {reparse.isPending ? "Starting…" : "Try again"}
+              </Button>
+            )}
             {!resume.primary && (
               <Button
                 variant="outline"
