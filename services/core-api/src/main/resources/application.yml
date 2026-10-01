@@ -108,6 +108,11 @@ app:
       breaker-failure-rate-threshold: 50
       breaker-minimum-calls: 5
       breaker-open-duration: 5m
+    # PLAN.md section 6 expiry: a full-listing source's job missing for this many consecutive runs, or an
+    # aggregator job not seen for this long, is expired (once none of its listings is left).
+    expiry:
+      missed-runs: 2
+      aggregator-stale-after: 45d
 
 springdoc:
   # Include actuator endpoints (health) in /v3/api-docs so the web client is generated for them.

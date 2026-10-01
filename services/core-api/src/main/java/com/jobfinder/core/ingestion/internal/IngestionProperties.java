@@ -17,7 +17,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  */
 @ConfigurationProperties("app.ingestion")
 record IngestionProperties(@DefaultValue Scheduler scheduler, @DefaultValue("30m") Duration lockAtMostFor,
-        @DefaultValue Defaults defaults) {
+        @DefaultValue Defaults defaults, @DefaultValue Expiry expiry) {
 
     IngestionProperties {
         if (lockAtMostFor.isNegative() || lockAtMostFor.isZero()) {
@@ -26,6 +26,23 @@ record IngestionProperties(@DefaultValue Scheduler scheduler, @DefaultValue("30m
     }
 
     record Scheduler(@DefaultValue("true") boolean enabled) {
+    }
+
+    /**
+     * The expiry rules of PLAN.md section 6: a listing that a full-listing source (ATS, scrape) has
+     * not returned for {@code missedRuns} consecutive runs is gone, and so is an aggregator listing
+     * not seen for {@code aggregatorStaleAfter}. A job expires when none of its listings is left.
+     */
+    record Expiry(@DefaultValue("2") int missedRuns, @DefaultValue("45d") Duration aggregatorStaleAfter) {
+
+        Expiry {
+            if (missedRuns < 1) {
+                throw new IllegalArgumentException("app.ingestion.expiry.missed-runs must be at least 1");
+            }
+            if (aggregatorStaleAfter.isNegative() || aggregatorStaleAfter.isZero()) {
+                throw new IllegalArgumentException("app.ingestion.expiry.aggregator-stale-after must be positive");
+            }
+        }
     }
 
     record Defaults(

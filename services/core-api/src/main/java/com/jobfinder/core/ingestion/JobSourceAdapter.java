@@ -1,6 +1,7 @@
 package com.jobfinder.core.ingestion;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -22,7 +23,12 @@ import java.util.stream.Stream;
  * <li>{@code since} is the start of the last fully successful run of this source, or {@code null}
  * if there has been none. A source that supports incremental fetching may use it to return only
  * newer postings; one that does not can ignore it, because storing the same posting twice is
- * harmless.
+ * harmless;
+ * <li>{@link #toNormalizerInput} maps one stored posting to the normalizer's input; it is where a
+ * source's own field names end, and it may throw {@link IllegalArgumentException} for a posting it
+ * cannot read, which rejects that posting without failing the run;
+ * <li>an incremental adapter (one that really returns only postings newer than {@code since}) must
+ * say so with {@link #fullListing()}: a posting absent from an incremental response is not gone.
  * </ul>
  */
 public interface JobSourceAdapter {
@@ -36,4 +42,22 @@ public interface JobSourceAdapter {
      * The postings for one target. The stream is read fully and closed by the pipeline.
      */
     Stream<RawPosting> fetch(FetchTarget target, Instant since);
+
+    /**
+     * Maps one posting, as this adapter fetched it, to the normalizer's input. The default is empty:
+     * the posting is kept raw but produces no job, which is only right for a source not yet wired to
+     * the normalizer.
+     */
+    default Optional<NormalizerInput> toNormalizerInput(RawPosting posting, FetchTarget target) {
+        return Optional.empty();
+    }
+
+    /**
+     * Whether each fetch returns everything the target currently lists. Only then does a posting's
+     * absence count towards expiry. An adapter that uses {@code since} to return only new postings
+     * must return false.
+     */
+    default boolean fullListing() {
+        return true;
+    }
 }
