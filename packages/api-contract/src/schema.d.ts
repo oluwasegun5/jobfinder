@@ -68,6 +68,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/jobs/{id}/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["save"];
+        post?: never;
+        delete: operations["unsave"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs/{id}/hide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["hide"];
+        post?: never;
+        delete: operations["unhide"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/resumes": {
         parameters: {
             query?: never;
@@ -244,6 +276,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/saved-jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["saved"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/resumes/{id}/download-url": {
         parameters: {
             query?: never;
@@ -252,6 +300,54 @@ export interface paths {
             cookie?: never;
         };
         get: operations["downloadUrl"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["search"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["job"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs/{id}/similar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["similar"];
         put?: never;
         post?: never;
         delete?: never;
@@ -540,10 +636,84 @@ export interface components {
             enabled?: boolean;
             created?: boolean;
         };
+        CompanyRef: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+        };
+        JobPage: {
+            items?: components["schemas"]["JobSummary"][];
+            nextCursor?: string;
+        };
+        JobSummary: {
+            /** Format: uuid */
+            id?: string;
+            title?: string;
+            company?: components["schemas"]["CompanyRef"];
+            location?: string;
+            city?: string;
+            country?: string;
+            workMode?: string;
+            employmentType?: string;
+            seniority?: string;
+            salary?: components["schemas"]["Salary"];
+            /** Format: date-time */
+            postedAt?: string;
+            status?: string;
+            summary?: string;
+            saved?: boolean;
+            /** Format: double */
+            similarity?: number;
+            /** Format: date-time */
+            savedAt?: string;
+        };
+        Salary: {
+            min?: number;
+            max?: number;
+            currency?: string;
+            period?: string;
+        };
         DownloadUrlResponse: {
             url?: string;
             /** Format: date-time */
             expiresAt?: string;
+        };
+        Attribution: {
+            name?: string;
+            text?: string;
+            url?: string;
+            notes?: string;
+        };
+        JobDetail: {
+            /** Format: uuid */
+            id?: string;
+            title?: string;
+            company?: components["schemas"]["CompanyRef"];
+            location?: string;
+            city?: string;
+            country?: string;
+            workMode?: string;
+            employmentType?: string;
+            seniority?: string;
+            salary?: components["schemas"]["Salary"];
+            /** Format: date-time */
+            postedAt?: string;
+            /** Format: date-time */
+            expiresAt?: string;
+            status?: string;
+            description?: string;
+            skills?: string[];
+            applyUrl?: string;
+            listings?: components["schemas"]["Listing"][];
+            saved?: boolean;
+            hidden?: boolean;
+            similarAvailable?: boolean;
+        };
+        Listing: {
+            source?: string;
+            sourceKind?: string;
+            url?: string;
+            attribution?: components["schemas"]["Attribution"];
         };
         MeResponse: {
             /** Format: uuid */
@@ -716,6 +886,86 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["PreferencesResponse"];
                 };
+            };
+        };
+    };
+    save: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unsave: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    hide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unhide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -988,6 +1238,29 @@ export interface operations {
             };
         };
     };
+    saved: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["JobPage"];
+                };
+            };
+        };
+    };
     downloadUrl: {
         parameters: {
             query?: never;
@@ -1006,6 +1279,96 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["DownloadUrlResponse"];
+                };
+            };
+        };
+    };
+    search: {
+        parameters: {
+            query?: {
+                q?: string;
+                workMode?: ("REMOTE" | "HYBRID" | "ONSITE")[];
+                employmentType?: ("FULL_TIME" | "PART_TIME" | "CONTRACT" | "TEMPORARY" | "INTERNSHIP")[];
+                seniority?: ("INTERN" | "JUNIOR" | "MID" | "SENIOR" | "LEAD" | "EXECUTIVE")[];
+                country?: string[];
+                location?: string;
+                companyId?: string;
+                minSalary?: number;
+                salaryCurrency?: string;
+                postedWithinDays?: number;
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["JobPage"];
+                };
+            };
+        };
+    };
+    job: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["JobDetail"];
+                };
+            };
+        };
+    };
+    similar: {
+        parameters: {
+            query?: {
+                q?: string;
+                workMode?: ("REMOTE" | "HYBRID" | "ONSITE")[];
+                employmentType?: ("FULL_TIME" | "PART_TIME" | "CONTRACT" | "TEMPORARY" | "INTERNSHIP")[];
+                seniority?: ("INTERN" | "JUNIOR" | "MID" | "SENIOR" | "LEAD" | "EXECUTIVE")[];
+                country?: string[];
+                location?: string;
+                companyId?: string;
+                minSalary?: number;
+                salaryCurrency?: string;
+                postedWithinDays?: number;
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["JobPage"];
                 };
             };
         };
