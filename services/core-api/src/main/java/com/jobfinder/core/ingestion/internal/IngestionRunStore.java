@@ -37,16 +37,18 @@ class IngestionRunStore {
         return id;
     }
 
-    void finish(UUID runId, IngestionRunStatus status, Counts counts, String errorSummary, Instant finishedAt) {
+    void finish(UUID runId, IngestionRunStatus status, int targets, Counts counts, String errorSummary,
+            Instant finishedAt) {
         jdbc.sql("""
                 update ingestion_runs
-                   set status = :status, finished_at = :finishedAt, fetched = :fetched, created = :created,
+                   set status = :status, finished_at = :finishedAt, targets = :targets, fetched = :fetched, created = :created,
                        updated = :updated, expired = :expired, errors = :errors, error_summary = :summary,
                        updated_at = now()
                  where id = :id
                 """)
                 .param("status", status.name())
                 .param("finishedAt", utc(finishedAt))
+                .param("targets", targets)
                 .param("fetched", counts.fetched())
                 .param("created", counts.created())
                 .param("updated", counts.updated())
@@ -71,6 +73,22 @@ class IngestionRunStore {
                 .param("now", utc(now))
                 .param("sourceId", sourceId)
                 .update();
+    }
+
+    /**
+     * The postings fetched by the latest run before {@code before} that ended SUCCEEDED and had targets, or empty
+     * if there is none: what "normal" looks like for the zero-jobs alert.
+     */
+    Optional<Integer> previousCleanFetched(UUID sourceId, Instant before) {
+        return jdbc.sql("""
+                select fetched from ingestion_runs
+                 where source_id = :id and status = 'SUCCEEDED' and targets > 0 and started_at < :before
+                 order by started_at desc limit 1
+                """)
+                .param("id", sourceId)
+                .param("before", utc(before))
+                .query(Integer.class)
+                .optional();
     }
 
     /** When the last fully successful run started: the {@code since} handed to adapters. */

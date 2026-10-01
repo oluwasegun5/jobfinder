@@ -6,7 +6,10 @@ import { renderWithQueryClient } from "@/test/render";
 
 import { AppShell } from "./app-shell";
 
+let role: string | undefined;
+
 vi.mock("next/navigation", () => ({ usePathname: () => "/dashboard" }));
+vi.mock("@/features/auth/auth-provider", () => ({ useAuth: () => ({ user: { id: "u", email: "u@example.test", role } }) }));
 vi.mock("@/features/auth/user-menu", () => ({ UserMenu: () => null }));
 vi.mock("@/features/health/api-status", () => ({ ApiStatus: () => null }));
 
@@ -19,6 +22,18 @@ describe("AppShell", () => {
     expect(screen.getByRole("link", { name: "Saved jobs" })).toHaveAttribute("href", "/saved-jobs");
     expect(screen.queryByRole("link", { name: /Applications/ })).not.toBeInTheDocument();
     expect(screen.getByText("content")).toBeInTheDocument();
+  });
+
+  it("shows the job sources link to administrators only", () => {
+    role = "USER";
+    const { unmount } = renderWithQueryClient(<AppShell>content</AppShell>);
+    expect(screen.queryByRole("link", { name: "Job sources" })).not.toBeInTheDocument();
+    unmount();
+
+    role = "ADMIN";
+    renderWithQueryClient(<AppShell>content</AppShell>);
+    expect(screen.getByRole("link", { name: "Job sources" })).toHaveAttribute("href", "/admin/ingestion");
+    role = undefined;
   });
 
   it("toggles the mobile menu from the keyboard", async () => {

@@ -17,6 +17,12 @@ spring:
   mail:
     host: ${MAIL_HOST:localhost}
     port: ${MAIL_PORT:1025}
+    properties:
+      # A mail server that stops answering must not hold up a request or an ingestion run (source alerts are sent
+      # from the run's thread).
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
@@ -108,6 +114,20 @@ app:
       breaker-failure-rate-threshold: 50
       breaker-minimum-calls: 5
       breaker-open-duration: 5m
+    # Source alerts (docs/adr/0024-source-dashboard-alerts.md): an email to these admins when a source returns no
+    # jobs after returning some, or more than error-rate-threshold of a run's targets fail. A blank list (the
+    # default) only logs the alert.
+    alerts:
+      recipients: ${INGESTION_ALERT_RECIPIENTS:}
+      from: no-reply@jobfinder.local
+      web-base-url: ${WEB_BASE_URL:http://localhost:3000}
+      error-rate-threshold: 0.2
+      # A run of fewer targets than this only counts when every target failed.
+      error-rate-min-targets: 5
+      # An empty run is a drop to zero only if the previous clean run fetched at least this many postings.
+      zero-jobs-min-previous: 5
+      # A source that stays in breach is announced again after this long; 0 announces it once.
+      re-alert-interval: 24h
     # PLAN.md section 6 expiry: a full-listing source's job missing for this many consecutive runs, or an
     # aggregator job not seen for this long, is expired (once none of its listings is left).
     expiry:

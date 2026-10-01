@@ -52,11 +52,12 @@ class IngestionPipeline {
     private final SourceResilienceProvider resilienceProvider;
     private final MeterRegistry meters;
     private final TransactionTemplate tx;
+    private final SourceAlerts alerts;
 
     IngestionPipeline(SourceStore sources, IngestionRunStore runs, RawPostingStore rawPostings,
             JobIngester jobIngester, JobStore jobs, CompanyStore companies, IngestionProperties properties,
             SourceResilienceProvider resilienceProvider, MeterRegistry meters,
-            PlatformTransactionManager transactionManager) {
+            PlatformTransactionManager transactionManager, SourceAlerts alerts) {
         this.sources = sources;
         this.runs = runs;
         this.rawPostings = rawPostings;
@@ -67,6 +68,7 @@ class IngestionPipeline {
         this.resilienceProvider = resilienceProvider;
         this.meters = meters;
         this.tx = new TransactionTemplate(transactionManager);
+        this.alerts = alerts;
     }
 
     IngestionRunSummary execute(SourceStore.SourceRow source, JobSourceAdapter adapter) {
@@ -107,9 +109,11 @@ class IngestionPipeline {
         SourceHealth health = healthOf(targets.size(), errors.size());
         Instant finished = Instant.now();
         IngestionRunStore.Counts counts = new IngestionRunStore.Counts(fetched, created, updated, expired, errors.size());
-        runs.finish(runId, status, counts, summarize(errors), finished);
+        runs.finish(runId, status, targets.size(), counts, summarize(errors), finished);
         sources.recordRun(source.id(), finished, health);
         record(source.code(), status, counts, rejected, Duration.between(started, finished));
+        alerts.evaluate(new SourceAlerts.RunOutcome(source, adapter.fullListing(), runId, started, status,
+                targets.size(), counts, finished));
         log.info("Source {}: run {} {} (fetched {}, created {}, updated {}, expired {}, rejected {}, errors {})",
                 source.code(), runId, status, fetched, created, updated, expired, rejected, errors.size());
         return new IngestionRunSummary(runId, source.code(), status, fetched, created, updated, expired,

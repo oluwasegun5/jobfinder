@@ -40,6 +40,12 @@ record SourceSettings(int intervalMinutes, int jitterSeconds, double requestsPer
         return !now.isBefore(lastRunAt.plus(wait));
     }
 
+    /** When a source last run at {@code lastRunAt} is next due; {@code null} if it never ran (it is due at once). */
+    Instant nextDue(String sourceCode, Instant lastRunAt) {
+        return lastRunAt == null ? null
+                : lastRunAt.plus(Duration.ofMinutes(intervalMinutes).plus(jitter(sourceCode)));
+    }
+
     Duration jitter(String sourceCode) {
         if (jitterSeconds <= 0) {
             return Duration.ZERO;

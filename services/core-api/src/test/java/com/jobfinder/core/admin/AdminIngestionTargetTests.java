@@ -112,6 +112,28 @@ class AdminIngestionTargetTests extends AuthTestSupport {
     }
 
     @Test
+    void anAggregatorSearchTargetNeedsNoCompany() throws Exception {
+        String adminToken = token(true);
+        String search = unique("gb:software engineer");
+        try {
+            String created = add(adminToken, "{\"source\":\"ARBEITNOW\",\"identifier\":\"%s\"}".formatted(search))
+                    .andExpect(status().isCreated()).andExpect(jsonPath("$.source").value("ARBEITNOW"))
+                    .andExpect(jsonPath("$.identifier").value(search)).andExpect(jsonPath("$.companyName").doesNotExist())
+                    .andExpect(jsonPath("$.created").value(true)).andReturn().getResponse().getContentAsString();
+            String id = JsonPath.read(created, "$.id");
+
+            add(adminToken, "{\"source\":\"ARBEITNOW\",\"identifier\":\"%s\"}".formatted(search))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(id))
+                    .andExpect(jsonPath("$.created").value(false));
+
+            add(adminToken, body("ARBEITNOW", unique("all"), "Acme")).andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("invalid_target"));
+        } finally {
+            jdbc.update("delete from source_targets where identifier = ?", search);
+        }
+    }
+
+    @Test
     void anUnknownSourceIsNotFound() throws Exception {
         String adminToken = token(true);
 
@@ -125,7 +147,9 @@ class AdminIngestionTargetTests extends AuthTestSupport {
         String adminToken = token(true);
 
         add(adminToken, body("GREENHOUSE", "board", "")).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("validation_failed"));
+                .andExpect(jsonPath("$.code").value("invalid_target"));
+        add(adminToken, "{\"source\":\"GREENHOUSE\",\"identifier\":\"board\"}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("invalid_target"));
         add(adminToken, body("GREENHOUSE", "", "Acme")).andExpect(status().isBadRequest());
         add(adminToken, "{}").andExpect(status().isBadRequest());
         add(adminToken, body("GREENHOUSE", "line\\nbreak", "Acme")).andExpect(status().isBadRequest())

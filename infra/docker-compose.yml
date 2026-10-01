@@ -144,6 +144,8 @@ services:
       JSEARCH_RAPIDAPI_KEY: ${JSEARCH_RAPIDAPI_KEY:-}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      # Source alerts (docs/adr/0024-source-dashboard-alerts.md): comma-separated admin emails; blank only logs them.
+      INGESTION_ALERT_RECIPIENTS: ${INGESTION_ALERT_RECIPIENTS:-}
       SERVER_PORT: 8080
     ports:
       - "${CORE_API_PORT:-8080}:8080"
