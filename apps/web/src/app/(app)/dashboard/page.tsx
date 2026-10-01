@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiStatus } from "@/features/health/api-status";
@@ -19,6 +20,11 @@ export default function DashboardPage() {
                 Your matches, tailored documents and applications will show up here.
               </CardDescription>
             </CardHeader>
+            <CardContent>
+              <Link href="/feed" className="text-sm font-medium underline underline-offset-4">
+                See jobs picked for you
+              </Link>
+            </CardContent>
           </Card>
           <Card>
             <CardHeader>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, Briefcase, Coins, DatabaseZap, KanbanSquare, LayoutDashboard, Menu, UserRound, X } from "lucide-react";
+import { Bookmark, Briefcase, Coins, DatabaseZap, KanbanSquare, LayoutDashboard, Menu, Sparkles, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ComponentType, type ReactNode } from "react";
@@ -20,6 +20,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+  { label: "For you", icon: Sparkles, href: "/feed" },
   { label: "Jobs", icon: Briefcase, href: "/jobs" },
   { label: "Saved jobs", icon: Bookmark, href: "/saved-jobs" },
   { label: "Applications", icon: KanbanSquare },

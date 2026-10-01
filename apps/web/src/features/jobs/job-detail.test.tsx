@@ -93,6 +93,29 @@ describe("JobDetailView", () => {
     expect(api.callsTo("PUT", `/jobs/${A}/save`)).toHaveLength(1);
   });
 
+  it("marks the job as applied and takes it back", async () => {
+    const user = userEvent.setup();
+    let applied = false;
+    const api = setup({
+      [`GET /jobs/${A}`]: () => json(detail({ applied })),
+      [`PUT /jobs/${A}/applied`]: () => {
+        applied = true;
+        return new Response(null, { status: 204 });
+      },
+      [`DELETE /jobs/${A}/applied`]: () => {
+        applied = false;
+        return new Response(null, { status: 204 });
+      },
+    });
+    await user.click(await screen.findByRole("button", { name: "Mark as applied" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Applied" })).toHaveAttribute("aria-pressed", "true"));
+    expect(api.callsTo("PUT", `/jobs/${A}/applied`)).toHaveLength(1);
+
+    await user.click(screen.getByRole("button", { name: "Applied" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Mark as applied" })).toHaveAttribute("aria-pressed", "false"));
+    expect(api.callsTo("DELETE", `/jobs/${A}/applied`)).toHaveLength(1);
+  });
+
   it("says when a job is missing", async () => {
     setup({ [`GET /jobs/${A}`]: () => json({ detail: "nope", code: "job_not_found" }, 404) });
     expect(await screen.findByRole("alert")).toHaveTextContent("could not be found");

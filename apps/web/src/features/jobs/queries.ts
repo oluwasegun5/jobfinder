@@ -63,9 +63,10 @@ export function useSavedJobs() {
   });
 }
 
-type StateChange = "save" | "unsave" | "hide" | "unhide";
+export type StateChange = "save" | "unsave" | "hide" | "unhide" | "apply" | "unapply";
 
-async function change(id: string, action: StateChange) {
+/** One state change of one job: saves, hides and "I applied" are the caller's own, and feed the "For you" ranking. */
+export async function changeJobState(id: string, action: StateChange) {
   const params = { params: { path: { id } } };
   const result =
     action === "save"
@@ -74,11 +75,15 @@ async function change(id: string, action: StateChange) {
         ? await api.DELETE("/jobs/{id}/save", params)
         : action === "hide"
           ? await api.PUT("/jobs/{id}/hide", params)
-          : await api.DELETE("/jobs/{id}/hide", params);
+          : action === "unhide"
+            ? await api.DELETE("/jobs/{id}/hide", params)
+            : action === "apply"
+              ? await api.PUT("/jobs/{id}/applied", params)
+              : await api.DELETE("/jobs/{id}/applied", params);
   if (!result.response.ok) throw new ApiProblem(result.error, result.response.status);
 }
 
-/** What changing a job's state does to the cached job page: saving un-hides it and hiding un-saves it. */
+/** What changing a job's state does to the cached job page: saving un-hides it, hiding un-saves it, applying un-hides it. */
 function applyToDetail(job: JobDetail, action: StateChange): JobDetail {
   switch (action) {
     case "save":
@@ -89,22 +94,28 @@ function applyToDetail(job: JobDetail, action: StateChange): JobDetail {
       return { ...job, saved: false, hidden: true };
     case "unhide":
       return { ...job, hidden: false };
+    case "apply":
+      return { ...job, applied: true, hidden: false };
+    case "unapply":
+      return { ...job, applied: false };
   }
 }
 
-function refreshAfterChange(queryClient: QueryClient, id: string, action: StateChange) {
+export function refreshAfterChange(queryClient: QueryClient, id: string, action: StateChange) {
   queryClient.setQueryData<JobDetail>(jobKeys.detail(id), (job) => (job ? applyToDetail(job, action) : job));
   // The saved list is on another page: refetch it when it is next shown. Search results already on screen are left
   // alone (a hidden job must not make the list jump under the reader's hand); they refresh on the next visit.
   void queryClient.invalidateQueries({ queryKey: jobKeys.saved });
   void queryClient.invalidateQueries({ queryKey: ["jobs", "search"], refetchType: "none" });
+  // Likewise the "For you" feed: it is re-ranked by the change the next time it is opened.
+  void queryClient.invalidateQueries({ queryKey: ["feed"], refetchType: "none" });
 }
 
-/** Save, un-save, hide or un-hide one job. */
+/** Save, un-save, hide, un-hide, mark applied or un-mark one job. */
 export function useJobState() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, action }: { id: string; action: StateChange }) => change(id, action),
+    mutationFn: async ({ id, action }: { id: string; action: StateChange }) => changeJobState(id, action),
     onSuccess: (_, { id, action }) => refreshAfterChange(queryClient, id, action),
   });
 }

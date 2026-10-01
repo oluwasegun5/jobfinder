@@ -114,6 +114,7 @@ export function JobCard({ job, variant = "search" }: { job: JobSummary; variant?
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {job.similarity !== undefined && <Badge variant="secondary">{Math.round(job.similarity * 100)}% similar</Badge>}
+              {job.applied && <Badge variant="secondary">Applied</Badge>}
               {job.status && job.status !== "ACTIVE" && <Badge variant="destructive">No longer listed</Badge>}
             </div>
           </div>
