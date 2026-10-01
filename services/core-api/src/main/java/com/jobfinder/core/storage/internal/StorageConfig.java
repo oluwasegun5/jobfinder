@@ -1,4 +1,4 @@
-package com.jobfinder.core.profile.internal;
+package com.jobfinder.core.storage.internal;
 
 import java.net.URI;
 
@@ -14,7 +14,7 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 @Configuration
-@EnableConfigurationProperties({ StorageProperties.class, ResumeProperties.class })
+@EnableConfigurationProperties(StorageProperties.class)
 class StorageConfig {
 
     @Bean(destroyMethod = "close")

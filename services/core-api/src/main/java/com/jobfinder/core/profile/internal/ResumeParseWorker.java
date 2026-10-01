@@ -14,6 +14,8 @@ import com.jobfinder.core.billing.AiDailyCapReachedException;
 import com.jobfinder.core.billing.AiUsageGate;
 import com.jobfinder.core.profile.internal.AiServiceResumeParser.Parsed;
 import com.jobfinder.core.profile.internal.ResumeParseStore.Target;
+import com.jobfinder.core.storage.ObjectNotFoundException;
+import com.jobfinder.core.storage.ObjectStorage;
 
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;

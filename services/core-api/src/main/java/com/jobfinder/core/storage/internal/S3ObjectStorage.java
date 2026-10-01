@@ -1,9 +1,12 @@
-package com.jobfinder.core.profile.internal;
+package com.jobfinder.core.storage.internal;
 
 import java.net.URI;
 import java.time.Duration;
 
 import org.springframework.stereotype.Component;
+
+import com.jobfinder.core.storage.ObjectNotFoundException;
+import com.jobfinder.core.storage.ObjectStorage;
 
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -11,6 +14,7 @@ import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
@@ -47,11 +51,50 @@ class S3ObjectStorage implements ObjectStorage {
     }
 
     @Override
+    public boolean exists(String key) {
+        try {
+            s3.headObject(HeadObjectRequest.builder().bucket(bucket).key(key).build());
+            return true;
+        } catch (NoSuchKeyException e) {
+            return false;
+        }
+    }
+
+    @Override
     public URI presignDownload(String key, String filename, Duration ttl) {
         GetObjectRequest get = GetObjectRequest.builder().bucket(bucket).key(key)
-                .responseContentDisposition("attachment; filename=\"" + filename + "\"").build();
+                .responseContentDisposition(attachment(filename)).build();
         return URI.create(presigner.presignGetObject(GetObjectPresignRequest.builder()
                 .signatureDuration(ttl).getObjectRequest(get).build()).url().toString());
+    }
+
+    /**
+     * An RFC 6266 attachment header that cannot be broken out of: quotes, backslashes and control characters never
+     * reach the header; a plain ASCII fallback is always sent and the exact name travels as {@code filename*}.
+     */
+    static String attachment(String filename) {
+        String name = filename == null || filename.isBlank() ? "download" : filename;
+        StringBuilder ascii = new StringBuilder();
+        StringBuilder encoded = new StringBuilder();
+        name.codePoints().forEach(cp -> {
+            boolean unsafe = Character.isISOControl(cp) || cp == '"' || cp == '\\' || cp == '/' || cp == '%'
+                    || cp == ';';
+            if (unsafe) {
+                ascii.append('_');
+                encoded.append('_');
+            } else if (cp < 0x7f && cp >= 0x20) {
+                ascii.append((char) cp);
+                encoded.append((char) cp);
+            } else {
+                ascii.append('_');
+                for (byte b : new String(Character.toChars(cp)).getBytes(java.nio.charset.StandardCharsets.UTF_8)) {
+                    encoded.append('%').append(String.format("%02X", b));
+                }
+            }
+        });
+        String disposition = "attachment; filename=\"" + ascii + "\"";
+        return ascii.toString().contentEquals(encoded)
+                ? disposition : disposition + "; filename*=UTF-8''" + encoded.toString().replace(" ", "%20");
     }
 
     @Override

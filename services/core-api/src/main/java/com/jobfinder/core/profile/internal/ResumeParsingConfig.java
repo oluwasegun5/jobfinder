@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
  * message is parked for inspection instead of being redelivered forever.
  */
 @Configuration
-@EnableConfigurationProperties({ AiServiceProperties.class, ResumeParsingProperties.class })
+@EnableConfigurationProperties({ AiServiceProperties.class, ResumeParsingProperties.class, ResumeProperties.class })
 class ResumeParsingConfig {
 
     @Bean

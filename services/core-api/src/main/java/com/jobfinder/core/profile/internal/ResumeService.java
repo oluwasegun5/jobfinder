@@ -18,6 +18,7 @@ import com.jobfinder.core.billing.AiUsageGate;
 import com.jobfinder.core.profile.internal.ResumeDtos.DownloadUrlResponse;
 import com.jobfinder.core.profile.internal.ResumeDtos.ResumeResponse;
 import com.jobfinder.core.shared.ApiException;
+import com.jobfinder.core.storage.ObjectStorage;
 
 /**
  * CV upload (which queues parsing), listing, download links, primary selection and deletion. Every method takes the
