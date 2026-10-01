@@ -86,7 +86,9 @@
       "output_tokens": 0,
       "cost_usd": "0",
       "latency_ms": 0,
-      "prompt_version": "parse_resume/v1"
+      "prompt_version": "parse_resume/v1",
+      "call_id": "00000000-0000-4000-8000-0000000000c1",
+      "pricing_version": "fake"
     }
   ]
 }

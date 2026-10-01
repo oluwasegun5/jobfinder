@@ -92,13 +92,34 @@ public class StubEmbeddingWorker {
 
     public ResultActions results(String kind, String model, int dimension, List<Map<String, Object>> items)
             throws Exception {
+        return results(kind, model, dimension, items, List.of(usageEntry(UUID.randomUUID(), null,
+                "embed_" + kind.toLowerCase(), model, "0.000001")));
+    }
+
+    /** One usage record as ai-service sends it with the results; {@code userId} is null for system work. */
+    public static Map<String, Object> usageEntry(UUID callId, UUID userId, String feature, String model,
+            String costUsd) {
+        Map<String, Object> entry = new LinkedHashMap<>();
+        entry.put("callId", callId.toString());
+        entry.put("userId", userId == null ? null : userId.toString());
+        entry.put("feature", feature);
+        entry.put("provider", "stub");
+        entry.put("model", model);
+        entry.put("inputTokens", 12);
+        entry.put("costUsd", costUsd);
+        entry.put("latencyMs", 3);
+        entry.put("pricingVersion", "test");
+        return entry;
+    }
+
+    public ResultActions results(String kind, String model, int dimension, List<Map<String, Object>> items,
+            List<Map<String, Object>> usage) throws Exception {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("kind", kind);
         body.put("model", model);
         body.put("dimension", dimension);
         body.put("items", items);
-        body.put("usage", List.of(Map.of("feature", "embed_" + kind.toLowerCase(), "provider", "stub", "model", model,
-                "inputTokens", 12, "costUsd", "0.000001", "latencyMs", 3)));
+        body.put("usage", usage);
         return mvc.perform(put("/internal/v1/embeddings/results").header("X-Service-Token", AiServiceStubs.TOKEN)
                 .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body)));
     }

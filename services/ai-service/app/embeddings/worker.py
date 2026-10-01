@@ -11,7 +11,7 @@ import logging
 from collections.abc import Awaitable, Callable, Sequence
 from decimal import Decimal
 from typing import Protocol, TypeVar
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from app.config import ModelPricing, Settings
 from app.embeddings.base import EmbeddingError, EmbeddingInputType, EmbeddingProvider
@@ -76,6 +76,7 @@ class EmbeddingWorker:
         self._max_attempts = settings.embedding_max_attempts
         self._backoff = settings.embedding_retry_backoff_seconds
         self._pricing: dict[str, ModelPricing] = settings.llm_pricing
+        self._pricing_version = settings.llm_pricing_version
         self._sleep = sleep
 
     def handler(self, kind: EmbeddingKind) -> Callable[[Sequence[Delivery]], Awaitable[None]]:
@@ -162,15 +163,20 @@ class EmbeddingWorker:
             for item, vector in zip(inputs.items, batch.vectors, strict=True)
         ]
         usage = self._usage(kind, inputs.items, batch.model, batch.input_tokens, batch.latency_ms)
-        stored = await self._retrying(
-            lambda: self._core.store_results(
-                kind,
-                model=batch.model,
-                dimension=self._provider.dimension,
-                items=items,
-                usage=usage,
+        try:
+            stored = await self._retrying(
+                lambda: self._core.store_results(
+                    kind,
+                    model=batch.model,
+                    dimension=self._provider.dimension,
+                    items=items,
+                    usage=usage,
+                )
             )
-        )
+        except EmbeddingFailedError:
+            # The provider already billed this call: report it even though the vectors are lost.
+            await self._report_unstored_usage(usage)
+            raise
         for record in usage:
             logger.info(
                 "ai usage user=%s feature=%s provider=%s model=%s inputTokens=%d outputTokens=0 "
@@ -191,6 +197,24 @@ class EmbeddingWorker:
             stored.missing,
         )
         return stored.applied
+
+    async def _report_unstored_usage(self, usage: list[UsageRecord]) -> None:
+        """Best effort and idempotent (same call ids). If core-api cannot be reached even for this,
+        the figures are logged at ERROR so the spend can still be reconciled by hand."""
+        try:
+            await self._retrying(lambda: self._core.record_usage(usage))
+        except Exception:
+            for record in usage:
+                logger.error(
+                    "UNRECORDED ai usage call=%s user=%s feature=%s model=%s inputTokens=%d "
+                    "costUsd=%s",
+                    record.call_id,
+                    record.user_id,
+                    record.feature,
+                    record.model,
+                    record.input_tokens,
+                    record.cost_usd,
+                )
 
     def _usage(
         self,
@@ -213,6 +237,7 @@ class EmbeddingWorker:
                 else estimate_cost_usd(self._pricing, model, share, 0)
             )
             return UsageRecord(
+                call_id=uuid4(),
                 user_id=user_id,
                 feature=feature,
                 provider=self._provider.name,
@@ -220,6 +245,7 @@ class EmbeddingWorker:
                 input_tokens=share,
                 cost_usd=cost,
                 latency_ms=share_latency,
+                pricing_version=self._pricing_version,
             )
 
         if kind is EmbeddingKind.JOB:

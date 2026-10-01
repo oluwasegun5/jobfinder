@@ -96,6 +96,24 @@ class ResumeParseStore {
         }));
     }
 
+    /**
+     * Puts a FAILED resume back to PENDING and queues its upload version for parsing again (once this commits).
+     * Returns false, changing nothing, if the resume is gone or not FAILED with the given reason.
+     */
+    boolean retry(UUID resumeId, UUID userId, ParseFailureReason expectedReason) {
+        return Boolean.TRUE.equals(tx.execute(status -> {
+            int changed = jdbc.sql("""
+                    update resumes set parse_status = 'PENDING', parse_error = null, updated_at = now()
+                    where id = :id and parse_status = 'FAILED' and parse_error = :reason
+                    """).param("id", resumeId).param("reason", expectedReason.code()).update();
+            if (changed == 0) {
+                return false;
+            }
+            events.publishEvent(new ResumeUploaded(resumeId, userId, 1));
+            return true;
+        }));
+    }
+
     /** Marks a PENDING resume FAILED with a reason. Returns false if it was not PENDING (or is gone). */
     boolean fail(UUID resumeId, ParseFailureReason reason) {
         return Boolean.TRUE.equals(tx.execute(status -> jdbc.sql("""

@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.jobfinder.core.billing.AiUsageGate;
 import com.jobfinder.core.profile.internal.ResumeDtos.DownloadUrlResponse;
 import com.jobfinder.core.profile.internal.ResumeDtos.ResumeResponse;
 import com.jobfinder.core.shared.ApiException;
@@ -38,9 +39,14 @@ class ResumeService {
     private final TransactionTemplate tx;
     private final Clock clock;
     private final ApplicationEventPublisher events;
+    private final ResumeParseStore parseStore;
+    private final AiUsageGate gate;
 
     ResumeService(ResumeRepository resumes, ResumeVersionRepository versions, ObjectStorage storage,
-            ResumeProperties properties, TransactionTemplate tx, Clock clock, ApplicationEventPublisher events) {
+            ResumeProperties properties, TransactionTemplate tx, Clock clock, ApplicationEventPublisher events,
+            ResumeParseStore parseStore, AiUsageGate gate) {
+        this.parseStore = parseStore;
+        this.gate = gate;
         this.resumes = resumes;
         this.versions = versions;
         this.storage = storage;
@@ -89,6 +95,27 @@ class ResumeService {
             deleteQuietly(key);
             throw e;
         }
+    }
+
+    /**
+     * Asks for the parse of a CV again after it failed for a reason that is not the file's fault: the daily AI cap
+     * (usable again after the reset), or ai-service or the queue being unavailable. The cap is checked first, so
+     * trying too early is answered 429 {@code ai_daily_cap_reached} with the reset time, without queuing anything.
+     */
+    ResumeResponse reparse(UUID userId, UUID id) {
+        Resume resume = find(userId, id);
+        ParseFailureReason reason = resume.getParseStatus() == ParseStatus.FAILED
+                ? ParseFailureReason.fromCode(resume.getParseError()).orElse(null) : null;
+        if (reason == null || !reason.userRetryable()) {
+            throw new ApiException(HttpStatus.CONFLICT, "reparse_not_allowed",
+                    "Only a CV whose parsing failed because of the daily limit or a temporary problem can be parsed again.");
+        }
+        gate.requireAllowance(userId, "parse_resume");
+        if (!parseStore.retry(id, userId, reason)) {
+            throw new ApiException(HttpStatus.CONFLICT, "reparse_not_allowed",
+                    "This CV is already being parsed again.");
+        }
+        return ResumeResponse.from(find(userId, id));
     }
 
     List<ResumeResponse> list(UUID userId) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatAgo, formatDuration, formatUntil } from "./format";
+import { formatAgo, formatCount, formatDuration, formatUntil, formatUsd } from "./format";
 
 const now = new Date("2026-10-01T12:00:00Z");
 
@@ -34,5 +34,19 @@ describe("formatDuration", () => {
     expect(formatDuration("2026-10-01T10:00:00Z", "2026-10-01T10:00:12Z")).toBe("12 s");
     expect(formatDuration("2026-10-01T10:00:00Z", "2026-10-01T10:03:05Z")).toBe("3 min 05 s");
     expect(formatDuration("2026-10-01T10:00:00Z", undefined)).toBe("running");
+  });
+});
+
+describe("formatUsd and formatCount", () => {
+  it("keeps the precision of a few embedding tokens and of a month of parsing", () => {
+    expect(formatUsd(0.000024)).toBe("$0.000024");
+    expect(formatUsd(12.5)).toBe("$12.50");
+    expect(formatUsd(0.0035)).toBe("$0.0035");
+    expect(formatUsd(undefined)).toBe("$0.00");
+  });
+
+  it("groups thousands", () => {
+    expect(formatCount(1234567)).toBe("1,234,567");
+    expect(formatCount(undefined)).toBe("0");
   });
 });

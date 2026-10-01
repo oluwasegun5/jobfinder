@@ -51,6 +51,8 @@ class FakeCore:
         self.failures: list[int] = []  # statuses to answer with before behaving
         self.input_requests: list[dict[str, Any]] = []
         self.results_requests: list[dict[str, Any]] = []
+        self.usage_requests: list[dict[str, Any]] = []
+        self.results_status: int | None = None  # answer every results write with this status
         self.tokens_seen: list[str] = []
 
     def add(self, text: str, *, owner: UUID | None = None) -> UUID:
@@ -93,7 +95,12 @@ class FakeCore:
                     "skipped": skipped,
                 },
             )
+        if request.url.path.endswith("/billing/usage"):
+            self.usage_requests.append(body)
+            return httpx.Response(200, json={"recorded": len(body["usage"]), "duplicates": 0})
         self.results_requests.append(body)
+        if self.results_status is not None:
+            return httpx.Response(self.results_status, json={"title": "boom"})
         return httpx.Response(200, json={"applied": len(body["items"]), "stale": 0, "missing": 0})
 
     def client(self) -> CoreApiClient:
@@ -163,6 +170,7 @@ async def test_a_batch_of_jobs_is_embedded_in_one_call_and_stored_with_its_hashe
     assert usage["feature"] == "embed_job"
     assert usage["provider"] == "fake"
     assert set(usage) == {
+        "callId",
         "userId",
         "feature",
         "provider",
@@ -170,7 +178,10 @@ async def test_a_batch_of_jobs_is_embedded_in_one_call_and_stored_with_its_hashe
         "inputTokens",
         "costUsd",
         "latencyMs",
+        "pricingVersion",
     }
+    UUID(usage["callId"])
+    assert usage["pricingVersion"] == "2026-10-01"
     assert set(core.tokens_seen) == {TOKEN}
 
 
@@ -392,3 +403,91 @@ async def test_usage_is_priced_from_the_pricing_table_for_a_paid_provider() -> N
     assert usage["inputTokens"] == 10
     # 10 tokens at $0.06 per million is $0.0000006, which the ledger rounds to a micro-dollar.
     assert Decimal(usage["costUsd"]) == Decimal("0.000001")
+
+
+async def test_every_usage_record_has_its_own_call_id_and_a_retried_write_reuses_it() -> None:
+    core = FakeCore(input_type="query")
+    core.failures = [503]  # the first request (inputs) fails transiently
+    a, b = core.add("one two", owner=uuid4()), core.add("three four", owner=uuid4())
+    worker, _ = _worker(core)
+
+    await worker.handle_messages(EmbeddingKind.RESUME_VERSION, [_message(a), _message(b)])
+
+    usage = core.results_requests[0]["usage"]
+    assert len({u["callId"] for u in usage}) == 2
+
+
+async def test_the_same_call_ids_are_sent_when_the_results_write_is_retried() -> None:
+    core = FakeCore()
+    item = core.add("job text")
+    worker, _ = _worker(core)
+    sent: list[list[str]] = []
+    real = core.handle
+
+    def flaky(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/results"):
+            body = json.loads(request.content)
+            sent.append([u["callId"] for u in body["usage"]])
+            if len(sent) == 1:
+                return httpx.Response(503, json={"title": "lost response"})
+        return real(request)
+
+    worker._core = CoreApiClient(
+        _settings(),
+        httpx.AsyncClient(
+            base_url="http://core.test",
+            transport=httpx.MockTransport(flaky),
+            headers={SERVICE_TOKEN_HEADER: TOKEN},
+        ),
+    )
+
+    await worker.handle_messages(EmbeddingKind.JOB, [_message(item)])
+
+    assert len(sent) == 2
+    assert sent[0] == sent[1]
+
+
+async def test_usage_of_results_that_could_not_be_stored_is_still_reported() -> None:
+    core = FakeCore()
+    core.results_status = 409
+    item = core.add("job text")
+    worker, provider = _worker(core)
+    message = _message(item)
+
+    await worker.handle_messages(EmbeddingKind.JOB, [message])
+
+    assert message.state == "rejected"
+    assert len(provider.calls) == 1  # the provider was called and billed
+    (report,) = core.usage_requests
+    (usage,) = report["usage"]
+    assert usage["feature"] == "embed_job"
+    assert usage["callId"] == core.results_requests[0]["usage"][0]["callId"]
+
+
+async def test_unreportable_usage_is_logged_at_error_level(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    core = FakeCore()
+    core.results_status = 409
+    item = core.add("job text")
+    worker, _ = _worker(core)
+    real = core.handle
+
+    def refuse_usage(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/billing/usage"):
+            return httpx.Response(400, json={"title": "no"})
+        return real(request)
+
+    worker._core = CoreApiClient(
+        _settings(),
+        httpx.AsyncClient(
+            base_url="http://core.test",
+            transport=httpx.MockTransport(refuse_usage),
+            headers={SERVICE_TOKEN_HEADER: TOKEN},
+        ),
+    )
+
+    with caplog.at_level("ERROR"):
+        await worker.handle_messages(EmbeddingKind.JOB, [_message(item)])
+
+    assert any("UNRECORDED ai usage" in r.message for r in caplog.records)

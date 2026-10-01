@@ -10,12 +10,14 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.jobfinder.core.billing.AiCallStatus;
+import com.jobfinder.core.billing.AiUsage;
+import com.jobfinder.core.billing.AiUsageGate;
+import com.jobfinder.core.billing.AiUsageLedger;
 import com.jobfinder.core.embeddings.internal.EmbeddingDtos.InputItem;
 import com.jobfinder.core.embeddings.internal.EmbeddingDtos.InputsResponse;
 import com.jobfinder.core.embeddings.internal.EmbeddingDtos.ResultItem;
@@ -39,11 +41,15 @@ import tools.jackson.databind.json.JsonMapper;
  * lock, rebuilds its text, and writes only if the hash of that text is the one the vector was made from: a vector
  * computed from older text is dropped (counted {@code stale}) because the change that made it old has already
  * queued a fresh message. Writing the same vector twice is a no-op in effect.
+ *
+ * <p><b>Usage.</b> The cost of the provider call that made the vectors goes to the billing ledger in the same
+ * transaction as the vectors, so either both are stored or neither is and ai-service's retry repeats both; the
+ * ledger records each call id once. Resume embeddings are attributed to the resume's owner and are subject to the
+ * daily AI cap (an owner who has used it up gets {@code AI_DAILY_CAP_REACHED} in {@code skipped}, and the resume
+ * version is embedded by a later backfill); job embeddings are system work with no owner and no cap.
  */
 @Service
 class EmbeddingService {
-
-    private static final Logger log = LoggerFactory.getLogger(EmbeddingService.class);
 
     private static final String INPUT_TYPE_JOB = "document";
     private static final String INPUT_TYPE_RESUME = "query";
@@ -53,9 +59,13 @@ class EmbeddingService {
     private final EmbeddingProperties properties;
     private final TransactionTemplate tx;
     private final JsonMapper json;
+    private final AiUsageLedger ledger;
+    private final AiUsageGate gate;
 
     EmbeddingService(EmbeddingStore store, EmbeddingTextBuilder texts, EmbeddingProperties properties,
-            TransactionTemplate tx, JsonMapper json) {
+            TransactionTemplate tx, JsonMapper json, AiUsageLedger ledger, AiUsageGate gate) {
+        this.ledger = ledger;
+        this.gate = gate;
         this.store = store;
         this.texts = texts;
         this.properties = properties;
@@ -87,6 +97,7 @@ class EmbeddingService {
             }
         } else {
             Map<UUID, ResumeVersionRow> rows = by(store.resumeVersions(ids, false), ResumeVersionRow::id);
+            Map<UUID, Boolean> capped = new java.util.HashMap<>();
             for (UUID id : ids) {
                 ResumeVersionRow row = rows.get(id);
                 if (row == null) {
@@ -98,6 +109,8 @@ class EmbeddingService {
                     String hash = EmbeddingTextBuilder.hash(text);
                     if (current(row.model(), row.inputHash(), hash)) {
                         skipped.add(new Skipped(id, "UP_TO_DATE"));
+                    } else if (capped.computeIfAbsent(row.userId(), owner -> gate.allowance(owner).exhausted())) {
+                        skipped.add(new Skipped(id, "AI_DAILY_CAP_REACHED"));
                     } else {
                         items.add(new InputItem(id, row.userId(), text, hash));
                     }
@@ -118,12 +131,33 @@ class EmbeddingService {
             validate(item);
             results.put(item.id(), item);
         }
-        ResultsResponse response = tx.execute(status -> request.kind() == EmbeddingKind.JOB ? storeJobs(results)
-                : storeResumeVersions(results));
-        if (request.usage() != null) {
-            request.usage().forEach(EmbeddingService::logUsage);
-        }
-        return response;
+        return tx.execute(status -> {
+            ResultsResponse response = request.kind() == EmbeddingKind.JOB ? storeJobs(results)
+                    : storeResumeVersions(results);
+            // The call was billed whether or not every vector was still wanted, so the usage is always recorded.
+            if (request.usage() != null) {
+                List<UsageRecord> usage = request.usage();
+                for (int i = 0; i < usage.size(); i++) {
+                    ledger.record(toUsage(request, usage.get(i), i));
+                }
+            }
+            return response;
+        });
+    }
+
+    /**
+     * The ledger entry for one usage record. The key is ai-service's call id; a sender that leaves it out gets a key
+     * derived from the write itself (kind, record, and the ids and hashes it stores), which is the same when the
+     * identical write is repeated.
+     */
+    private static AiUsage toUsage(ResultsRequest request, UsageRecord u, int index) {
+        String key = u.callId() != null ? "ai-service:" + u.callId() : "derived:" + EmbeddingTextBuilder.hash(
+                request.kind() + "|" + index + "|" + u.userId() + "|" + u.feature() + "|" + u.model() + "|"
+                        + request.items().stream().map(item -> item.id() + ":" + item.inputHash()).sorted()
+                                .collect(Collectors.joining(",")));
+        return new AiUsage(key, u.userId(), u.feature(), u.provider(), u.model(), u.inputTokens(), 0,
+                u.costUsd() == null ? java.math.BigDecimal.ZERO : u.costUsd(), u.latencyMs(),
+                EmbeddingTextBuilder.TEMPLATE_VERSION, u.pricingVersion(), AiCallStatus.SUCCEEDED);
     }
 
     /** True if a row needs a (new) embedding now, given what is stored. */
@@ -212,12 +246,5 @@ class EmbeddingService {
 
     private static <T> Map<UUID, T> by(List<T> rows, Function<T, UUID> id) {
         return rows.stream().collect(Collectors.toMap(id, Function.identity()));
-    }
-
-    /** Usage goes to the ledger in Phase 3 (ADR 0008); until then it is logged, without any content. */
-    private static void logUsage(UsageRecord u) {
-        log.info("ai usage user={} feature={} provider={} model={} inputTokens={} outputTokens=0 costUsd={} "
-                + "latencyMs={} promptVersion={}", u.userId(), u.feature(), u.provider(), u.model(), u.inputTokens(),
-                u.costUsd(), u.latencyMs(), EmbeddingTextBuilder.TEMPLATE_VERSION);
     }
 }

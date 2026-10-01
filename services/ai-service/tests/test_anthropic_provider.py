@@ -158,3 +158,13 @@ def test_blank_api_key_counts_as_unset(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_short_service_token_is_rejected() -> None:
     with pytest.raises(ValueError, match="ai_service_token"):
         _settings(ai_service_token=SecretStr("short"))
+
+
+async def test_a_refusal_still_reports_the_billed_call() -> None:
+    provider, _ = _provider(_settings(), _message(stop_reason="refusal", text=""))
+    with pytest.raises(LLMRefusalError) as exc_info:
+        await provider.generate(_request())
+    (usage,) = exc_info.value.usage
+    assert usage.feature == _request().feature
+    assert usage.provider == "anthropic"
+    assert usage.input_tokens > 0 or usage.output_tokens >= 0

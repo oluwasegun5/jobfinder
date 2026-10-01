@@ -212,3 +212,38 @@ def test_requires_a_valid_user_id(client: TestClient) -> None:
         "/v1/parse-resume", params={"user_id": "nope"}, content=ALL_FIXTURES[0].render()
     )
     assert bad.status_code == 422
+
+
+def test_usage_carries_a_call_id_and_the_pricing_version(
+    client: TestClient, fake_provider: FakeProvider
+) -> None:
+    fixture = ALL_FIXTURES[0]
+    fake_provider.queue("not json", json.dumps(fixture.expected))
+
+    response = _post(client, fixture.render())
+
+    usage = response.json()["usage"]
+    assert len(usage) == 2
+    assert len({u["call_id"] for u in usage}) == 2
+    assert {u["pricing_version"] for u in usage} == {"fake"}
+
+
+def test_a_failed_parse_still_reports_every_billed_attempt(
+    client: TestClient, fake_provider: FakeProvider
+) -> None:
+    fake_provider.queue("nope", '{"experience": "many"}')
+
+    response = _post(client, ALL_FIXTURES[0].render())
+
+    assert response.status_code == 502
+    usage = response.json()["usage"]
+    assert [u["feature"] for u in usage] == ["parse_resume", "parse_resume"]
+    assert len({u["call_id"] for u in usage}) == 2
+    assert all(u["model"] == "fake-fast" for u in usage)
+
+
+def test_problems_without_a_billed_call_carry_an_empty_usage_list(client: TestClient) -> None:
+    response = _post(client, b"plain text, not a CV file")
+
+    assert response.status_code == 415
+    assert response.json()["usage"] == []

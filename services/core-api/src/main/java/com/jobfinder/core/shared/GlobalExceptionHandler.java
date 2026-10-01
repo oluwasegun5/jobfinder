@@ -30,6 +30,7 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     ResponseEntity<ProblemDetail> handleApi(ApiException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(ex.status(), ex.getMessage());
         problem.setProperty("code", ex.code());
+        ex.properties().forEach(problem::setProperty);
         return ResponseEntity.status(ex.status()).headers(ex.headers()).body(problem);
     }
 

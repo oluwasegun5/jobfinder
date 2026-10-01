@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, Briefcase, DatabaseZap, KanbanSquare, LayoutDashboard, Menu, UserRound, X } from "lucide-react";
+import { Bookmark, Briefcase, Coins, DatabaseZap, KanbanSquare, LayoutDashboard, Menu, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ComponentType, type ReactNode } from "react";
@@ -27,7 +27,10 @@ const navItems: NavItem[] = [
 ];
 
 /** Shown to administrators only (core-api enforces the role; this just keeps the menu honest). */
-const adminNavItems: NavItem[] = [{ label: "Job sources", icon: DatabaseZap, href: "/admin/ingestion" }];
+const adminNavItems: NavItem[] = [
+  { label: "Job sources", icon: DatabaseZap, href: "/admin/ingestion" },
+  { label: "AI cost", icon: Coins, href: "/admin/billing" },
+];
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();

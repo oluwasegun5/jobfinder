@@ -132,6 +132,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/resumes/{id}/reparse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reparse"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/verify-email": {
         parameters: {
             query?: never;
@@ -388,6 +404,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/billing/allowance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["allowance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/me": {
         parameters: {
             query?: never;
@@ -428,6 +460,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["listRuns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/billing/costs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["costs"];
         put?: never;
         post?: never;
         delete?: never;
@@ -841,6 +889,14 @@ export interface components {
             url?: string;
             attribution?: components["schemas"]["Attribution"];
         };
+        AllowanceResponse: {
+            dailyCap?: number;
+            used?: number;
+            remaining?: number;
+            /** Format: date-time */
+            resetsAt?: string;
+            exhausted?: boolean;
+        };
         MeResponse: {
             /** Format: uuid */
             id?: string;
@@ -861,6 +917,32 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+        };
+        CostReportResponse: {
+            /** Format: date */
+            from?: string;
+            /** Format: date */
+            to?: string;
+            totals?: components["schemas"]["CostRowResponse"];
+            byFeature?: components["schemas"]["CostRowResponse"][];
+            byDay?: components["schemas"]["CostRowResponse"][];
+            byModel?: components["schemas"]["CostRowResponse"][];
+            byDayFeature?: components["schemas"]["CostRowResponse"][];
+        };
+        CostRowResponse: {
+            /** Format: date */
+            day?: string;
+            feature?: string;
+            model?: string;
+            /** Format: int64 */
+            calls?: number;
+            /** Format: int64 */
+            failedCalls?: number;
+            /** Format: int64 */
+            inputTokens?: number;
+            /** Format: int64 */
+            outputTokens?: number;
+            costUsd?: number;
         };
     };
     responses: never;
@@ -1175,6 +1257,28 @@ export interface operations {
         responses: {
             /** @description OK */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResumeResponse"];
+                };
+            };
+        };
+    };
+    reparse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1579,6 +1683,26 @@ export interface operations {
             };
         };
     };
+    allowance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AllowanceResponse"];
+                };
+            };
+        };
+    };
     me: {
         parameters: {
             query?: never;
@@ -1639,6 +1763,29 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["IngestionRunPageResponse"];
+                };
+            };
+        };
+    };
+    costs: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CostReportResponse"];
                 };
             };
         };

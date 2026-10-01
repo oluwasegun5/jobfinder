@@ -113,6 +113,24 @@ export function useSetPrimaryResume() {
   });
 }
 
+/** Failures that are not the file's fault: the user may ask for the CV to be read again (core-api decides). */
+export const REPARSABLE_ERRORS = ["ai_daily_cap_reached", "parser_unavailable", "parse_queue_unavailable"];
+
+/**
+ * Asks core-api to read a CV again. While the daily AI limit is still used up the answer is 429
+ * `ai_daily_cap_reached`, whose `detail` says when it resets.
+ */
+export function useReparseResume() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => unwrap(await api.POST("/resumes/{id}/reparse", { params: { path: { id } } })),
+    onSuccess: (_, id) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.content(id) });
+      return queryClient.invalidateQueries({ queryKey: queryKeys.resumes });
+    },
+  });
+}
+
 export function useDeleteResume() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -30,6 +30,9 @@ def _without_volatile(body: dict[str, Any]) -> dict[str, Any]:
     for usage in stable["usage"]:
         usage["input_tokens"] = 0
         usage["output_tokens"] = 0
+        # A fresh random id per call; the shape (a UUID string) is what is pinned.
+        uuid.UUID(usage["call_id"])
+        usage["call_id"] = "00000000-0000-4000-8000-0000000000c1"
     return stable
 
 

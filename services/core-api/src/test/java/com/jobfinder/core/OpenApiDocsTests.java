@@ -58,4 +58,17 @@ class OpenApiDocsTests {
 				"\"/jobs/{id}/hide\"", "\"/saved-jobs\"", "\"nextCursor\"", "\"attribution\"", "\"postedWithinDays\"");
 	}
 
+	@Test
+	void apiDocsDescribeTheBillingEndpointsAndLeaveOutTheInternalOnes() throws Exception {
+		String body = mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(status().isOk())
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+
+		assertThat(body).contains("\"/admin/billing/costs\"", "CostReportResponse", "\"/billing/allowance\"",
+				"AllowanceResponse", "\"/resumes/{id}/reparse\"");
+		assertThat(body).doesNotContain("/internal/v1/billing");
+	}
+
 }

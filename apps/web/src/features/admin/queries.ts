@@ -12,6 +12,8 @@ export type AdminSourceList = components["schemas"]["IngestionSourceListResponse
 export type AdminRun = components["schemas"]["IngestionRunResponse"];
 export type AdminRunPage = components["schemas"]["IngestionRunPageResponse"];
 export type AdminAlert = components["schemas"]["SourceAlertResponse"];
+export type AdminCostReport = components["schemas"]["CostReportResponse"];
+export type AdminCostRow = components["schemas"]["CostRowResponse"];
 
 /** While any source is running, how often the list is re-read to catch the end of the run. */
 export const RUN_POLL_MS = 3_000;
@@ -22,6 +24,7 @@ export const adminKeys = {
   sources: ["admin", "sources"] as const,
   runs: (source: string | undefined, page: number) => ["admin", "runs", source ?? "all", page] as const,
   allRuns: ["admin", "runs"] as const,
+  costs: (from: string | undefined, to: string | undefined) => ["admin", "costs", from ?? "default", to ?? "default"] as const,
 };
 
 export function useAdminSources() {
@@ -81,5 +84,17 @@ export function useAdminRuns(source: string | undefined, page: number) {
           params: { query: { source: source || undefined, page, size: RUNS_PAGE_SIZE } },
         }),
       ),
+  });
+}
+
+/**
+ * AI cost by feature, day and model between two UTC days (`yyyy-MM-dd`, both included). Without a range core-api
+ * answers with the last seven days.
+ */
+export function useAdminCosts(from: string | undefined, to: string | undefined) {
+  return useQuery({
+    queryKey: adminKeys.costs(from, to),
+    placeholderData: keepPreviousData,
+    queryFn: async () => unwrap(await api.GET("/admin/billing/costs", { params: { query: { from, to } } })),
   });
 }

@@ -1,9 +1,11 @@
 package com.jobfinder.core.profile.internal;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.http.HttpClient;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -15,12 +17,20 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import com.jobfinder.core.billing.AiCallStatus;
+import com.jobfinder.core.billing.AiUsage;
+import com.jobfinder.core.billing.AiUsageLedger;
+
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Calls ai-service {@code POST /v1/parse-resume}. Turns every outcome into either a
  * {@link Parsed} result or a {@link ParseFailure} that says whether a retry could help.
+ *
+ * <p>Every billed call the response reports goes to the usage ledger (docs/adr/0025-ai-usage-ledger.md), on success
+ * and on failure alike: ai-service lists the calls it made in the error body too, so a parse that fails after a
+ * billed attempt still costs the user's allowance.
  *
  * <p>The response body holds the person's CV data: it is never logged, and only its shape is
  * checked here (the content was already validated against a strict schema by ai-service).
@@ -44,8 +54,10 @@ class AiServiceResumeParser {
 
     private final RestClient client;
     private final JsonMapper json;
+    private final AiUsageLedger ledger;
 
-    AiServiceResumeParser(AiServiceProperties properties, JsonMapper json) {
+    AiServiceResumeParser(AiServiceProperties properties, JsonMapper json, AiUsageLedger ledger) {
+        this.ledger = ledger;
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1).connectTimeout(properties.connectTimeout()).build());
         factory.setReadTimeout(properties.readTimeout());
@@ -63,7 +75,7 @@ class AiServiceResumeParser {
                     .uri(uri -> uri.path("/v1/parse-resume").queryParam("user_id", userId).build())
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .body(file)
-                    .exchange((request, response) -> interpret(response.getStatusCode().value(),
+                    .exchange((request, response) -> interpret(userId, response.getStatusCode().value(),
                             response.getBody().readNBytes(MAX_RESPONSE_BYTES + 1)));
         } catch (ResourceAccessException e) {
             throw ParseFailure.transientFailure("ai-service unreachable: " + e.getClass().getSimpleName(), e);
@@ -72,14 +84,14 @@ class AiServiceResumeParser {
         }
     }
 
-    private Parsed interpret(int status, byte[] body) throws IOException {
+    private Parsed interpret(UUID userId, int status, byte[] body) throws IOException {
         if (body.length > MAX_RESPONSE_BYTES) {
             throw ParseFailure.permanent(ParseFailureReason.INVALID_PARSER_RESPONSE, "ai-service response too large");
         }
-        return status == 200 ? success(body) : failure(status, body);
+        return status == 200 ? success(userId, body) : failure(userId, status, body);
     }
 
-    private Parsed success(byte[] body) {
+    private Parsed success(UUID userId, byte[] body) {
         Map<String, Object> response = readObject(body);
         Object structured = response == null ? null : response.get("structured");
         if (!(structured instanceof Map<?, ?> resume)
@@ -103,7 +115,7 @@ class AiServiceResumeParser {
         } catch (JacksonException e) {
             throw invalidResponse();
         }
-        logUsage(response.get("usage"));
+        recordUsage(userId, response.get("usage"), AiCallStatus.SUCCEEDED);
         return new Parsed(structuredJson, warningsJson, model, promptVersion);
     }
 
@@ -127,8 +139,12 @@ class AiServiceResumeParser {
         return value instanceof String s && !s.isBlank() && s.length() <= MAX_WARNING_FIELD_CHARS;
     }
 
-    private Parsed failure(int status, byte[] body) {
+    private Parsed failure(UUID userId, int status, byte[] body) {
         Map<String, Object> problem = readObject(body);
+        if (problem != null) {
+            // Calls billed before the failure (a validation retry, a refusal) are still recorded.
+            recordUsage(userId, problem.get("usage"), AiCallStatus.FAILED);
+        }
         String code = problem != null && problem.get("code") instanceof String c ? c : null;
         boolean retryable = problem != null && Boolean.TRUE.equals(problem.get("retryable"));
         log.warn("ai-service refused a parse (status={}, code={}, retryable={})", status, code, retryable);
@@ -166,18 +182,60 @@ class AiServiceResumeParser {
         return null;
     }
 
-    /** Usage goes to the ledger in Phase 3 (ADR 0008); until then it is logged, without any CV content. */
-    private void logUsage(Object usage) {
-        if (usage instanceof List<?> calls) {
-            for (Object call : calls) {
-                if (call instanceof Map<?, ?> u) {
-                    log.info("ai usage user={} feature={} provider={} model={} inputTokens={} outputTokens={} costUsd={} "
-                            + "latencyMs={} promptVersion={}", u.get("user_id"), u.get("feature"), u.get("provider"),
-                            u.get("model"), u.get("input_tokens"), u.get("output_tokens"), u.get("cost_usd"),
-                            u.get("latency_ms"), u.get("prompt_version"));
-                }
+    /**
+     * Records each reported call, once (ai-service's {@code call_id} is the idempotency key), against the user the parse
+     * was requested for (not whatever the response says). A malformed entry is
+     * skipped with a warning. If the ledger itself is unavailable the parse is not failed (the work was paid for
+     * and the result is good): the figures are logged at ERROR so the spend can be reconciled, and nothing
+     * personal is in the line.
+     */
+    private void recordUsage(UUID userId, Object usage, AiCallStatus status) {
+        if (!(usage instanceof List<?> calls)) {
+            return;
+        }
+        for (Object call : calls) {
+            Optional<AiUsage> parsed = call instanceof Map<?, ?> u ? toUsage(userId, u, status) : Optional.empty();
+            if (parsed.isEmpty()) {
+                log.warn("Skipping a malformed ai-service usage entry");
+                continue;
+            }
+            try {
+                ledger.record(parsed.get());
+            } catch (RuntimeException e) {
+                AiUsage u = parsed.get();
+                log.error("UNRECORDED ai usage call={} user={} feature={} model={} inputTokens={} outputTokens={} "
+                        + "costUsd={}", u.requestKey(), u.userId(), u.feature(), u.model(), u.inputTokens(),
+                        u.outputTokens(), u.costUsd(), e);
             }
         }
+    }
+
+    private static Optional<AiUsage> toUsage(UUID userId, Map<?, ?> u, AiCallStatus status) {
+        try {
+            UUID callId = u.get("call_id") instanceof String id ? UUID.fromString(id) : UUID.randomUUID();
+            if (!(u.get("feature") instanceof String feature) || !(u.get("provider") instanceof String provider)
+                    || !(u.get("model") instanceof String model)) {
+                return Optional.empty();
+            }
+            return Optional.of(new AiUsage("ai-service:" + callId, userId, feature, provider, model,
+                    number(u.get("input_tokens")).longValue(), number(u.get("output_tokens")).longValue(),
+                    number(u.get("cost_usd")), number(u.get("latency_ms")).longValue(),
+                    u.get("prompt_version") instanceof String v ? v : null,
+                    u.get("pricing_version") instanceof String v && !v.isBlank() ? v : null, status));
+        } catch (IllegalArgumentException | ArithmeticException e) {
+            return Optional.empty();
+        }
+    }
+
+    /** ai-service sends money as a string and counts as numbers; both are accepted. */
+    private static BigDecimal number(Object value) {
+        if (value instanceof Number n) {
+            return new BigDecimal(n.toString());
+        }
+        if (value instanceof String s) {
+            return new BigDecimal(s);
+        }
+        throw new IllegalArgumentException("not a number");
     }
 
     private static ParseFailure invalidResponse() {
