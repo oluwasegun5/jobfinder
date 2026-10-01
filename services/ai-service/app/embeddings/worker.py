@@ -206,7 +206,12 @@ class EmbeddingWorker:
         feature = _FEATURE[kind]
 
         def record(user_id: UUID | None, share: int, share_latency: int) -> UsageRecord:
-            cost: Decimal = estimate_cost_usd(self._pricing, model, share, 0)
+            # The fake provider is free and has no price list entry to warn about.
+            cost: Decimal = (
+                Decimal(0)
+                if self._provider.name == "fake"
+                else estimate_cost_usd(self._pricing, model, share, 0)
+            )
             return UsageRecord(
                 user_id=user_id,
                 feature=feature,

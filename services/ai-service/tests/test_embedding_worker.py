@@ -1,4 +1,5 @@
 import json
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 from uuid import UUID, uuid4
@@ -7,7 +8,7 @@ import httpx
 import pytest
 from pydantic import SecretStr
 
-from app.config import EmbeddingProviderName, Settings
+from app.config import EmbeddingProviderName, ModelPricing, Settings
 from app.embeddings import (
     EmbeddingBatch,
     EmbeddingError,
@@ -375,3 +376,19 @@ def test_the_inputs_response_core_api_pins_parses_into_our_model() -> None:
     assert inputs.items[0].user_id is None
     assert len(inputs.items[0].input_hash) == 64
     assert inputs.skipped[0].reason == "NOT_FOUND"
+
+
+async def test_usage_is_priced_from_the_pricing_table_for_a_paid_provider() -> None:
+    core = FakeCore()
+    item = core.add("one two three four five six seven eight nine ten")
+    provider = FakeEmbeddingProvider(model=MODEL, dimension=DIM)
+    provider.name = "voyage"  # priced like a real provider; the fake one is free
+    pricing = {MODEL: ModelPricing(input_per_mtok=Decimal("0.06"), output_per_mtok=Decimal(0))}
+    worker, _ = _worker(core, provider, llm_pricing=pricing)
+
+    await worker.handle_messages(EmbeddingKind.JOB, [_message(item)])
+
+    (usage,) = core.results_requests[0]["usage"]
+    assert usage["inputTokens"] == 10
+    # 10 tokens at $0.06 per million is $0.0000006, which the ledger rounds to a micro-dollar.
+    assert Decimal(usage["costUsd"]) == Decimal("0.000001")
