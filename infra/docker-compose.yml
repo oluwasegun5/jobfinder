@@ -126,6 +126,9 @@ services:
       # The pinned embedding space; ai-service gets the same two values (docs/adr/0022-embeddings-pipeline.md).
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-fake-embed-1024}
       EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION:-1024}
+      # AI usage ledger and per-user daily cap (docs/adr/0025-ai-usage-ledger.md).
+      AI_DAILY_CAP_CREDITS: ${AI_DAILY_CAP_CREDITS:-500}
+      AI_MICRO_USD_PER_CREDIT: ${AI_MICRO_USD_PER_CREDIT:-1000}
       MAIL_HOST: mailpit
       MAIL_PORT: 1025
       # core-api talks to the object store over the compose network; browsers get pre-signed URLs
@@ -169,6 +172,8 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       LLM_MODEL_FAST: ${LLM_MODEL_FAST:-claude-haiku-4-5}
       LLM_MODEL_STRONG: ${LLM_MODEL_STRONG:-claude-sonnet-5}
+      # Label of the price list in app/config.py (LLM_PRICING); bump it when a price changes (ADR 0025).
+      LLM_PRICING_VERSION: ${LLM_PRICING_VERSION:-2026-10-01}
       # Embeddings: keyless fake vectors by default; EMBEDDING_PROVIDER=voyage plus a key for real ones.
       EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-fake}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-fake-embed-1024}
