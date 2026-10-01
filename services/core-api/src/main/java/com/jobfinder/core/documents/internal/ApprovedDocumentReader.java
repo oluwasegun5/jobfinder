@@ -29,4 +29,9 @@ class ApprovedDocumentReader implements ApprovedDocuments {
                 .map(r -> new ApprovedDocument(r.id(), r.type().name(), r.jobId(), r.jobTitle(), r.jobCompany(),
                         json.writeValueAsString(r.content()), r.approvedAt()));
     }
+
+    @Override
+    public boolean exists(UUID userId, UUID documentId) {
+        return store.find(userId, documentId, false).isPresent();
+    }
 }

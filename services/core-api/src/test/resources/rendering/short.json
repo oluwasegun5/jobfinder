@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "contact": {
+    "full_name": "Ṣọlá Ọ̀gúnlẹ́yẹ",
+    "email": "shola.ogunleye@example.test",
+    "phone": "+234 800 555 0199",
+    "location": "Ibadan, Nigeria",
+    "links": [
+      {
+        "label": "Portfolio",
+        "url": "https://shola-ogunleye.example.test"
+      },
+      {
+        "label": "GitHub",
+        "url": "https://github.com/shola-test"
+      }
+    ]
+  },
+  "headline": "Backend engineer for payments and logistics",
+  "summary": "Backend engineer with seven years of experience building Java services for fintech and delivery products. Writes clear runbooks, mentors juniors and likes boring, reliable systems.",
+  "experience": [
+    {
+      "company": "Ìbàdàn Payments Ltd",
+      "title": "Senior Backend Engineer",
+      "location": "Ibadan, Nigeria",
+      "start_date": "2021-03",
+      "end_date": null,
+      "is_current": true,
+      "bullets": [
+        "Cut p95 latency of the settlement API by 38% across 14 services.",
+        "Led four engineers delivering a ledger service in Java 21 and Spring Boot.",
+        "Introduced contract tests that caught 11 breaking changes before release.",
+        "Moved nightly reconciliation to Kafka consumers, removing a 3 hour batch window."
+      ]
+    },
+    {
+      "company": "Akòkó Logistics",
+      "title": "Software Engineer",
+      "location": "Lagos, Nigeria",
+      "start_date": "2017-06",
+      "end_date": "2021-02",
+      "is_current": false,
+      "bullets": [
+        "Built REST APIs on PostgreSQL for dispatch and proof of delivery.",
+        "Containerised twelve services with Docker and wrote their runbooks.",
+        "Mentored three graduate engineers through their first production releases."
+      ]
+    },
+    {
+      "company": "Freelance",
+      "title": "Web Developer",
+      "location": null,
+      "start_date": "2015",
+      "end_date": "2017-05",
+      "is_current": false,
+      "bullets": [
+        "Delivered small business sites and a booking tool for a clinic."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "University of Ìbàdàn",
+      "degree": "BSc",
+      "field_of_study": "Computer Science",
+      "start_date": "2011",
+      "end_date": "2015"
+    }
+  ],
+  "skills": [
+    "Java",
+    "Spring Boot",
+    "PostgreSQL",
+    "Kafka",
+    "Docker",
+    "REST APIs",
+    "Testcontainers",
+    "Git"
+  ],
+  "projects": [
+    {
+      "name": "Roster Tool",
+      "description": "A small scheduling tool for volunteer rosters at a community centre.",
+      "url": "https://github.com/shola-test/roster",
+      "technologies": [
+        "Java",
+        "Thymeleaf"
+      ]
+    }
+  ],
+  "certifications": [
+    {
+      "name": "Certified Kubernetes Application Developer",
+      "issuer": "Example Training Foundation",
+      "date": "2022-09"
+    }
+  ]
+}

@@ -210,6 +210,11 @@ app:
       connect-timeout: 2s
       read-timeout: 15s
 
+  rendering:
+    # Resume export to PDF and DOCX (docs/adr/0030-document-rendering.md). How long the pre-signed download link of a
+    # rendered file works; the files themselves live in the app.storage bucket under renders/<user id>/.
+    download-url-ttl: 5m
+
   feed:
     # The "For you" feed (docs/adr/0027-feed-and-feedback.md): ranks and pages through the user's best pool-size matches.
     pool-size: 100
