@@ -147,3 +147,90 @@ def test_fact_check_response_matches_the_contract_core_api_stubs(client: TestCli
 
     assert response.status_code == 200
     _pin("fact-check-failed.json", response.json())
+
+
+def test_cover_letter_response_matches_the_contract_core_api_stubs(
+    client: TestClient, fake_provider: FakeProvider
+) -> None:
+    """A faithful letter with one warning-free fact check and one injected sentence redacted.
+
+    If this fails, the response shape of POST /v1/cover-letter changed. Update core-api's
+    AiWritingClient if needed, then regenerate with UPDATE_CONTRACTS=1.
+    """
+    from tests.fixtures import tailoring as fx
+    from tests.fixtures import writing as wx
+
+    fake_provider.queue(wx.letter_reply())
+
+    response = client.post(
+        "/v1/cover-letter",
+        json=wx.letter_request(job=fx.JOB_WITH_INJECTION, tone="formal", length="standard"),
+    )
+
+    assert response.status_code == 200
+    _pin("cover-letter-ok.json", _without_volatile(response.json()))
+
+
+def test_cover_letter_with_an_invented_employer_matches_the_blocking_contract(
+    client: TestClient, fake_provider: FakeProvider
+) -> None:
+    from tests.fixtures import tailoring as fx
+    from tests.fixtures import writing as wx
+
+    fake_provider.queue(
+        wx.letter_reply(wx.with_paragraph(f"I worked at {fx.FAKE_EMPLOYER} before this role."))
+    )
+
+    response = client.post("/v1/cover-letter", json=wx.letter_request())
+
+    assert response.status_code == 200
+    _pin("cover-letter-blocked.json", _without_volatile(response.json()))
+
+
+def test_screening_answers_response_matches_the_contract_core_api_stubs(
+    client: TestClient, fake_provider: FakeProvider
+) -> None:
+    """The ten answers: four written (one with a NEW_SKILL warning), the rest from the profile."""
+    from tests.fixtures import writing as wx
+
+    fake_provider.queue(wx.answers_reply())
+
+    response = client.post(
+        "/v1/screening-answers",
+        json=wx.screening_request(
+            tone="warm",
+            length="short",
+            profile={
+                "years_experience": 8,
+                "preferences": {
+                    "locations": ["Lagos"],
+                    "work_modes": ["REMOTE"],
+                    "min_salary": 6500000,
+                    "currency": "NGN",
+                },
+            },
+        ),
+    )
+
+    assert response.status_code == 200
+    _pin("screening-answers-ok.json", _without_volatile(response.json()))
+
+
+def test_fact_check_text_response_matches_the_contract_core_api_stubs(client: TestClient) -> None:
+    from tests.fixtures import tailoring as fx
+
+    body = {
+        "source": fx.SOURCE,
+        "texts": [
+            {
+                "path": "paragraphs[0]",
+                "text": "Sincerely, [Your Name], with 25 years of experience.",
+            }
+        ],
+        "as_of": "2026-10-01",
+    }
+
+    response = client.post("/v1/fact-check-text", json=body)
+
+    assert response.status_code == 200
+    _pin("fact-check-text-failed.json", response.json())

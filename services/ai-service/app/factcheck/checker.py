@@ -18,8 +18,9 @@ structured fields (employers, titles, dates, schools, skills) and also reads the
 """
 
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
+from datetime import date
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
@@ -49,6 +50,9 @@ class FlagCode(StrEnum):
     NEW_PHONE = "NEW_PHONE"
     CONTACT_CHANGED = "CONTACT_CHANGED"
     INJECTION_LEAKAGE = "INJECTION_LEAKAGE"
+    # Raised for generated prose (cover letters, screening answers), see `check_texts`.
+    PLACEHOLDER = "PLACEHOLDER"
+    NEW_EXPERIENCE_YEARS = "NEW_EXPERIENCE_YEARS"
     NEW_SKILL = "NEW_SKILL"
     NEW_METRIC = "NEW_METRIC"
     NEW_NUMBER = "NEW_NUMBER"
@@ -76,6 +80,8 @@ SEVERITY: dict[FlagCode, Severity] = {
             FlagCode.NEW_PHONE,
             FlagCode.CONTACT_CHANGED,
             FlagCode.INJECTION_LEAKAGE,
+            FlagCode.PLACEHOLDER,
+            FlagCode.NEW_EXPERIENCE_YEARS,
         ),
         Severity.BLOCKING,
     ),
@@ -108,6 +114,8 @@ _MESSAGES: dict[FlagCode, str] = {
     FlagCode.NEW_PHONE: "This phone number is not in your resume.",
     FlagCode.CONTACT_CHANGED: "Your contact details differ from your resume.",
     FlagCode.INJECTION_LEAKAGE: "This text looks like an instruction from the job posting.",
+    FlagCode.PLACEHOLDER: "This text still contains a placeholder that must be filled in or removed.",  # noqa: E501
+    FlagCode.NEW_EXPERIENCE_YEARS: "This length of experience does not match your resume.",
     FlagCode.NEW_SKILL: "This skill or technology is not in your resume.",
     FlagCode.NEW_METRIC: "This figure is not in your resume.",
     FlagCode.NEW_NUMBER: "This number is not in your resume.",
@@ -164,7 +172,10 @@ _NUM_TOKEN = re.compile(
 )
 _EMPLOYER_CUE = re.compile(
     r"(?:\b(?i:worked\s+(?:at|for)|employed\s+(?:at|by)|working\s+(?:at|for)|joined|"
-    r"previously\s+(?:at|with)|formerly\s+(?:at|with))|@)\s*"
+    r"previously\s+(?:at|with)|formerly\s+(?:at|with)|"
+    r"spent\s+(?:\w+\s+){0,3}?years?\s+(?:at|with|for)|"
+    r"(?:was|am|as)\s+(?:an?\s+)?(?:\w+\s+){0,3}?(?:engineer|developer|manager|lead|consultant|"
+    r"analyst|architect|director|intern|officer)\s+(?:at|for|with))|@)\s*"
     r"((?:[A-Z][\w&'.-]*)(?:\s+(?:[A-Z][\w&'.-]*|&|of|and))*)"
 )
 _DEGREE_CLAIM = re.compile(
@@ -280,6 +291,8 @@ class _Source:
     text: str
     words: set[str]
     compact_text: str
+    # Compact text of the resume alone (`compact_text` also holds the allowed extra context).
+    resume_compact: str
     numbers: set[str]
     years: set[str]
     urls: set[str]
@@ -291,9 +304,10 @@ class _Source:
     shingles: set[tuple[str, ...]] = field(default_factory=set)
 
     @classmethod
-    def of(cls, resume: ParsedResume) -> "_Source":
+    def of(cls, resume: ParsedResume, extra_text: str = "") -> "_Source":
         pairs = _strings(resume)
-        text = "\n".join(value for _, value in pairs)
+        resume_text = "\n".join(value for _, value in pairs)
+        text = f"{resume_text}\n{extra_text}" if extra_text else resume_text
         urls = {normalize.norm_url(m.group(0)) for m in _URL.finditer(_EMAIL.sub(" ", text))}
         urls |= {normalize.norm_url(link.url) for link in resume.contact.links}
         urls |= {normalize.norm_url(p.url) for p in resume.projects if p.url}
@@ -316,6 +330,7 @@ class _Source:
             text=text,
             words=set(tokens),
             compact_text=normalize.compact(text),
+            resume_compact=normalize.compact(resume_text),
             numbers=set(normalize.numbers_in(text)),
             years=normalize.years_in(text),
             urls=urls,
@@ -339,6 +354,11 @@ class _Source:
     def has_text(self, value: str) -> bool:
         key = normalize.compact(value)
         return bool(key) and key in self.compact_text
+
+    def has_resume_text(self, value: str) -> bool:
+        """Like `has_text`, but only the resume counts (a job's company is not an employer)."""
+        key = normalize.compact(value)
+        return bool(key) and key in self.resume_compact
 
 
 class _Flags:
@@ -411,7 +431,7 @@ def _check_text(text: str, path: str, src: _Source, flags: _Flags) -> None:
         span = re.sub(r"(?:\s+(?:of|and|&))+$", "", match.group(1)).strip()
         if (
             span
-            and not src.has_text(span)
+            and not src.has_resume_text(span)
             and normalize.canonical_skill(span) not in lexicon.KNOWN_SKILLS
         ):
             flags.add(FlagCode.NEW_EMPLOYER, path, span)
@@ -586,7 +606,13 @@ def _check_contact(src: _Source, cand: ParsedResume, flags: _Flags) -> None:
 def _check_injection(
     cand: ParsedResume, src: _Source, job_description: str | None, flags: _Flags
 ) -> None:
-    for path, text in _strings(cand):
+    _check_injection_texts(_strings(cand), src, job_description, flags)
+
+
+def _check_injection_texts(
+    items: Iterable[tuple[str, str]], src: _Source, job_description: str | None, flags: _Flags
+) -> None:
+    for path, text in items:
         if injection.REDACTION in text:
             flags.add(FlagCode.INJECTION_LEAKAGE, path, text)
             continue
@@ -627,6 +653,120 @@ def check_resume(
     _check_projects(src, candidate, flags)
     _check_skills(src, candidate, flags)
     _check_injection(candidate, src, job_description, flags)
+    blocking = sum(1 for f in flags.items if f.severity is Severity.BLOCKING)
+    return FactCheckResult(
+        passed=blocking == 0,
+        blocking=blocking,
+        warnings=len(flags.items) - blocking,
+        flags=sorted(
+            flags.items, key=lambda f: (f.severity is not Severity.BLOCKING, f.path or "")
+        ),
+    )
+
+
+# --- generated prose: cover letters and screening answers -----------------------------
+
+PLACEHOLDER_RE = re.compile(
+    r"\[[^\]\n]{1,80}\]"
+    r"|\{\{[^}\n]{0,80}\}\}"
+    r"|<[A-Za-z][^<>\n]{0,60}>"
+    r"|\bNEEDS_INPUT\b"
+    r"|\b(?:your|company|hiring\s+manager|recipient)\s+name\b"
+    r"|\binsert\s+\w+(?:\s+\w+)?\s+here\b"
+    r"|\blorem\s+ipsum\b|\bx{3,}\b",
+    re.IGNORECASE,
+)
+_NUMBER_WORD_ALT = "|".join(sorted(normalize.NUMBER_WORDS, key=len, reverse=True))
+_YEARS_CLAIM = re.compile(
+    rf"(?<![\w.])(\d{{1,2}}|{_NUMBER_WORD_ALT})\s*\+?\s*(?:-\s*)?(?:years?|yrs?)\b",
+    re.IGNORECASE,
+)
+
+
+def _claimed_years(text: str) -> Iterable[tuple[str, int]]:
+    for match in _YEARS_CLAIM.finditer(text):
+        values = normalize.numbers_in(match.group(1))
+        if values and values[0].isdigit():
+            yield match.group(0), int(values[0])
+
+
+def _month(value: str | None, *, end: bool) -> int | None:
+    if not value or len(value) < 4 or not value[:4].isdigit():
+        return None
+    year = int(value[:4])
+    if len(value) >= 7 and value[5:7].isdigit():
+        return year * 12 + int(value[5:7]) - 1 + (1 if end else 0)
+    return year * 12 + (12 if end else 0)
+
+
+def _spans(resume: ParsedResume, as_of: date) -> list[tuple[int, int]]:
+    now = as_of.year * 12 + as_of.month
+    spans: list[tuple[int, int]] = []
+    for job in resume.experience:
+        start = _month(job.start_date, end=False)
+        end = now if job.is_current or not job.end_date else _month(job.end_date, end=True)
+        if start is not None and end is not None and end >= start:
+            spans.append((start, end))
+    return spans
+
+
+def total_experience_months(resume: ParsedResume, as_of: date) -> int:
+    """Months covered by the resume's roles (overlapping roles counted once)."""
+    merged: list[list[int]] = []
+    for start, end in sorted(_spans(resume, as_of)):
+        if merged and start <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+    return sum(end - start for start, end in merged)
+
+
+def _experience_years(resume: ParsedResume, as_of: date) -> set[int]:
+    """Whole-year values that honestly describe the resume's experience (each role, the total)."""
+    allowed: set[int] = set()
+    for start, end in _spans(resume, as_of):
+        months = end - start
+        allowed |= {months // 12, -(-months // 12)}
+    total = total_experience_months(resume, as_of)
+    allowed |= {total // 12, -(-total // 12)}
+    return {y for y in allowed if y > 0}
+
+
+def check_texts(
+    source: ParsedResume,
+    items: Sequence[tuple[str, str]],
+    job_description: str | None = None,
+    *,
+    allowed_context: str = "",
+    years_experience: int | None = None,
+    as_of: date | None = None,
+) -> FactCheckResult:
+    """Fact check of generated prose (a cover letter, screening answers) against the resume.
+
+    The same entity checks as `check_resume` run on each `(path, text)` (employers, schools,
+    degrees, certifications, links, metrics, skills, injected instructions), plus two that only
+    make sense for prose: a PLACEHOLDER (BLOCKING) and a claim of N years of experience that the
+    resume's dates, the profile's `years_experience` or the user's own words do not support
+    (NEW_EXPERIENCE_YEARS, BLOCKING). `allowed_context` is text the writer may use besides the
+    resume: the job's title and company, and what the user typed. A company named in it is not an
+    employer: "joined Acme" is still flagged unless the resume says so.
+    """
+    src = _Source.of(source, allowed_context)
+    flags = _Flags()
+    allowed_years = _experience_years(source, as_of or date.today())
+    if years_experience is not None:
+        allowed_years.add(years_experience)
+    for _, value in _claimed_years(src.text):
+        allowed_years.add(value)
+    for path, text in items:
+        for match in PLACEHOLDER_RE.finditer(text):
+            flags.add(FlagCode.PLACEHOLDER, path, match.group(0))
+        for written, value in _claimed_years(text):
+            if value not in allowed_years:
+                flags.add(FlagCode.NEW_EXPERIENCE_YEARS, path, written)
+        # The claim itself was judged above; "some years" keeps the sentence readable for the cues.
+        _check_text(_YEARS_CLAIM.sub("some years", text), path, src, flags)
+    _check_injection_texts(items, src, job_description, flags)
     blocking = sum(1 for f in flags.items if f.severity is Severity.BLOCKING)
     return FactCheckResult(
         passed=blocking == 0,
