@@ -286,7 +286,9 @@ class JobSearchRepository {
                        j.work_mode, j.employment_type, j.seniority, j.salary_min, j.salary_max, j.salary_currency,
                        j.salary_period, j.posted_at, j.status, left(j.description_text, 400) as summary,
                        exists (select 1 from user_job_actions a
-                                where a.user_id = :userId and a.job_id = j.id and a.action = 'SAVED') as saved
+                                where a.user_id = :userId and a.job_id = j.id and a.action = 'SAVED') as saved,
+                       exists (select 1 from user_job_actions a
+                                where a.user_id = :userId and a.job_id = j.id and a.action = 'APPLIED') as applied
                   from jobs j join companies c on c.id = j.company_id
                  where j.id in (:ids)
                 """)
@@ -299,7 +301,7 @@ class JobSearchRepository {
                             rs.getString("work_mode"), rs.getString("employment_type"), rs.getString("seniority"),
                             salary(rs), instant(rs.getObject("posted_at", OffsetDateTime.class)),
                             rs.getString("status"), summaryText(rs.getString("summary")), rs.getBoolean("saved"),
-                            null, null);
+                            rs.getBoolean("applied"), null, null);
                     result.put(summary.id(), summary);
                     return null;
                 }).list();
@@ -316,7 +318,9 @@ class JobSearchRepository {
                        exists (select 1 from user_job_actions a
                                 where a.user_id = :userId and a.job_id = j.id and a.action = 'SAVED') as saved,
                        exists (select 1 from user_job_actions a
-                                where a.user_id = :userId and a.job_id = j.id and a.action = 'HIDDEN') as hidden
+                                where a.user_id = :userId and a.job_id = j.id and a.action = 'HIDDEN') as hidden,
+                       exists (select 1 from user_job_actions a
+                                where a.user_id = :userId and a.job_id = j.id and a.action = 'APPLIED') as applied
                   from jobs j join companies c on c.id = j.company_id
                  where j.id = :id
                 """)
@@ -328,7 +332,8 @@ class JobSearchRepository {
                         salary(rs), instant(rs.getObject("posted_at", OffsetDateTime.class)),
                         instant(rs.getObject("expires_at", OffsetDateTime.class)), rs.getString("status"),
                         rs.getString("description_text"), texts(rs.getArray("skills")), rs.getString("apply_url"),
-                        List.of(), rs.getBoolean("saved"), rs.getBoolean("hidden"), rs.getBoolean("embedded")))
+                        List.of(), rs.getBoolean("saved"), rs.getBoolean("hidden"), rs.getBoolean("applied"),
+                        rs.getBoolean("embedded")))
                 .optional();
     }
 
@@ -358,6 +363,16 @@ class JobSearchRepository {
 
     void unhide(UUID userId, UUID jobId) {
         remove(userId, jobId, "HIDDEN");
+    }
+
+    /** Records that the user applied (and un-hides the job: a job applied to is not one they want out of sight). */
+    void markApplied(UUID userId, UUID jobId, Instant now) {
+        remove(userId, jobId, "HIDDEN");
+        insert(userId, jobId, "APPLIED", now);
+    }
+
+    void unmarkApplied(UUID userId, UUID jobId) {
+        remove(userId, jobId, "APPLIED");
     }
 
     private void insert(UUID userId, UUID jobId, String action, Instant now) {

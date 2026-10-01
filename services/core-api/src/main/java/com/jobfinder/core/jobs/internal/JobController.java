@@ -69,7 +69,20 @@ class JobController {
         jobs.unsave(CurrentUser.require().id(), id);
     }
 
-    /** Hides the job from the caller's searches (and removes it from their saved jobs). */
+    /** Records that the caller applied to the job; it stays in search (flagged) and leaves the "For you" feed. */
+    @PutMapping("/jobs/{id}/applied")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void applied(@PathVariable UUID id) {
+        jobs.markApplied(CurrentUser.require().id(), id);
+    }
+
+    @DeleteMapping("/jobs/{id}/applied")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void notApplied(@PathVariable UUID id) {
+        jobs.unmarkApplied(CurrentUser.require().id(), id);
+    }
+
+    /** Hides the job from the caller's searches and feed (and removes it from their saved jobs). */
     @PutMapping("/jobs/{id}/hide")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void hide(@PathVariable UUID id) {

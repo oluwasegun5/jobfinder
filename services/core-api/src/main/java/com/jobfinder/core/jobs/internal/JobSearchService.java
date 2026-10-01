@@ -116,7 +116,7 @@ class JobSearchService {
         return new JobDetail(job.id(), job.title(), job.company(), job.location(), job.city(), job.country(),
                 job.workMode(), job.employmentType(), job.seniority(), job.salary(), job.postedAt(), job.expiresAt(),
                 job.status(), job.description(), job.skills(), job.applyUrl(), jobListings, job.saved(), job.hidden(),
-                job.similarAvailable());
+                job.applied(), job.similarAvailable());
     }
 
     @Transactional
@@ -129,6 +129,19 @@ class JobSearchService {
     void unsave(UUID userId, UUID jobId) {
         requireJob(jobId);
         repository.unsave(userId, jobId);
+    }
+
+    /** Marks the job as applied to (and un-hides it: you do not hide what you applied to). */
+    @Transactional
+    void markApplied(UUID userId, UUID jobId) {
+        requireJob(jobId);
+        repository.markApplied(userId, jobId, now());
+    }
+
+    @Transactional
+    void unmarkApplied(UUID userId, UUID jobId) {
+        requireJob(jobId);
+        repository.unmarkApplied(userId, jobId);
     }
 
     @Transactional
