@@ -1,4 +1,4 @@
-"""RabbitMQ consumer scaffold (aio-pika). Real queues (jobs.embed, ...) are added later."""
+"""RabbitMQ consumer (aio-pika): one robust connection, several queues, one handler each."""
 
 import asyncio
 import contextlib
@@ -61,11 +61,15 @@ class RabbitConsumer:
         prefetch: int,
         reconnect_seconds: float,
         handlers: dict[str, MessageHandler] | None = None,
+        dead_letter_queues: dict[str, str] | None = None,
     ) -> None:
         self._params = params
         self._prefetch = prefetch
         self._reconnect_seconds = reconnect_seconds
         self._handlers = handlers if handlers is not None else {NOOP_QUEUE: handle_noop}
+        # queue name -> its dead-letter queue. core-api declares these queues with the same
+        # arguments and RabbitMQ rejects a redeclaration that differs, so they must match exactly.
+        self._dead_letter_queues = dead_letter_queues or {}
         self._connection: AbstractRobustConnection | None = None
         self._task: asyncio.Task[None] | None = None
         self._state = ConsumerState.CONNECTING
@@ -94,7 +98,17 @@ class RabbitConsumer:
                 channel = await self._connection.channel()
                 await channel.set_qos(prefetch_count=self._prefetch)
                 for queue_name, handler in self._handlers.items():
-                    queue = await channel.declare_queue(queue_name, durable=True)
+                    arguments: dict[str, str] | None = None
+                    dead_letter = self._dead_letter_queues.get(queue_name)
+                    if dead_letter is not None:
+                        await channel.declare_queue(dead_letter, durable=True)
+                        arguments = {
+                            "x-dead-letter-exchange": "",
+                            "x-dead-letter-routing-key": dead_letter,
+                        }
+                    queue = await channel.declare_queue(
+                        queue_name, durable=True, arguments=arguments
+                    )
                     await queue.consume(handler)
                 self._state = ConsumerState.UP
                 logger.info("RabbitMQ consumer started (queues=%s)", ", ".join(self._handlers))

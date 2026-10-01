@@ -4,12 +4,18 @@ from decimal import Decimal
 from enum import StrEnum
 from functools import lru_cache
 
-from pydantic import BaseModel, Field, SecretStr, field_validator
+from pydantic import BaseModel, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class ProviderName(StrEnum):
     ANTHROPIC = "anthropic"
+
+
+class EmbeddingProviderName(StrEnum):
+    VOYAGE = "voyage"
+    # Deterministic, keyless vectors for tests and local development; carries no meaning.
+    FAKE = "fake"
 
 
 class ModelPricing(BaseModel):
@@ -23,6 +29,8 @@ def _default_pricing() -> dict[str, ModelPricing]:
     return {
         "claude-haiku-4-5": ModelPricing(input_per_mtok=Decimal("1"), output_per_mtok=Decimal("5")),
         "claude-sonnet-5": ModelPricing(input_per_mtok=Decimal("2"), output_per_mtok=Decimal("10")),
+        # Embeddings bill input tokens only (list price, checked 2026-10-01).
+        "voyage-4": ModelPricing(input_per_mtok=Decimal("0.06"), output_per_mtok=Decimal("0")),
     }
 
 
@@ -49,15 +57,46 @@ class Settings(BaseSettings):
     rabbitmq_user: str = "guest"
     rabbitmq_password: SecretStr = SecretStr("guest")
     rabbitmq_vhost: str = "/"
-    rabbitmq_prefetch: int = Field(default=10, gt=0)
+    rabbitmq_prefetch: int = Field(default=64, gt=0)
     rabbitmq_reconnect_seconds: float = Field(default=5.0, gt=0)
+
+    # Embeddings (docs/adr/0022-embeddings-pipeline.md). The model and dimension are the pinned
+    # embedding space and must equal core-api's EMBEDDING_MODEL / EMBEDDING_DIMENSION; core-api
+    # checks both on every request. Changing either makes core-api treat stored vectors as stale.
+    embedding_provider: EmbeddingProviderName = EmbeddingProviderName.VOYAGE
+    voyage_api_key: SecretStr | None = None
+    voyage_base_url: str = "https://api.voyageai.com/v1"
+    embedding_model: str = "voyage-4"
+    embedding_dimension: int = Field(default=1024, gt=0, le=2000)
+    embedding_timeout_seconds: float = Field(default=60.0, gt=0)
+    # One provider call embeds up to this many queued ids; a partial batch is sent after the wait.
+    embedding_batch_size: int = Field(default=32, gt=0, le=200)
+    embedding_batch_wait_seconds: float = Field(default=1.0, ge=0)
+    embedding_max_attempts: int = Field(default=3, gt=0)
+    embedding_retry_backoff_seconds: float = Field(default=2.0, ge=0)
+    jobs_embed_queue: str = "jobs.embed"
+    jobs_embed_dlq: str = "jobs.embed.dlq"
+    resumes_embed_queue: str = "resumes.embed"
+    resumes_embed_dlq: str = "resumes.embed.dlq"
+    # core-api's internal endpoints (the same service token authenticates both directions).
+    core_api_base_url: str = "http://localhost:8080"
+    core_api_timeout_seconds: float = Field(default=30.0, gt=0)
 
     log_level: str = "INFO"
 
-    @field_validator("anthropic_api_key", mode="before")
+    @model_validator(mode="after")
+    def _fake_embeddings_are_labelled(self) -> "Settings":
+        if (
+            self.embedding_provider is EmbeddingProviderName.FAKE
+            and not self.embedding_model.startswith("fake-")
+        ):
+            raise ValueError("EMBEDDING_MODEL must start with 'fake-' when EMBEDDING_PROVIDER=fake")
+        return self
+
+    @field_validator("anthropic_api_key", "voyage_api_key", mode="before")
     @classmethod
     def _blank_key_is_unset(cls, value: object) -> object:
-        # Compose passes ANTHROPIC_API_KEY="" when it is not configured.
+        # Compose passes ANTHROPIC_API_KEY="" (or VOYAGE_API_KEY="") when it is not configured.
         if value is None or (isinstance(value, str) and not value.strip()):
             return None
         return value

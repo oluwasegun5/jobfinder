@@ -14,8 +14,10 @@ app/
                    generate_structured (Pydantic validation, one retry)
   prompts/         versioned prompts: <feature>/v<n>.md
   parsing/         CV parsing: text extraction, strict schema, grounding check, service
+  embeddings/      EmbeddingProvider protocol, VoyageProvider, FakeEmbeddingProvider (keyless),
+                   core-api client, batching queue worker (docs/adr/0022)
   api/             routes: /health, /v1/diagnostics/llm, /v1/parse-resume
-  workers/         aio-pika consumer (one no-op queue: ai.noop)
+  workers/         aio-pika consumer: the embed queues (batched) and a no-op queue (ai.noop)
 evals/             hand-run evals against the real provider (not part of pytest)
 ```
 
@@ -37,6 +39,13 @@ AI_SERVICE_TOKEN=$(openssl rand -hex 32) RABBITMQ_ENABLED=false uv run uvicorn a
 | `LLM_MODEL_FAST` / `LLM_MODEL_STRONG` | `claude-haiku-4-5` / `claude-sonnet-5` | PLAN.md §7 model routing |
 | `LLM_PRICING` | haiku + sonnet-5 list prices | JSON `{model: {input_per_mtok, output_per_mtok}}` |
 | `RABBITMQ_HOST` / `_PORT` / `_USER` / `_PASSWORD` / `_VHOST`, `RABBITMQ_ENABLED` | `localhost` / `5672` / `guest` / `guest` / `/`, `true` | |
+| `EMBEDDING_PROVIDER` | `voyage` | `voyage` or `fake` (deterministic, keyless; model name must start with `fake-`) |
+| `EMBEDDING_MODEL` / `EMBEDDING_DIMENSION` | `voyage-4` / `1024` | the pinned embedding space; must equal core-api's, which also fixes the dimension in the `vector(n)` column |
+| `VOYAGE_API_KEY` | unset | with provider `voyage` and no key the embed queues are not consumed |
+| `EMBEDDING_BATCH_SIZE` / `_BATCH_WAIT_SECONDS` | `32` / `1.0` | texts per provider call; how long a partial batch waits |
+| `EMBEDDING_MAX_ATTEMPTS` / `_RETRY_BACKOFF_SECONDS` | `3` / `2.0` | transient failures, then the message goes to `*.dlq` |
+| `CORE_API_BASE_URL` | `http://localhost:8080` | core-api's internal endpoints; the same `AI_SERVICE_TOKEN` authenticates the calls |
+| `JOBS_EMBED_QUEUE` / `RESUMES_EMBED_QUEUE` (and `_DLQ`) | `jobs.embed` / `resumes.embed` (`*.dlq`) | declared with the same dead-letter arguments as core-api |
 
 ## Endpoints
 
@@ -48,6 +57,16 @@ AI_SERVICE_TOKEN=$(openssl rand -hex 32) RABBITMQ_ENABLED=false uv run uvicorn a
   trusted; max 6 MB). Returns `{structured, warnings, prompt_version, usage}` where `structured` is validated
   against `app/parsing/schema.py`, `warnings` lists skills/employers the CV text does not support, and `usage` has
   one record per LLM call. core-api calls this from its `resumes.parse` queue worker (docs/adr/0016).
+
+## Embeddings
+
+core-api queues `{"id": "<uuid>"}` on `jobs.embed` / `resumes.embed` when a job or resume version is created or
+materially changed. This service collects batches, asks core-api for the text of the stale ones
+(`POST /internal/v1/embeddings/inputs`), embeds them in one provider call and stores the vectors
+(`PUT /internal/v1/embeddings/results`). Nothing here exposes an HTTP route for it. See
+[docs/adr/0022-embeddings-pipeline.md](../../docs/adr/0022-embeddings-pipeline.md) for the design, and run
+`make embeddings-backfill` from the repo root to queue everything missing or stale.
+Without a key, keyless local runs use `EMBEDDING_PROVIDER=fake EMBEDDING_MODEL=fake-embed-1024`.
 
 Errors are RFC 7807 `application/problem+json` with a stable `code` and a `retryable` flag. For
 `/v1/parse-resume`: `empty_file` (400), `unsupported_file_type` (415), `file_too_large` (413),
