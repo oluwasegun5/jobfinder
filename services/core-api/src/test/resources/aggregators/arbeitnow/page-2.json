@@ -1,0 +1,18 @@
+{
+  "data": [
+    {
+      "slug": "werkstudent-initech-munich-100003",
+      "company_name": "Initech",
+      "title": "Werkstudent Marketing",
+      "description": "<p>Support our team.</p>",
+      "remote": false,
+      "url": "https://www.arbeitnow.example/jobs/companies/initech/werkstudent-100003",
+      "tags": [],
+      "job_types": ["Internship"],
+      "location": "Munich",
+      "created_at": 1790830000
+    }
+  ],
+  "links": {"first": "x", "last": null, "prev": "y", "next": null},
+  "meta": {"current_page": 2}
+}

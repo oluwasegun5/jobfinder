@@ -1,0 +1,34 @@
+[
+  {"last_updated": 1790792682, "legal": "API Terms of Service: Please link back (with follow, and without nofollow!) to the URL on Remote OK and mention Remote OK as a source, so we get traffic back from your site."},
+  {
+    "slug": "remote-senior-java-engineer-hooli-3000001",
+    "id": "3000001",
+    "epoch": 1790438426,
+    "date": "2026-09-26T16:00:26+00:00",
+    "company": "Hooli",
+    "company_logo": "https://remoteok.example/assets/img/hooli.png",
+    "position": "Senior Java Engineer",
+    "tags": ["java", "backend"],
+    "description": "<p>Build <strong>services</strong> remotely.</p>",
+    "location": "Worldwide",
+    "apply_url": "https://remoteok.example/remote-jobs/remote-senior-java-engineer-hooli-3000001",
+    "salary_min": 120000,
+    "salary_max": 160000,
+    "url": "https://remoteok.example/remote-jobs/remote-senior-java-engineer-hooli-3000001"
+  },
+  {
+    "slug": "remote-community-manager-pied-piper-3000002",
+    "id": "3000002",
+    "epoch": 1790400000,
+    "date": "2026-09-26T05:20:00+00:00",
+    "company": "Pied Piper",
+    "position": "Community Manager",
+    "tags": ["community"],
+    "description": "Grow our community.",
+    "location": "",
+    "apply_url": "https://remoteok.example/remote-jobs/remote-community-manager-pied-piper-3000002",
+    "salary_min": 0,
+    "salary_max": 0,
+    "url": "https://remoteok.example/remote-jobs/remote-community-manager-pied-piper-3000002"
+  }
+]

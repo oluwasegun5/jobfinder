@@ -1,0 +1,16 @@
+{
+  "count": 3,
+  "results": [
+    {
+      "id": "4400000003",
+      "title": "Junior Developer",
+      "description": "Learn on the job.",
+      "redirect_url": "https://www.adzuna.example/land/ad/4400000003?se=synthetic&v=1",
+      "created": "2026-09-26T09:00:00Z",
+      "company": {"display_name": "Fabrikam Ltd"},
+      "location": {"display_name": "Leeds, West Yorkshire"},
+      "salary_is_predicted": "0",
+      "contract_time": "part_time"
+    }
+  ]
+}

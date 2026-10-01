@@ -1,0 +1,32 @@
+{
+  "0-legal-notice": "Synthetic legal notice standing in for Remotive's.",
+  "job-count": 2,
+  "jobs": [
+    {
+      "id": 2000001,
+      "url": "https://remotive.example/remote-jobs/software-dev/senior-backend-engineer-2000001",
+      "title": "Senior Backend Engineer",
+      "company_name": "Litware",
+      "company_logo": "https://remotive.example/job/2000001/logo",
+      "category": "Software Development",
+      "tags": ["java", "kubernetes"],
+      "job_type": "full_time",
+      "publication_date": "2026-09-21T12:55:11",
+      "candidate_required_location": "Worldwide",
+      "salary": "$90k - $120k",
+      "description": "<p>Work on our <strong>platform</strong>.</p><ul><li>Own APIs</li></ul>"
+    },
+    {
+      "id": 2000002,
+      "url": "https://remotive.example/remote-jobs/customer-service/support-agent-2000002",
+      "title": "Support Agent",
+      "company_name": "Proseware",
+      "category": "Customer Service",
+      "job_type": "freelance",
+      "publication_date": "2026-09-20T08:00:00",
+      "candidate_required_location": "USA",
+      "salary": "",
+      "description": "<p>Help customers.</p>"
+    }
+  ]
+}
