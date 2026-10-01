@@ -225,6 +225,7 @@ class IngestionPipelineTests extends IngestionTestSupport {
     void everyAdapterIsRegisteredAsAnEnabledSourceOfItsKind() {
         assertThat(jdbc.queryForList("select code || ':' || kind || ':' || enabled from sources "
                 + "where code like 'FAKE%' order by code", String.class))
-                .containsExactly("FAKE:ATS:true", "FAKE_BREAKER:AGGREGATOR:true", "FAKE_RETRY:ATS:true");
+                .containsExactly("FAKE:ATS:true", "FAKE_AGG:AGGREGATOR:true", "FAKE_BREAKER:AGGREGATOR:true",
+                        "FAKE_RETRY:ATS:true");
     }
 }

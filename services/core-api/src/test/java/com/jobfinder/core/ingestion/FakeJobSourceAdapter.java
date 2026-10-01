@@ -1,8 +1,10 @@
 package com.jobfinder.core.ingestion;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -11,10 +13,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+
 /**
  * A programmable source for pipeline tests: per target identifier it can return N postings, fail
  * permanently, fail retryably a number of times before succeeding, or block until released. Every
- * call is recorded so tests can see how often, and with which {@code since}, it was called.
+ * call is recorded so tests can see how often, and with which {@code since}, it was called. Its postings
+ * are JSON documents with the fields {@code title}, {@code company}, {@code location}, {@code remote},
+ * {@code employmentType}, {@code salaryText}, {@code description}, {@code applyUrl} and
+ * {@code expiresAt}, which {@link #toNormalizerInput} maps to the normalizer's input.
  */
 public class FakeJobSourceAdapter implements JobSourceAdapter {
 
@@ -30,6 +38,7 @@ public class FakeJobSourceAdapter implements JobSourceAdapter {
     private final Map<String, Behaviour> behaviours = new ConcurrentHashMap<>();
     private final List<Call> calls = new CopyOnWriteArrayList<>();
     private volatile int payloadVersion = 1;
+    private volatile boolean fullListing = true;
 
     public FakeJobSourceAdapter(String code, SourceKind kind) {
         this.code = code;
@@ -54,6 +63,62 @@ public class FakeJobSourceAdapter implements JobSourceAdapter {
             return Stream.empty();
         }
         return behaviour.fetch(target, since);
+    }
+
+    private static final JsonMapper JSON = JsonMapper.builder().build();
+
+    /** A posting with the given id whose JSON document holds the given fields. */
+    public static RawPosting raw(String externalId, Map<String, Object> fields) {
+        return new RawPosting(externalId, JSON.writeValueAsString(fields));
+    }
+
+    /** The target returns exactly these postings. */
+    public FakeJobSourceAdapter customPostings(String identifier, RawPosting... postings) {
+        behaviours.put(identifier, (target, since) -> Stream.of(postings));
+        return this;
+    }
+
+    /** Whether this fake claims each fetch returns everything the target lists (the default). */
+    public FakeJobSourceAdapter fullListing(boolean value) {
+        this.fullListing = value;
+        return this;
+    }
+
+    @Override
+    public boolean fullListing() {
+        return fullListing;
+    }
+
+    @Override
+    public Optional<NormalizerInput> toNormalizerInput(RawPosting posting, FetchTarget target) {
+        JsonNode node = JSON.readTree(posting.payload());
+        String title = text(node, "title");
+        if (title == null) {
+            throw new IllegalArgumentException("posting has no title field");
+        }
+        NormalizerInput.Builder builder = NormalizerInput.builder(title)
+                .companyName(text(node, "company"))
+                .locationText(text(node, "location"))
+                .employmentType(text(node, "employmentType"))
+                .salaryText(text(node, "salaryText"))
+                .description(text(node, "description"))
+                .applyUrl(text(node, "applyUrl"));
+        if (node.hasNonNull("remote")) {
+            builder.remote(node.get("remote").asBoolean());
+        }
+        if (node.hasNonNull("expiresAt")) {
+            builder.expiresAt(Instant.parse(node.get("expiresAt").asString()));
+        }
+        if (node.hasNonNull("salaryMin")) {
+            builder.salary(new BigDecimal(node.get("salaryMin").asString()),
+                    node.hasNonNull("salaryMax") ? new BigDecimal(node.get("salaryMax").asString()) : null,
+                    text(node, "salaryCurrency"), text(node, "salaryPeriod"));
+        }
+        return Optional.of(builder.build());
+    }
+
+    private static String text(JsonNode node, String field) {
+        return node.hasNonNull(field) ? node.get(field).asString() : null;
     }
 
     /** The target returns {@code count} postings, with ids {@code <identifier>-0 ... <identifier>-(count-1)}. */
@@ -124,10 +189,12 @@ public class FakeJobSourceAdapter implements JobSourceAdapter {
         behaviours.clear();
         calls.clear();
         payloadVersion = 1;
+        fullListing = true;
     }
 
     private RawPosting posting(String externalId) {
         return new RawPosting(externalId,
-                "{\"id\":\"%s\",\"title\":\"Job %s\",\"v\":%d}".formatted(externalId, externalId, payloadVersion));
+                "{\"id\":\"%s\",\"title\":\"Job %s\",\"company\":\"Fake Co\",\"v\":%d}".formatted(externalId,
+                        externalId, payloadVersion));
     }
 }
