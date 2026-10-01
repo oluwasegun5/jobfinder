@@ -1,0 +1,3 @@
+{"status": "OK", "request_id": "x", "data": [
+  {"job_id": "synthetic-job-id-0003==", "employer_name": "Adventure Works", "job_title": "QA Engineer", "job_apply_link": "https://publisher.example/q/0003", "job_description": "Test things.", "job_employment_type": "INTERN", "job_city": "Abuja", "job_country": "NG"}
+]}

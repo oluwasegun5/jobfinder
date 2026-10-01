@@ -1,0 +1,28 @@
+[
+  {
+    "id": "7c1e0000-0000-4000-8000-000000000001",
+    "text": "Staff Data Engineer",
+    "categories": { "commitment": "Full-time", "location": "Berlin, Germany", "team": "Data", "allLocations": ["Berlin, Germany"] },
+    "country": "DE",
+    "workplaceType": "hybrid",
+    "description": "<div>Join the data platform team.</div>",
+    "descriptionPlain": "Join the data platform team.",
+    "lists": [
+      { "text": "What you will do", "content": "<li>Design pipelines</li><li>Mentor engineers</li>" }
+    ],
+    "additional": "<div>We value diverse teams.</div>",
+    "hostedUrl": "https://jobs.example.test/examplelabs/7c1e0000-0000-4000-8000-000000000001",
+    "applyUrl": "https://jobs.example.test/examplelabs/7c1e0000-0000-4000-8000-000000000001/apply",
+    "createdAt": 1788000000000,
+    "salaryRange": { "min": 120000, "max": 160000, "currency": "EUR", "interval": "per-year-salary" }
+  },
+  {
+    "id": "7c1e0000-0000-4000-8000-000000000002",
+    "text": "Support Specialist",
+    "categories": { "commitment": "Contract", "location": "Remote", "team": "Support" },
+    "workplaceType": "remote",
+    "descriptionPlain": "Help our customers.",
+    "hostedUrl": "https://jobs.example.test/examplelabs/7c1e0000-0000-4000-8000-000000000002",
+    "createdAt": 1788100000000
+  }
+]

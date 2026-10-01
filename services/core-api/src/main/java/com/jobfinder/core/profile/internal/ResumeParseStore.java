@@ -3,11 +3,14 @@ package com.jobfinder.core.profile.internal;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import com.jobfinder.core.profile.ResumeVersionChanged;
 
 /**
  * The only writer of parse results. Every write is a guarded, single-purpose update, so the
@@ -34,9 +37,12 @@ class ResumeParseStore {
 
     private final JdbcClient jdbc;
     private final TransactionTemplate tx;
+    private final ApplicationEventPublisher events;
 
-    ResumeParseStore(JdbcClient jdbc, PlatformTransactionManager transactionManager) {
+    ResumeParseStore(JdbcClient jdbc, PlatformTransactionManager transactionManager,
+            ApplicationEventPublisher events) {
         this.jdbc = jdbc;
+        this.events = events;
         this.tx = new TransactionTemplate(transactionManager);
         this.tx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
@@ -82,6 +88,10 @@ class ResumeParseStore {
                 status.setRollbackOnly();
                 return false;
             }
+            // The version now has content: let the embeddings pipeline know once this commits.
+            jdbc.sql("select id from resume_versions where resume_id = :id and version_number = :versionNumber")
+                    .param("id", resumeId).param("versionNumber", versionNumber).query(java.util.UUID.class)
+                    .optional().ifPresent(versionId -> events.publishEvent(new ResumeVersionChanged(versionId)));
             return true;
         }));
     }

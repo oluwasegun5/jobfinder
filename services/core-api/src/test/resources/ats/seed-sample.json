@@ -1,0 +1,13 @@
+{
+  "sources": {
+    "LEVER": { "requestsPerSecond": 0.25, "bogusKey": 5 },
+    "NOSUCHSOURCE": { "requestsPerSecond": 1 }
+  },
+  "targets": [
+    { "source": "GREENHOUSE", "token": "seed-test-a", "company": "Seed Test Alpha" },
+    { "source": "LEVER", "token": "seed-test-b", "company": "Seed Test Beta" },
+    { "source": "NOSUCHSOURCE", "token": "seed-test-c", "company": "Seed Test Gamma" },
+    { "source": "ASHBY", "token": "seed-test-d", "company": "  " },
+    { "source": "GREENHOUSE", "token": "seed-test-a", "company": "Seed Test Alpha Again" }
+  ]
+}

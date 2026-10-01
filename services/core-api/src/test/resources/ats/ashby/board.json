@@ -1,0 +1,52 @@
+{
+  "apiVersion": "1",
+  "jobs": [
+    {
+      "id": "a5b00000-0000-4000-8000-000000000001",
+      "title": "Product Designer",
+      "department": "Design",
+      "team": "Core",
+      "employmentType": "FullTime",
+      "location": "Remote - Europe",
+      "isListed": true,
+      "isRemote": true,
+      "workplaceType": "Remote",
+      "publishedAt": "2026-09-10T10:00:00.000+00:00",
+      "jobUrl": "https://jobs.example.test/exampleai/a5b00000-0000-4000-8000-000000000001",
+      "applyUrl": "https://jobs.example.test/exampleai/a5b00000-0000-4000-8000-000000000001/application",
+      "descriptionHtml": "<p>Design the product.</p>",
+      "descriptionPlain": "Design the product.",
+      "compensation": {
+        "compensationTierSummary": "EUR 90K - 120K",
+        "summaryComponents": [
+          { "compensationType": "Bonus", "interval": "1 YEAR", "currencyCode": "EUR", "minValue": null, "maxValue": null },
+          { "compensationType": "Salary", "interval": "1 YEAR", "currencyCode": "EUR", "minValue": 90000, "maxValue": 120000 }
+        ]
+      }
+    },
+    {
+      "id": "a5b00000-0000-4000-8000-000000000002",
+      "title": "Hidden Role",
+      "employmentType": "Contract",
+      "location": "Lagos",
+      "isListed": false,
+      "isRemote": false,
+      "workplaceType": "OnSite",
+      "publishedAt": "2026-09-11T10:00:00.000+00:00",
+      "jobUrl": "https://jobs.example.test/exampleai/a5b00000-0000-4000-8000-000000000002",
+      "descriptionPlain": "Not on the board."
+    },
+    {
+      "id": "a5b00000-0000-4000-8000-000000000003",
+      "title": "Account Executive",
+      "employmentType": "PartTime",
+      "location": "London, UK",
+      "isListed": true,
+      "isRemote": false,
+      "workplaceType": "Hybrid",
+      "publishedAt": "2026-09-12T10:00:00.000+00:00",
+      "jobUrl": "https://jobs.example.test/exampleai/a5b00000-0000-4000-8000-000000000003",
+      "descriptionPlain": "Sell the product."
+    }
+  ]
+}

@@ -30,6 +30,7 @@ export function fakeApi(routes: Record<string, Route>) {
   const client = createApiClient({ baseUrl: "http://core-api.test", fetch });
   return {
     client,
+    fetch,
     calls,
     routes,
     callsTo: (method: string, path: string) => calls.filter((c) => c.method === method && c.path === path),

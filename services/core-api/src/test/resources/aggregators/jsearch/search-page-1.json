@@ -1,0 +1,44 @@
+{
+  "status": "OK",
+  "request_id": "00000000-0000-4000-8000-000000000000",
+  "parameters": {"query": "software developer jobs in Nigeria", "page": 1, "num_pages": 1},
+  "data": [
+    {
+      "job_id": "synthetic-job-id-0001==",
+      "employer_name": "Tailspin Africa",
+      "employer_website": "https://tailspin.example",
+      "job_publisher": "LinkedIn",
+      "job_employment_type": "FULLTIME",
+      "job_title": "Backend Developer",
+      "job_apply_link": "https://publisher.example/jobs/view/0001",
+      "job_apply_is_direct": false,
+      "job_description": "Design and build APIs in Java.\n\nRequirements: 3 years of experience.",
+      "job_is_remote": false,
+      "job_posted_at_timestamp": 1790500000,
+      "job_posted_at_datetime_utc": "2026-09-27T10:26:40.000Z",
+      "job_city": "Lagos",
+      "job_state": "LA",
+      "job_country": "NG",
+      "job_google_link": "https://www.google.example/search?q=jobs",
+      "job_offer_expiration_datetime_utc": "2026-11-20T00:00:00.000Z",
+      "job_min_salary": 3000,
+      "job_max_salary": 4500,
+      "job_salary_currency": "USD",
+      "job_salary_period": "MONTH",
+      "apply_options": [{"publisher": "LinkedIn", "apply_link": "https://publisher.example/jobs/view/0001", "is_direct": false}]
+    },
+    {
+      "job_id": "synthetic-job-id-0002==",
+      "employer_name": "Wingtip Cloud",
+      "job_publisher": "Indeed",
+      "job_employment_type": "CONTRACTOR",
+      "job_title": "Platform Engineer",
+      "job_apply_link": "https://publisher.example/viewjob?jk=0002",
+      "job_description": "Operate Kubernetes clusters.",
+      "job_is_remote": true,
+      "job_posted_at_timestamp": 1790400000,
+      "job_location": "Remote, Nigeria",
+      "job_country": "NG"
+    }
+  ]
+}

@@ -36,6 +36,10 @@
 		<wiremock.version>3.13.2</wiremock.version>
 		<shedlock.version>7.10.1</shedlock.version>
 		<resilience4j.version>2.4.0</resilience4j.version>
+		<jsoup.version>1.22.1</jsoup.version>
+		<!-- Tests tagged "perf" (SearchPerformanceTests) are left out of the everyday run; -Pperf runs only them. -->
+		<test.excludedGroups>perf</test.excludedGroups>
+		<test.groups/>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -97,6 +101,11 @@
 			<groupId>net.javacrumbs.shedlock</groupId>
 			<artifactId>shedlock-provider-jdbc-template</artifactId>
 			<version>${shedlock.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jsoup</groupId>
+			<artifactId>jsoup</artifactId>
+			<version>${jsoup.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.github.resilience4j</groupId>
@@ -249,7 +258,26 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<groups>${test.groups}</groups>
+					<excludedGroups>${test.excludedGroups}</excludedGroups>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<!-- Performance tests only: ./mvnw test -Pperf -Dtest=SearchPerformanceTests (make search-perf). -->
+			<id>perf</id>
+			<properties>
+				<test.groups>perf</test.groups>
+				<test.excludedGroups/>
+			</properties>
+		</profile>
+	</profiles>
 
 </project>

@@ -1,0 +1,11 @@
+[
+  {
+    "id": "7c1e0000-0000-4000-8000-000000000003",
+    "text": "Marketing Intern",
+    "categories": { "commitment": "Internship", "location": "Nairobi, Kenya" },
+    "workplaceType": "onsite",
+    "description": "<div>Learn marketing.</div>",
+    "hostedUrl": "https://jobs.example.test/examplelabs/7c1e0000-0000-4000-8000-000000000003",
+    "createdAt": 1788200000000
+  }
+]

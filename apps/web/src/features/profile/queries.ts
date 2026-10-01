@@ -24,7 +24,7 @@ export class ApiProblem extends Error {
   }
 }
 
-function unwrap<T>(result: { data?: T; error?: unknown; response: Response }): T {
+export function unwrap<T>(result: { data?: T; error?: unknown; response: Response }): T {
   if (result.data === undefined) throw new ApiProblem(result.error, result.response.status);
   return result.data;
 }

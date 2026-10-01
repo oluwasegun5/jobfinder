@@ -17,6 +17,12 @@ spring:
   mail:
     host: ${MAIL_HOST:localhost}
     port: ${MAIL_PORT:1025}
+    properties:
+      # A mail server that stops answering must not hold up a request or an ingestion run (source alerts are sent
+      # from the run's thread).
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
@@ -108,8 +114,46 @@ app:
       breaker-failure-rate-threshold: 50
       breaker-minimum-calls: 5
       breaker-open-duration: 5m
+    # Source alerts (docs/adr/0024-source-dashboard-alerts.md): an email to these admins when a source returns no
+    # jobs after returning some, or more than error-rate-threshold of a run's targets fail. A blank list (the
+    # default) only logs the alert.
+    alerts:
+      recipients: ${INGESTION_ALERT_RECIPIENTS:}
+      from: no-reply@jobfinder.local
+      web-base-url: ${WEB_BASE_URL:http://localhost:3000}
+      error-rate-threshold: 0.2
+      # A run of fewer targets than this only counts when every target failed.
+      error-rate-min-targets: 5
+      # An empty run is a drop to zero only if the previous clean run fetched at least this many postings.
+      zero-jobs-min-previous: 5
+      # A source that stays in breach is announced again after this long; 0 announces it once.
+      re-alert-interval: 24h
+    # PLAN.md section 6 expiry: a full-listing source's job missing for this many consecutive runs, or an
+    # aggregator job not seen for this long, is expired (once none of its listings is left).
+    expiry:
+      missed-runs: 2
+      aggregator-stale-after: 45d
+    # Aggregator adapters (ADR 0021). A blank key leaves the source registered but skipped, with the reason
+    # logged at startup. Keys come from the environment only; never put one in this file.
+    # Quota levers per source: max-pages-per-target, max-requests-per-day, min-request-interval, and the run
+    # frequency (intervalMinutes in the source's sources.config; see seed-targets.json). The defaults keep each
+    # source inside its free tier.
+    aggregators:
+      adzuna:
+        app-id: ${ADZUNA_APP_ID:}
+        app-key: ${ADZUNA_APP_KEY:}
+      jsearch:
+        api-key: ${JSEARCH_RAPIDAPI_KEY:}
+
+  embeddings:
+    # The pinned embedding space (docs/adr/0022-embeddings-pipeline.md). ai-service must use the same two values;
+    # the dimension must also match the vector(n) columns of V19. Changing the model makes every stored vector stale.
+    model: ${EMBEDDING_MODEL:voyage-4}
+    dimension: ${EMBEDDING_DIMENSION:1024}
 
 springdoc:
+  # The service-to-service endpoints (service token, not user tokens) are not part of the public API.
+  paths-to-exclude: /internal/**
   # Include actuator endpoints (health) in /v3/api-docs so the web client is generated for them.
   show-actuator: true
 

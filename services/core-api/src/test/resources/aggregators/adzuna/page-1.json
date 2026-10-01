@@ -1,0 +1,39 @@
+{
+  "__CLASS__": "Adzuna::API::Response::JobSearchResults",
+  "count": 3,
+  "mean": 52000.5,
+  "results": [
+    {
+      "__CLASS__": "Adzuna::API::Response::Job",
+      "id": "4400000001",
+      "title": "Senior <strong>Software</strong> <strong>Engineer</strong>",
+      "description": "Build and run the payments platform. You will own services end to end and mentor the team...",
+      "redirect_url": "https://www.adzuna.example/land/ad/4400000001?se=synthetic&v=1",
+      "created": "2026-09-28T08:15:00Z",
+      "company": {"__CLASS__": "Adzuna::API::Response::Company", "display_name": "Northwind Labs"},
+      "location": {"__CLASS__": "Adzuna::API::Response::Location", "display_name": "Manchester, Greater Manchester", "area": ["UK", "North West England", "Greater Manchester", "Manchester"]},
+      "category": {"label": "IT Jobs", "tag": "it-jobs"},
+      "salary_min": 65000.0,
+      "salary_max": 80000.0,
+      "salary_is_predicted": "0",
+      "contract_type": "permanent",
+      "contract_time": "full_time",
+      "latitude": 53.48,
+      "longitude": -2.24
+    },
+    {
+      "id": "4400000002",
+      "title": "Software Engineer (Python)",
+      "description": "Join a small team shipping data tools.",
+      "redirect_url": "https://www.adzuna.example/land/ad/4400000002?se=synthetic&v=1",
+      "created": "2026-09-27T10:00:00Z",
+      "company": {"display_name": "Contoso Data"},
+      "location": {"display_name": "London", "area": ["UK", "London"]},
+      "salary_min": 41000.0,
+      "salary_max": 47000.0,
+      "salary_is_predicted": "1",
+      "contract_type": "contract",
+      "contract_time": "full_time"
+    }
+  ]
+}

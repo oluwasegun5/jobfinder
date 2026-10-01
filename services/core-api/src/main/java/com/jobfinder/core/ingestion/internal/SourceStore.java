@@ -11,6 +11,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
+import com.jobfinder.core.ingestion.SourceAttribution;
 import com.jobfinder.core.ingestion.SourceKind;
 
 /** Reads and updates {@code sources} and {@code source_targets}. */
@@ -64,8 +65,43 @@ class SourceStore {
                 .update();
     }
 
+    /** Writes the credit the adapter's terms require; the adapter owns the wording, so this always overwrites. */
+    void updateAttribution(String code, SourceAttribution attribution) {
+        jdbc.sql("""
+                update sources set attribution_name = :name, attribution_text = :text, attribution_url = :url,
+                                   attribution_notes = :notes, updated_at = now()
+                where code = :code
+                """)
+                .param("name", attribution.name())
+                .param("text", attribution.text())
+                .param("url", attribution.url())
+                .param("notes", attribution.notes())
+                .param("code", code)
+                .update();
+    }
+
+    /** Merges {@code patch} (a JSON object) into the source's config; keys already set keep their value. */
+    void applyDefaultConfig(String code, String patch) {
+        jdbc.sql("update sources set config = cast(:patch as jsonb) || config, updated_at = now() where code = :code")
+                .param("patch", patch)
+                .param("code", code)
+                .update();
+    }
+
     Optional<SourceRow> findByCode(String code) {
         return jdbc.sql(SELECT + " where code = :code").param("code", code).query(sourceMapper).optional();
+    }
+
+    List<SourceRow> findAll() {
+        return jdbc.sql(SELECT + " order by code").query(sourceMapper).list();
+    }
+
+    /** @return whether a source with the code exists */
+    boolean setEnabled(String code, boolean enabled) {
+        return jdbc.sql("update sources set enabled = :enabled, updated_at = now() where code = :code")
+                .param("enabled", enabled)
+                .param("code", code)
+                .update() == 1;
     }
 
     List<SourceRow> findEnabled() {

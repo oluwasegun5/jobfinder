@@ -22,7 +22,7 @@ class IngestionSchedulerTests extends IngestionTestSupport {
 
     @BeforeEach
     void onlyTheFakeSourceIsInPlay() {
-        jdbc.update("update sources set enabled = false where code in ('FAKE_RETRY', 'FAKE_BREAKER')");
+        jdbc.update("update sources set enabled = false where code in ('FAKE_RETRY', 'FAKE_BREAKER', 'FAKE_AGG')");
         addTarget(FAKE, "acme");
         fake.postings("acme", 2);
     }

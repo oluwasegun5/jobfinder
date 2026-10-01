@@ -212,6 +212,138 @@
         }
       }
     },
+    "/jobs/{id}/save": {
+      "put": {
+        "tags": [
+          "job-controller"
+        ],
+        "operationId": "save",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "job-controller"
+        ],
+        "operationId": "unsave",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/jobs/{id}/hide": {
+      "put": {
+        "tags": [
+          "job-controller"
+        ],
+        "operationId": "hide",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "job-controller"
+        ],
+        "operationId": "unhide",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/admin/ingestion/sources/{code}/enabled": {
+      "put": {
+        "tags": [
+          "admin-ingestion-controller"
+        ],
+        "operationId": "setEnabled",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetSourceEnabledRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionSourceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/resumes": {
       "get": {
         "tags": [
@@ -489,6 +621,129 @@
         }
       }
     },
+    "/admin/ingestion/targets": {
+      "post": {
+        "tags": [
+          "admin-ingestion-controller"
+        ],
+        "operationId": "addTarget",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddTargetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The target already existed and was left as it was",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TargetResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The target was created",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TargetResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/ingestion/sources/{code}/runs": {
+      "post": {
+        "tags": [
+          "admin-ingestion-controller"
+        ],
+        "operationId": "startRun",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "The run was started",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionRunStartedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A run of this source is already in progress (code run_in_progress), or the source cannot run (code source_unavailable)",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionRunStartedResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/saved-jobs": {
+      "get": {
+        "tags": [
+          "job-controller"
+        ],
+        "operationId": "saved",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 50,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 600,
+              "minLength": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobPage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/resumes/{id}/download-url": {
       "get": {
         "tags": [
@@ -520,6 +775,394 @@
         }
       }
     },
+    "/jobs": {
+      "get": {
+        "tags": [
+          "job-controller"
+        ],
+        "operationId": "search",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "workMode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "REMOTE",
+                  "HYBRID",
+                  "ONSITE"
+                ]
+              },
+              "maxItems": 3,
+              "minItems": 0
+            }
+          },
+          {
+            "name": "employmentType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "FULL_TIME",
+                  "PART_TIME",
+                  "CONTRACT",
+                  "TEMPORARY",
+                  "INTERNSHIP"
+                ]
+              },
+              "maxItems": 5,
+              "minItems": 0
+            }
+          },
+          {
+            "name": "seniority",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "INTERN",
+                  "JUNIOR",
+                  "MID",
+                  "SENIOR",
+                  "LEAD",
+                  "EXECUTIVE"
+                ]
+              },
+              "maxItems": 6,
+              "minItems": 0
+            }
+          },
+          {
+            "name": "country",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z]{2}$"
+              },
+              "maxItems": 20,
+              "minItems": 0
+            }
+          },
+          {
+            "name": "location",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "companyId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "minSalary",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          {
+            "name": "salaryCurrency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z]{3}$"
+            }
+          },
+          {
+            "name": "postedWithinDays",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 365,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 50,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 600,
+              "minLength": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobPage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{id}": {
+      "get": {
+        "tags": [
+          "job-controller"
+        ],
+        "operationId": "job",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{id}/similar": {
+      "get": {
+        "tags": [
+          "job-controller"
+        ],
+        "operationId": "similar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "workMode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "REMOTE",
+                  "HYBRID",
+                  "ONSITE"
+                ]
+              },
+              "maxItems": 3,
+              "minItems": 0
+            }
+          },
+          {
+            "name": "employmentType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "FULL_TIME",
+                  "PART_TIME",
+                  "CONTRACT",
+                  "TEMPORARY",
+                  "INTERNSHIP"
+                ]
+              },
+              "maxItems": 5,
+              "minItems": 0
+            }
+          },
+          {
+            "name": "seniority",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "INTERN",
+                  "JUNIOR",
+                  "MID",
+                  "SENIOR",
+                  "LEAD",
+                  "EXECUTIVE"
+                ]
+              },
+              "maxItems": 6,
+              "minItems": 0
+            }
+          },
+          {
+            "name": "country",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z]{2}$"
+              },
+              "maxItems": 20,
+              "minItems": 0
+            }
+          },
+          {
+            "name": "location",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "companyId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "minSalary",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          {
+            "name": "salaryCurrency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z]{3}$"
+            }
+          },
+          {
+            "name": "postedWithinDays",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 365,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 50,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 600,
+              "minLength": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobPage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/me": {
       "get": {
         "tags": [
@@ -533,6 +1176,76 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/ingestion/sources": {
+      "get": {
+        "tags": [
+          "admin-ingestion-controller"
+        ],
+        "operationId": "listSources",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionSourceListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/ingestion/runs": {
+      "get": {
+        "tags": [
+          "admin-ingestion-controller"
+        ],
+        "operationId": "listRuns",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionRunPageResponse"
                 }
               }
             }
@@ -1260,6 +1973,158 @@
           }
         }
       },
+      "SetSourceEnabledRequest": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
+      "IngestionRunResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "RUNNING",
+              "SUCCEEDED",
+              "PARTIAL",
+              "FAILED"
+            ]
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "targets": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "fetched": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "created": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "updated": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "expired": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "errors": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "errorSummary": {
+            "type": "string"
+          }
+        }
+      },
+      "IngestionSourceResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "ATS",
+              "AGGREGATOR",
+              "SCRAPE"
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "schedule": {
+            "type": "string",
+            "enum": [
+              "SCHEDULED",
+              "DISABLED",
+              "UNAVAILABLE",
+              "SCHEDULER_OFF"
+            ]
+          },
+          "unavailableReason": {
+            "type": "string"
+          },
+          "health": {
+            "type": "string"
+          },
+          "lastRunAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nextDueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "running": {
+            "type": "boolean"
+          },
+          "enabledTargets": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalTargets": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastRun": {
+            "$ref": "#/components/schemas/IngestionRunResponse"
+          },
+          "alerts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceAlertResponse"
+            }
+          }
+        }
+      },
+      "SourceAlertResponse": {
+        "type": "object",
+        "properties": {
+          "rule": {
+            "type": "string"
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastNotifiedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "occurrences": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      },
       "TokenRequest": {
         "type": "object",
         "properties": {
@@ -1374,6 +2239,165 @@
           "idToken"
         ]
       },
+      "AddTargetRequest": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 0
+          },
+          "identifier": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
+          },
+          "companyName": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "identifier",
+          "source"
+        ]
+      },
+      "TargetResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source": {
+            "type": "string"
+          },
+          "identifier": {
+            "type": "string"
+          },
+          "companyName": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "created": {
+            "type": "boolean"
+          }
+        }
+      },
+      "IngestionRunStartedResponse": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "CompanyRef": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "JobPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobSummary"
+            }
+          },
+          "nextCursor": {
+            "type": "string"
+          }
+        }
+      },
+      "JobSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "company": {
+            "$ref": "#/components/schemas/CompanyRef"
+          },
+          "location": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "workMode": {
+            "type": "string"
+          },
+          "employmentType": {
+            "type": "string"
+          },
+          "seniority": {
+            "type": "string"
+          },
+          "salary": {
+            "$ref": "#/components/schemas/Salary"
+          },
+          "postedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "saved": {
+            "type": "boolean"
+          },
+          "similarity": {
+            "type": "number",
+            "format": "double"
+          },
+          "savedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Salary": {
+        "type": "object",
+        "properties": {
+          "min": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string"
+          }
+        }
+      },
       "DownloadUrlResponse": {
         "type": "object",
         "properties": {
@@ -1383,6 +2407,114 @@
           "expiresAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "Attribution": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "JobDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "company": {
+            "$ref": "#/components/schemas/CompanyRef"
+          },
+          "location": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "workMode": {
+            "type": "string"
+          },
+          "employmentType": {
+            "type": "string"
+          },
+          "seniority": {
+            "type": "string"
+          },
+          "salary": {
+            "$ref": "#/components/schemas/Salary"
+          },
+          "postedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "applyUrl": {
+            "type": "string"
+          },
+          "listings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Listing"
+            }
+          },
+          "saved": {
+            "type": "boolean"
+          },
+          "hidden": {
+            "type": "boolean"
+          },
+          "similarAvailable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Listing": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "sourceKind": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "attribution": {
+            "$ref": "#/components/schemas/Attribution"
           }
         }
       },
@@ -1401,6 +2533,44 @@
           },
           "emailVerified": {
             "type": "boolean"
+          }
+        }
+      },
+      "IngestionSourceListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IngestionSourceResponse"
+            }
+          }
+        }
+      },
+      "IngestionRunPageResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IngestionRunResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       }

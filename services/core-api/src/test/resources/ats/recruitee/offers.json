@@ -1,0 +1,32 @@
+{
+  "offers": [
+    {
+      "id": 5550001, "slug": "backend-developer", "status": "published",
+      "title": "Backend Developer", "company_name": "Example BV",
+      "description": "<p>Write APIs.</p>", "requirements": "<ul><li>Java</li></ul>",
+      "location": "Amsterdam, Noord-Holland, Netherlands", "city": "Amsterdam", "country": "Netherlands", "country_code": "NL",
+      "remote": false, "hybrid": true, "on_site": false,
+      "employment_type_code": "fulltime_permanent",
+      "careers_url": "https://careers.example.test/o/backend-developer",
+      "careers_apply_url": "https://careers.example.test/o/backend-developer/c/new",
+      "published_at": "2026-09-29 16:02:37 UTC", "created_at": "2026-09-29 15:56:16 UTC", "close_at": null,
+      "salary": { "min": "4000", "max": "6000", "period": "month", "currency": "EUR" }
+    },
+    {
+      "id": 5550002, "slug": "support-agent", "status": "published",
+      "title": "Support Agent", "company_name": "Example BV",
+      "description": "<p>Help people.</p>",
+      "city": "Lagos", "country": "Nigeria", "country_code": "NG",
+      "remote": true, "hybrid": false, "on_site": false,
+      "employment_type_code": "parttime_permanent",
+      "careers_url": "https://careers.example.test/o/support-agent",
+      "published_at": "2026-09-28 10:00:00 UTC", "close_at": "2026-12-31 00:00:00 UTC",
+      "salary": { "min": null, "max": null, "period": null, "currency": null }
+    },
+    {
+      "id": 5550003, "slug": "old-draft", "status": "draft",
+      "title": "Draft Role", "company_name": "Example BV",
+      "description": "<p>Not published.</p>", "careers_url": "https://careers.example.test/o/old-draft"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "offset": 0, "limit": 100, "totalFound": 3,
+  "content": [
+    {
+      "id": "7440001", "name": "Platform Engineer", "uuid": "u-1", "refNumber": "R1",
+      "company": { "identifier": "examplehq", "name": "Example HQ" },
+      "releasedDate": "2026-09-09T09:43:26.403Z",
+      "location": { "city": "Lisbon", "region": "Lisboa", "country": "pt", "remote": false, "hybrid": true, "fullLocation": "Lisbon, Lisboa, Portugal" },
+      "typeOfEmployment": { "id": "permanent", "label": "Full-time" },
+      "ref": "https://api.example.test/v1/companies/examplehq/postings/7440001"
+    },
+    {
+      "id": "7440002", "name": "Data Annotator", "uuid": "u-2",
+      "company": { "identifier": "examplehq", "name": "Example HQ" },
+      "releasedDate": "2026-09-08T09:00:00.000Z",
+      "location": { "city": "Remote", "country": "ng", "remote": true, "hybrid": false, "fullLocation": "Nigeria, Remote" },
+      "typeOfEmployment": { "id": "contract", "label": "Contract" }
+    },
+    {
+      "id": "7440003", "name": "Receptionist", "uuid": "u-3",
+      "company": { "identifier": "examplehq", "name": "Example HQ" },
+      "releasedDate": "2026-09-07T09:00:00.000Z",
+      "location": { "city": "Cape Town", "country": "za", "remote": false, "hybrid": false, "fullLocation": "Cape Town, South Africa" },
+      "typeOfEmployment": { "id": "permanent", "label": "Full-time" }
+    }
+  ]
+}

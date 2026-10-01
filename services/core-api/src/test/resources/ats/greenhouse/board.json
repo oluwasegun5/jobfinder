@@ -1,0 +1,31 @@
+{
+  "jobs": [
+    {
+      "id": 4001001,
+      "internal_job_id": 900001,
+      "title": "Senior Backend Engineer",
+      "company_name": "Example Corp",
+      "location": { "name": "Remote - Nigeria" },
+      "absolute_url": "https://boards.example.test/examplecorp/jobs/4001001",
+      "first_published": "2026-09-01T09:30:00-04:00",
+      "updated_at": "2026-09-20T12:00:00-04:00",
+      "application_deadline": null,
+      "content": "&lt;p&gt;Build services in &lt;strong&gt;Java&lt;/strong&gt;.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Own APIs&lt;/li&gt;&lt;/ul&gt;",
+      "departments": [{ "id": 1, "name": "Engineering" }],
+      "offices": [{ "id": 2, "name": "Remote" }],
+      "pay_input_ranges": [
+        { "min_cents": 9000000, "max_cents": 12000000, "currency_type": "USD", "title": "Remote", "blurb": "Annual base" }
+      ]
+    },
+    {
+      "id": 4001002,
+      "title": "Office Manager",
+      "location": { "name": "Lagos, Nigeria" },
+      "absolute_url": "https://boards.example.test/examplecorp/jobs/4001002",
+      "first_published": "2026-08-15T08:00:00Z",
+      "content": "&lt;p&gt;Run the Lagos office.&lt;/p&gt;",
+      "pay_input_ranges": []
+    }
+  ],
+  "meta": { "total": 2 }
+}

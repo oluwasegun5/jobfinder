@@ -1,0 +1,30 @@
+{
+  "data": [
+    {
+      "slug": "backend-developer-acme-gmbh-berlin-100001",
+      "company_name": "Acme GmbH",
+      "title": "Backend Developer (m/f/d)",
+      "description": "<p>We build logistics software in Berlin.</p>",
+      "remote": false,
+      "url": "https://www.arbeitnow.example/jobs/companies/acme-gmbh/backend-developer-berlin-100001",
+      "tags": ["Software Development"],
+      "job_types": ["Full-time"],
+      "location": "Berlin",
+      "created_at": 1790850000
+    },
+    {
+      "slug": "devops-engineer-globex-remote-100002",
+      "company_name": "Globex",
+      "title": "DevOps Engineer",
+      "description": "<p>Fully remote DevOps role.</p>",
+      "remote": true,
+      "url": "https://globex.example/careers/100002",
+      "tags": [],
+      "job_types": [],
+      "location": "Germany",
+      "created_at": 1790840000
+    }
+  ],
+  "links": {"first": "https://www.arbeitnow.example/api/job-board-api?page=1", "last": null, "prev": null, "next": "https://www.arbeitnow.example/api/job-board-api?page=2"},
+  "meta": {"current_page": 1, "per_page": 2, "terms": "synthetic terms", "info": "synthetic"}
+}

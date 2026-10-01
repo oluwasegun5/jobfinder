@@ -18,7 +18,8 @@ import jakarta.annotation.PreDestroy;
 /**
  * Wakes up every {@code poll-interval-ms}, finds the enabled sources that are due and starts each
  * on its own thread, so a slow source never delays the others. If an instance starts a source that
- * another is already running, the lock turns it away. Disabling a source (or setting
+ * another is already running, the lock turns it away. A source that cannot run (an aggregator without its API key)
+ * is skipped here without a run being recorded; it was reported once at startup. Disabling a source (or setting
  * {@code app.ingestion.scheduler.enabled=false}) stops it being scheduled; it does not interrupt a
  * run already in progress.
  */
@@ -53,6 +54,7 @@ class IngestionScheduler {
         List<Future<?>> started = new ArrayList<>();
         for (SourceStore.SourceRow source : sources.findEnabled()) {
             if (runner.adapters().containsKey(source.code())
+                    && runner.adapters().get(source.code()).unavailableReason().isEmpty()
                     && source.settings().isDue(source.code(), source.lastRunAt(), now)) {
                 started.add(executor.submit(() -> runQuietly(source.code())));
             }

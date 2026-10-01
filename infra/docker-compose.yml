@@ -123,6 +123,9 @@ services:
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-jobfinder}
       AI_SERVICE_URL: http://ai-service:8000
       AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:?set AI_SERVICE_TOKEN in .env (see .env.example)}
+      # The pinned embedding space; ai-service gets the same two values (docs/adr/0022-embeddings-pipeline.md).
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-fake-embed-1024}
+      EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION:-1024}
       MAIL_HOST: mailpit
       MAIL_PORT: 1025
       # core-api talks to the object store over the compose network; browsers get pre-signed URLs
@@ -135,8 +138,14 @@ services:
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env (see .env.example)}
       WEB_BASE_URL: ${WEB_BASE_URL:-http://localhost:3000}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      # Job aggregator keys (docs/adr/0021-aggregator-adapters.md). Blank: that source is registered but skipped.
+      ADZUNA_APP_ID: ${ADZUNA_APP_ID:-}
+      ADZUNA_APP_KEY: ${ADZUNA_APP_KEY:-}
+      JSEARCH_RAPIDAPI_KEY: ${JSEARCH_RAPIDAPI_KEY:-}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      # Source alerts (docs/adr/0024-source-dashboard-alerts.md): comma-separated admin emails; blank only logs them.
+      INGESTION_ALERT_RECIPIENTS: ${INGESTION_ALERT_RECIPIENTS:-}
       SERVER_PORT: 8080
     ports:
       - "${CORE_API_PORT:-8080}:8080"
@@ -160,6 +169,12 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       LLM_MODEL_FAST: ${LLM_MODEL_FAST:-claude-haiku-4-5}
       LLM_MODEL_STRONG: ${LLM_MODEL_STRONG:-claude-sonnet-5}
+      # Embeddings: keyless fake vectors by default; EMBEDDING_PROVIDER=voyage plus a key for real ones.
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-fake}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-fake-embed-1024}
+      EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION:-1024}
+      VOYAGE_API_KEY: ${VOYAGE_API_KEY:-}
+      CORE_API_BASE_URL: http://core-api:8080
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER:-jobfinder}

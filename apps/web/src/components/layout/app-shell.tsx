@@ -1,11 +1,12 @@
 "use client";
 
-import { Briefcase, KanbanSquare, LayoutDashboard, Menu, UserRound, X } from "lucide-react";
+import { Bookmark, Briefcase, DatabaseZap, KanbanSquare, LayoutDashboard, Menu, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ComponentType, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/features/auth/auth-provider";
 import { UserMenu } from "@/features/auth/user-menu";
 import { ApiStatus } from "@/features/health/api-status";
 import { cn } from "@/lib/utils";
@@ -19,17 +20,23 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { label: "Jobs", icon: Briefcase },
+  { label: "Jobs", icon: Briefcase, href: "/jobs" },
+  { label: "Saved jobs", icon: Bookmark, href: "/saved-jobs" },
   { label: "Applications", icon: KanbanSquare },
   { label: "Profile", icon: UserRound, href: "/profile" },
 ];
 
+/** Shown to administrators only (core-api enforces the role; this just keeps the menu honest). */
+const adminNavItems: NavItem[] = [{ label: "Job sources", icon: DatabaseZap, href: "/admin/ingestion" }];
+
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const items = user?.role === "ADMIN" ? [...navItems, ...adminNavItems] : navItems;
 
   return (
     <ul className="flex flex-col gap-1">
-      {navItems.map(({ label, icon: Icon, href }) => {
+      {items.map(({ label, icon: Icon, href }) => {
         const itemClass =
           "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring/50";
         if (!href) {
