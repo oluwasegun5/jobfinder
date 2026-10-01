@@ -99,6 +99,44 @@ class MatchingPipeline implements MatchService {
         return rank(userId, false);
     }
 
+    @Override
+    public RankedMatches cachedMatches(UUID userId, int limit) {
+        Candidate candidate = candidate(userId);
+        ResumeVector vector = embeddings.currentVector(candidate.resumeVersionId()).orElseThrow(
+                () -> new ApiException(HttpStatus.CONFLICT, "resume_embedding_pending",
+                        "Your resume is still being analysed. Try again in a moment."));
+        CandidateSnapshot snapshot = snapshots.candidate(candidate);
+        List<RecalledJob> recalled = jobs.recall(vector.model(), vector.values(), filters.selectionFor(candidate),
+                Math.max(1, Math.min(limit, properties.recallLimit())));
+        Instant now = Instant.now();
+        Map<UUID, JobForMatching> content = new HashMap<>();
+        jobs.jobs(recalled.stream().map(RecalledJob::jobId).toList()).forEach(j -> content.put(j.id(), j));
+        String promptVersion = properties.promptVersion();
+        Map<UUID, Row> cached = store.find(candidate.resumeVersionId(), promptVersion,
+                recalled.stream().map(RecalledJob::jobId).toList());
+        List<MatchResult> results = new ArrayList<>();
+        int fromCache = 0;
+        for (RecalledJob r : recalled) {
+            JobForMatching job = content.get(r.jobId());
+            if (job == null) {
+                continue;
+            }
+            Item item = new Item(job, stage2.score(r.similarity(), snapshot.skills(), r.skills(), r.postedAt(), now));
+            Row row = cached.get(job.id());
+            if (row != null && row.resumeHash().equals(snapshot.hash())
+                    && row.jobHash().equals(snapshots.job(job).hash())) {
+                results.add(llmScored(candidate.resumeVersionId(), promptVersion, item, row.llmScore(),
+                        row.strengths(), row.gaps(), row.model(), row.computedAt()));
+                fromCache++;
+            } else {
+                results.add(fallback(candidate.resumeVersionId(), promptVersion, item, MatchStatus.NOT_LLM_SCORED,
+                        job.active() ? null : FallbackReason.JOB_EXPIRED));
+            }
+        }
+        return new RankedMatches(userId, candidate.resumeVersionId(), order(results), new RankedMatches.Stats(
+                recalled.size(), results.size(), fromCache, 0, 0, results.size() - fromCache, 0, false));
+    }
+
     /** As {@link #rankedMatches}; the nightly batch also requires saved preferences (an onboarded user). */
     RankedMatches rank(UUID userId, boolean requirePreferences) {
         Candidate candidate = candidate(userId);
