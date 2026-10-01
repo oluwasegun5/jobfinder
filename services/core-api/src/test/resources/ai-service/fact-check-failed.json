@@ -1,0 +1,22 @@
+{
+  "passed": false,
+  "blocking": 1,
+  "warnings": 1,
+  "flags": [
+    {
+      "code": "NEW_DEGREE",
+      "severity": "BLOCKING",
+      "path": "education[0].degree",
+      "value": "PhD Computer Science",
+      "message": "This degree is not in your resume."
+    },
+    {
+      "code": "NEW_SKILL",
+      "severity": "WARNING",
+      "path": "skills[7]",
+      "value": "Kubernetes",
+      "message": "This skill or technology is not in your resume."
+    }
+  ],
+  "checker_version": "fact_check/v1"
+}
