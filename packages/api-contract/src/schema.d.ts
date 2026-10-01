@@ -100,6 +100,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/ingestion/sources/{code}/enabled": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["setEnabled"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/resumes": {
         parameters: {
             query?: never;
@@ -276,6 +292,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/ingestion/sources/{code}/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["startRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/saved-jobs": {
         parameters: {
             query?: never;
@@ -364,6 +396,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["me"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ingestion/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listSources"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ingestion/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listRuns"];
         put?: never;
         post?: never;
         delete?: never;
@@ -592,6 +656,64 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        SetSourceEnabledRequest: {
+            enabled: boolean;
+        };
+        IngestionRunResponse: {
+            /** Format: uuid */
+            id?: string;
+            source?: string;
+            /** @enum {string} */
+            status?: "RUNNING" | "SUCCEEDED" | "PARTIAL" | "FAILED";
+            /** Format: date-time */
+            startedAt?: string;
+            /** Format: date-time */
+            finishedAt?: string;
+            /** Format: int32 */
+            targets?: number;
+            /** Format: int32 */
+            fetched?: number;
+            /** Format: int32 */
+            created?: number;
+            /** Format: int32 */
+            updated?: number;
+            /** Format: int32 */
+            expired?: number;
+            /** Format: int32 */
+            errors?: number;
+            errorSummary?: string;
+        };
+        IngestionSourceResponse: {
+            code?: string;
+            /** @enum {string} */
+            kind?: "ATS" | "AGGREGATOR" | "SCRAPE";
+            enabled?: boolean;
+            /** @enum {string} */
+            schedule?: "SCHEDULED" | "DISABLED" | "UNAVAILABLE" | "SCHEDULER_OFF";
+            unavailableReason?: string;
+            health?: string;
+            /** Format: date-time */
+            lastRunAt?: string;
+            /** Format: date-time */
+            nextDueAt?: string;
+            running?: boolean;
+            /** Format: int32 */
+            enabledTargets?: number;
+            /** Format: int32 */
+            totalTargets?: number;
+            lastRun?: components["schemas"]["IngestionRunResponse"];
+            alerts?: components["schemas"]["SourceAlertResponse"][];
+        };
+        SourceAlertResponse: {
+            rule?: string;
+            /** Format: date-time */
+            since?: string;
+            /** Format: date-time */
+            lastNotifiedAt?: string;
+            /** Format: int32 */
+            occurrences?: number;
+            detail?: string;
+        };
         TokenRequest: {
             token: string;
         };
@@ -625,7 +747,7 @@ export interface components {
         AddTargetRequest: {
             source: string;
             identifier: string;
-            companyName: string;
+            companyName?: string;
         };
         TargetResponse: {
             /** Format: uuid */
@@ -635,6 +757,10 @@ export interface components {
             companyName?: string;
             enabled?: boolean;
             created?: boolean;
+        };
+        IngestionRunStartedResponse: {
+            source?: string;
+            status?: string;
         };
         CompanyRef: {
             /** Format: uuid */
@@ -721,6 +847,20 @@ export interface components {
             email?: string;
             role?: string;
             emailVerified?: boolean;
+        };
+        IngestionSourceListResponse: {
+            items?: components["schemas"]["IngestionSourceResponse"][];
+        };
+        IngestionRunPageResponse: {
+            items?: components["schemas"]["IngestionRunResponse"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
         };
     };
     responses: never;
@@ -966,6 +1106,32 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    setEnabled: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetSourceEnabledRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IngestionSourceResponse"];
+                };
             };
         };
     };
@@ -1227,13 +1393,53 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description The target already existed and was left as it was */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "*/*": components["schemas"]["TargetResponse"];
+                };
+            };
+            /** @description The target was created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TargetResponse"];
+                };
+            };
+        };
+    };
+    startRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The run was started */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IngestionRunStartedResponse"];
+                };
+            };
+            /** @description A run of this source is already in progress (code run_in_progress), or the source cannot run (code source_unavailable) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IngestionRunStartedResponse"];
                 };
             };
         };
@@ -1389,6 +1595,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MeResponse"];
+                };
+            };
+        };
+    };
+    listSources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IngestionSourceListResponse"];
+                };
+            };
+        };
+    };
+    listRuns: {
+        parameters: {
+            query?: {
+                source?: string;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IngestionRunPageResponse"];
                 };
             };
         };

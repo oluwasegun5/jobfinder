@@ -304,6 +304,46 @@
         }
       }
     },
+    "/admin/ingestion/sources/{code}/enabled": {
+      "put": {
+        "tags": [
+          "admin-ingestion-controller"
+        ],
+        "operationId": "setEnabled",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetSourceEnabledRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionSourceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/resumes": {
       "get": {
         "tags": [
@@ -599,11 +639,61 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "The target already existed and was left as it was",
             "content": {
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/TargetResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The target was created",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TargetResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/ingestion/sources/{code}/runs": {
+      "post": {
+        "tags": [
+          "admin-ingestion-controller"
+        ],
+        "operationId": "startRun",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "The run was started",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionRunStartedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A run of this source is already in progress (code run_in_progress), or the source cannot run (code source_unavailable)",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionRunStartedResponse"
                 }
               }
             }
@@ -1086,6 +1176,76 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/ingestion/sources": {
+      "get": {
+        "tags": [
+          "admin-ingestion-controller"
+        ],
+        "operationId": "listSources",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionSourceListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/ingestion/runs": {
+      "get": {
+        "tags": [
+          "admin-ingestion-controller"
+        ],
+        "operationId": "listRuns",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionRunPageResponse"
                 }
               }
             }
@@ -1813,6 +1973,158 @@
           }
         }
       },
+      "SetSourceEnabledRequest": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
+      "IngestionRunResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "RUNNING",
+              "SUCCEEDED",
+              "PARTIAL",
+              "FAILED"
+            ]
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "targets": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "fetched": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "created": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "updated": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "expired": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "errors": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "errorSummary": {
+            "type": "string"
+          }
+        }
+      },
+      "IngestionSourceResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "ATS",
+              "AGGREGATOR",
+              "SCRAPE"
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "schedule": {
+            "type": "string",
+            "enum": [
+              "SCHEDULED",
+              "DISABLED",
+              "UNAVAILABLE",
+              "SCHEDULER_OFF"
+            ]
+          },
+          "unavailableReason": {
+            "type": "string"
+          },
+          "health": {
+            "type": "string"
+          },
+          "lastRunAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nextDueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "running": {
+            "type": "boolean"
+          },
+          "enabledTargets": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalTargets": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastRun": {
+            "$ref": "#/components/schemas/IngestionRunResponse"
+          },
+          "alerts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceAlertResponse"
+            }
+          }
+        }
+      },
+      "SourceAlertResponse": {
+        "type": "object",
+        "properties": {
+          "rule": {
+            "type": "string"
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastNotifiedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "occurrences": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      },
       "TokenRequest": {
         "type": "object",
         "properties": {
@@ -1947,7 +2259,6 @@
           }
         },
         "required": [
-          "companyName",
           "identifier",
           "source"
         ]
@@ -1973,6 +2284,17 @@
           },
           "created": {
             "type": "boolean"
+          }
+        }
+      },
+      "IngestionRunStartedResponse": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
           }
         }
       },
@@ -2211,6 +2533,44 @@
           },
           "emailVerified": {
             "type": "boolean"
+          }
+        }
+      },
+      "IngestionSourceListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IngestionSourceResponse"
+            }
+          }
+        }
+      },
+      "IngestionRunPageResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IngestionRunResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       }
