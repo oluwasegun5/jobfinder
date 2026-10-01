@@ -195,6 +195,26 @@ app:
       user-page-size: 100
       lock-at-most-for: 2h
 
+  feed:
+    # The "For you" feed (docs/adr/0027-feed-and-feedback.md): ranks and pages through the user's best pool-size matches.
+    pool-size: 100
+    # Saves, hides and applications move jobs by company and title similarity. Points are added to the 0 to 100 match
+    # score (hidden subtracts), scaled by age (half-life) and, for titles, by the Jaccard similarity of the normalized
+    # words (at least title-threshold). Penalties and boosts are each capped, so feedback reorders but never empties.
+    feedback:
+      window: 90d
+      half-life: 30d
+      max-signals-per-action: 100
+      title-threshold: 0.5
+      hidden-company: 15
+      hidden-title: 15
+      saved-company: 5
+      saved-title: 6
+      applied-company: 4
+      applied-title: 5
+      max-penalty: 30
+      max-boost: 15
+
 springdoc:
   # The service-to-service endpoints (service token, not user tokens) are not part of the public API.
   paths-to-exclude: /internal/**
