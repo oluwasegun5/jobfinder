@@ -71,4 +71,16 @@ class OpenApiDocsTests {
 		assertThat(body).doesNotContain("/internal/v1/billing");
 	}
 
+	@Test
+	void apiDocsDescribeTheNotificationEndpoints() throws Exception {
+		String body = mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(status().isOk())
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+
+		assertThat(body).contains("\"/saved-searches\"", "\"/saved-searches/{id}\"", "\"/notifications/preferences\"",
+				"\"/notifications/unsubscribe/{token}\"", "SavedSearchRequest", "NotificationPreferencesRequest", "UnsubscribeInfo");
+	}
+
 }
