@@ -1,6 +1,11 @@
 {
   "sources": {
-    "WORKABLE": { "requestsPerSecond": 0.2 }
+    "WORKABLE": { "requestsPerSecond": 0.2 },
+    "ADZUNA": { "intervalMinutes": 720 },
+    "JSEARCH": { "intervalMinutes": 1440 },
+    "REMOTIVE": { "intervalMinutes": 480 },
+    "ARBEITNOW": { "intervalMinutes": 360 },
+    "REMOTEOK": { "intervalMinutes": 360 }
   },
   "targets": [
     {"source": "GREENHOUSE", "token": "abnormalsecurity", "company": "Abnormal"},
@@ -271,6 +276,17 @@
     {"source": "SMARTRECRUITERS", "token": "swiggy", "company": "SWIGGY"},
     {"source": "SMARTRECRUITERS", "token": "wise", "company": "Wise"},
     {"source": "RECRUITEE", "token": "bunq", "company": "bunq"},
-    {"source": "RECRUITEE", "token": "prismic", "company": "Prismic"}
+    {"source": "RECRUITEE", "token": "prismic", "company": "Prismic"},
+    {"source": "ADZUNA", "token": "gb:software engineer"},
+    {"source": "ADZUNA", "token": "us:software engineer"},
+    {"source": "ADZUNA", "token": "ca:software engineer"},
+    {"source": "ADZUNA", "token": "au:software engineer"},
+    {"source": "ADZUNA", "token": "za:software developer"},
+    {"source": "JSEARCH", "token": "ng:software developer jobs in Nigeria"},
+    {"source": "JSEARCH", "token": "us:remote software engineer jobs"},
+    {"source": "JSEARCH", "token": "gb:software engineer jobs in London"},
+    {"source": "REMOTIVE", "token": "all"},
+    {"source": "ARBEITNOW", "token": "all"},
+    {"source": "REMOTEOK", "token": "all"}
   ]
 }

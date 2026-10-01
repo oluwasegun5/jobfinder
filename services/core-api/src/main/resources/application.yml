@@ -113,6 +113,17 @@ app:
     expiry:
       missed-runs: 2
       aggregator-stale-after: 45d
+    # Aggregator adapters (ADR 0021). A blank key leaves the source registered but skipped, with the reason
+    # logged at startup. Keys come from the environment only; never put one in this file.
+    # Quota levers per source: max-pages-per-target, max-requests-per-day, min-request-interval, and the run
+    # frequency (intervalMinutes in the source's sources.config; see seed-targets.json). The defaults keep each
+    # source inside its free tier.
+    aggregators:
+      adzuna:
+        app-id: ${ADZUNA_APP_ID:}
+        app-key: ${ADZUNA_APP_KEY:}
+      jsearch:
+        api-key: ${JSEARCH_RAPIDAPI_KEY:}
 
 springdoc:
   # Include actuator endpoints (health) in /v3/api-docs so the web client is generated for them.
