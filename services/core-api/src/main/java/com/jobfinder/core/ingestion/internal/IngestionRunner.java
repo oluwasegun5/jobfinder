@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import com.jobfinder.core.ingestion.IngestionRunSummary;
 import com.jobfinder.core.ingestion.IngestionService;
 import com.jobfinder.core.ingestion.JobSourceAdapter;
+import com.jobfinder.core.ingestion.SourceUnavailableException;
 import com.jobfinder.core.ingestion.UnknownSourceException;
 
 import net.javacrumbs.shedlock.core.LockConfiguration;
@@ -56,6 +57,9 @@ class IngestionRunner implements IngestionService {
         if (source == null) {
             throw new UnknownSourceException(sourceCode);
         }
+        adapter.unavailableReason().ifPresent(reason -> {
+            throw new SourceUnavailableException(sourceCode, reason);
+        });
         LockConfiguration lock = new LockConfiguration(Instant.now(), lockName(sourceCode),
                 properties.lockAtMostFor(), Duration.ZERO);
         try {
@@ -66,6 +70,15 @@ class IngestionRunner implements IngestionService {
         } catch (Throwable e) {
             throw new IllegalStateException("Ingestion run of " + sourceCode + " failed", e);
         }
+    }
+
+    @Override
+    public Optional<String> unavailableReason(String sourceCode) {
+        JobSourceAdapter adapter = adapters.get(sourceCode);
+        if (adapter == null) {
+            throw new UnknownSourceException(sourceCode);
+        }
+        return adapter.unavailableReason();
     }
 
     static String lockName(String sourceCode) {

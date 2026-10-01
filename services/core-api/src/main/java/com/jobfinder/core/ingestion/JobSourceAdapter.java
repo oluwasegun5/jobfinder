@@ -29,6 +29,9 @@ import java.util.stream.Stream;
  * cannot read, which rejects that posting without failing the run;
  * <li>an incremental adapter (one that really returns only postings newer than {@code since}) must
  * say so with {@link #fullListing()}: a posting absent from an incremental response is not gone.
+ * <li>{@link #unavailableReason} says when the adapter cannot run at all (no API key): the source stays
+ * registered, but it is skipped and a manual run is refused with that reason;
+ * <li>{@link #attribution} is the credit the source's terms require, stored with the source.
  * </ul>
  */
 public interface JobSourceAdapter {
@@ -59,5 +62,20 @@ public interface JobSourceAdapter {
      */
     default boolean fullListing() {
         return true;
+    }
+
+    /**
+     * Why this adapter cannot run right now, or empty when it can. Used for an aggregator whose API key is
+     * not configured: the source stays registered (so the key can be added and the application restarted),
+     * but the scheduler skips it and {@link IngestionService#runNow} refuses with this reason. The reason
+     * must never contain a credential.
+     */
+    default Optional<String> unavailableReason() {
+        return Optional.empty();
+    }
+
+    /** The credit this source's terms require wherever its jobs are shown; empty when it asks for none. */
+    default Optional<SourceAttribution> attribution() {
+        return Optional.empty();
     }
 }

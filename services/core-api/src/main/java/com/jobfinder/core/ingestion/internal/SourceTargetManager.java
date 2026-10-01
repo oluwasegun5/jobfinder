@@ -12,6 +12,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.jobfinder.core.ingestion.InvalidSourceTargetException;
+import com.jobfinder.core.ingestion.SourceKind;
 import com.jobfinder.core.ingestion.SourceTargetService;
 import com.jobfinder.core.ingestion.SourceTargetView;
 import com.jobfinder.core.ingestion.UnknownSourceException;
@@ -54,6 +55,15 @@ class SourceTargetManager implements SourceTargetService {
             throw new InvalidSourceTargetException(
                     "The identifier must be 1 to " + MAX_IDENTIFIER + " characters without control characters.");
         }
+        if (runner.adapters().get(sourceCode).kind() == SourceKind.AGGREGATOR) {
+            // An aggregator target is a search; its postings name their own employers (ADR 0021).
+            if (companyName != null && !companyName.isBlank()) {
+                throw new InvalidSourceTargetException("An aggregator target is a search and has no company.");
+            }
+            sources.register(sourceCode, SourceKind.AGGREGATOR);
+            UUID sourceId = sources.findByCode(sourceCode).orElseThrow(() -> new UnknownSourceException(sourceCode)).id();
+            return tx.execute(status -> saveSearch(sourceCode, sourceId, id));
+        }
         String company = TextCleaner.truncate(TextCleaner.line(companyName), MAX_COMPANY);
         String normalized = company == null ? "" : Names.company(company);
         if (normalized.isEmpty()) {
@@ -63,6 +73,26 @@ class SourceTargetManager implements SourceTargetService {
         sources.register(sourceCode, runner.adapters().get(sourceCode).kind());
         UUID sourceId = sources.findByCode(sourceCode).orElseThrow(() -> new UnknownSourceException(sourceCode)).id();
         return tx.execute(status -> save(sourceCode, sourceId, id, company, normalized));
+    }
+
+    private SourceTargetView saveSearch(String sourceCode, UUID sourceId, String identifier) {
+        OffsetDateTime now = OffsetDateTime.now(clock).withOffsetSameInstant(ZoneOffset.UTC);
+        boolean inserted = jdbc.sql("""
+                insert into source_targets (id, source_id, identifier, created_at, updated_at)
+                values (:id, :sourceId, :identifier, :now, :now)
+                on conflict (source_id, identifier) do nothing
+                """)
+                .param("id", UUID.randomUUID())
+                .param("sourceId", sourceId)
+                .param("identifier", identifier)
+                .param("now", now)
+                .update() == 1;
+        return jdbc.sql("select id, enabled from source_targets where source_id = :sourceId and identifier = :identifier")
+                .param("sourceId", sourceId)
+                .param("identifier", identifier)
+                .query((rs, row) -> new SourceTargetView(rs.getObject("id", UUID.class), sourceCode, identifier, null,
+                        rs.getBoolean("enabled"), inserted))
+                .single();
     }
 
     private SourceTargetView save(String sourceCode, UUID sourceId, String identifier, String company,

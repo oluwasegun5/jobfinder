@@ -11,6 +11,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
+import com.jobfinder.core.ingestion.SourceAttribution;
 import com.jobfinder.core.ingestion.SourceKind;
 
 /** Reads and updates {@code sources} and {@code source_targets}. */
@@ -61,6 +62,21 @@ class SourceStore {
                 .param("id", UUID.randomUUID())
                 .param("code", code)
                 .param("kind", kind.name())
+                .update();
+    }
+
+    /** Writes the credit the adapter's terms require; the adapter owns the wording, so this always overwrites. */
+    void updateAttribution(String code, SourceAttribution attribution) {
+        jdbc.sql("""
+                update sources set attribution_name = :name, attribution_text = :text, attribution_url = :url,
+                                   attribution_notes = :notes, updated_at = now()
+                where code = :code
+                """)
+                .param("name", attribution.name())
+                .param("text", attribution.text())
+                .param("url", attribution.url())
+                .param("notes", attribution.notes())
+                .param("code", code)
                 .update();
     }
 

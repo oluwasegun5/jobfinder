@@ -11,7 +11,15 @@ public interface IngestionService {
      *
      * @return the run's summary, or empty if another run of the same source (on this or another
      *         instance) is already in progress, in which case nothing was started
-     * @throws UnknownSourceException if no adapter is registered under the code
+     * @throws UnknownSourceException     if no adapter is registered under the code
+     * @throws SourceUnavailableException if the source cannot run (its API key is not configured)
      */
     Optional<IngestionRunSummary> runNow(String sourceCode);
+
+    /**
+     * Why a registered source cannot run (a missing API key), or empty when it can.
+     *
+     * @throws UnknownSourceException if no adapter is registered under the code
+     */
+    Optional<String> unavailableReason(String sourceCode);
 }

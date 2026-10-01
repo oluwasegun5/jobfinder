@@ -14,8 +14,9 @@ import tools.jackson.databind.JsonNode;
 /**
  * Null-tolerant reads of the loosely typed JSON the job boards return. A missing field, a JSON null or a
  * value of the wrong type all read as "absent", so one odd posting never breaks the mapping of the rest.
+ * Public because the aggregator adapters read their sources' JSON the same way.
  */
-final class Fields {
+public final class Fields {
 
     private static final DateTimeFormatter RECRUITEE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss 'UTC'");
 
@@ -23,11 +24,11 @@ final class Fields {
     }
 
     /** The string at {@code field}, trimmed; numbers are rendered as text; blank and non-scalar are null. */
-    static String text(JsonNode node, String field) {
+    public static String text(JsonNode node, String field) {
         return scalar(node == null ? null : node.get(field));
     }
 
-    static String scalar(JsonNode value) {
+    public static String scalar(JsonNode value) {
         if (value == null || value.isNull() || value.isMissingNode()) {
             return null;
         }
@@ -35,17 +36,17 @@ final class Fields {
         return text == null || text.isBlank() ? null : text.trim();
     }
 
-    static JsonNode child(JsonNode node, String field) {
+    public static JsonNode child(JsonNode node, String field) {
         JsonNode value = node == null ? null : node.get(field);
         return value == null || value.isNull() ? null : value;
     }
 
-    static Boolean bool(JsonNode node, String field) {
+    public static Boolean bool(JsonNode node, String field) {
         JsonNode value = child(node, field);
         return value != null && value.isBoolean() ? value.booleanValue() : null;
     }
 
-    static BigDecimal decimal(JsonNode node, String field) {
+    public static BigDecimal decimal(JsonNode node, String field) {
         JsonNode value = child(node, field);
         if (value == null) {
             return null;
@@ -62,7 +63,7 @@ final class Fields {
     }
 
     /** ISO-8601 with an offset ("2026-09-09T10:50:29-04:00", "2024-03-04T14:29:08.532+00:00", "...Z"). */
-    static Instant isoInstant(String text) {
+    public static Instant isoInstant(String text) {
         if (text == null) {
             return null;
         }
@@ -74,7 +75,7 @@ final class Fields {
     }
 
     /** A bare date ("2026-07-30") as the start of that day in UTC. */
-    static Instant isoDate(String text) {
+    public static Instant isoDate(String text) {
         if (text == null) {
             return null;
         }
@@ -86,8 +87,32 @@ final class Fields {
         }
     }
 
+    /** A timestamp without an offset ("2026-09-21T12:55:11", Remotive's) read as UTC; with an offset, as stated. */
+    public static Instant utcInstant(String text) {
+        if (text == null) {
+            return null;
+        }
+        try {
+            return LocalDateTime.parse(text).toInstant(ZoneOffset.UTC);
+        } catch (DateTimeParseException e) {
+            return isoInstant(text);
+        }
+    }
+
+    public static Instant epochSeconds(JsonNode node, String field) {
+        JsonNode value = child(node, field);
+        if (value == null || !(value.isNumber() || (value.isString() && scalar(value) != null))) {
+            return null;
+        }
+        try {
+            return Instant.ofEpochSecond(Long.parseLong(value.asString().trim()));
+        } catch (NumberFormatException | java.time.DateTimeException e) {
+            return null;
+        }
+    }
+
     /** Recruitee's "2026-09-29 16:02:37 UTC". */
-    static Instant recruiteeInstant(String text) {
+    public static Instant recruiteeInstant(String text) {
         if (text == null) {
             return null;
         }
@@ -98,7 +123,7 @@ final class Fields {
         }
     }
 
-    static Instant epochMillis(JsonNode node, String field) {
+    public static Instant epochMillis(JsonNode node, String field) {
         JsonNode value = child(node, field);
         if (value == null || !value.isNumber()) {
             return null;
@@ -111,7 +136,7 @@ final class Fields {
     }
 
     /** Joins the non-blank parts with {@code ", "}; null when none is left. */
-    static String join(String... parts) {
+    public static String join(String... parts) {
         StringBuilder out = new StringBuilder();
         for (String part : parts) {
             if (part != null && !part.isBlank()) {
