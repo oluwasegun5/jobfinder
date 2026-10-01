@@ -1,0 +1,221 @@
+{
+  "prompt_version": "tailor_resume/v1",
+  "model": "fake-strong",
+  "resume": {
+    "schema_version": 1,
+    "contact": {
+      "full_name": "Jordan Ikeji",
+      "email": "jordan.ikeji@example.test",
+      "phone": "+234 800 555 0142",
+      "location": "Lagos, Nigeria",
+      "links": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/jordan-ikeji-test"
+        }
+      ]
+    },
+    "headline": "Backend engineer",
+    "summary": "Backend engineer with six years of experience building Java services, focused on reliable APIs and clear on-call runbooks.",
+    "experience": [
+      {
+        "company": "Northwind Systems",
+        "title": "Senior Backend Engineer",
+        "location": "Lagos, Nigeria",
+        "start_date": "2021-03",
+        "end_date": null,
+        "is_current": true,
+        "bullets": [
+          "Led a team of 4 engineers delivering a billing platform in Java and Spring Boot.",
+          "Migrated nightly batch jobs to Kafka consumers.",
+          "Cut API p95 latency by 35% across 12 services.",
+          "Wrote runbooks and handled on-call rotations."
+        ]
+      },
+      {
+        "company": "Brightpath Labs",
+        "title": "Software Engineer",
+        "location": null,
+        "start_date": "2017-06",
+        "end_date": "2021-02",
+        "is_current": false,
+        "bullets": [
+          "Designed RESTful APIs on Postgres for a logistics product.",
+          "Containerised services with Docker."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "institution": "Lakeside University",
+        "degree": "BSc",
+        "field_of_study": "Computer Science",
+        "start_date": "2012",
+        "end_date": "2016"
+      }
+    ],
+    "skills": [
+      "Java",
+      "Spring Boot",
+      "Kafka",
+      "PostgreSQL",
+      "REST APIs",
+      "Docker",
+      "Git",
+      "Kubernetes"
+    ],
+    "projects": [
+      {
+        "name": "Roster Tool",
+        "description": "A small scheduling tool for volunteer rosters.",
+        "url": null,
+        "technologies": [
+          "Java",
+          "PostgreSQL"
+        ]
+      }
+    ],
+    "certifications": [
+      {
+        "name": "AWS Certified Cloud Practitioner",
+        "issuer": "Amazon Web Services",
+        "date": "2022"
+      }
+    ]
+  },
+  "changes": [
+    {
+      "id": "c1",
+      "section": "SUMMARY",
+      "op": "REPLACE",
+      "path": "summary",
+      "before": "Backend engineer with six years of experience building Java services. Enjoys reliable APIs and clear on-call runbooks.",
+      "after": "Backend engineer with six years of experience building Java services, focused on reliable APIs and clear on-call runbooks.",
+      "rationale": "Reworded for this job."
+    },
+    {
+      "id": "c2",
+      "section": "EXPERIENCE",
+      "op": "REPLACE",
+      "path": "experience[0]",
+      "before": {
+        "company": "Northwind Systems",
+        "title": "Senior Backend Engineer",
+        "location": "Lagos, Nigeria",
+        "start_date": "2021-03",
+        "end_date": null,
+        "is_current": true,
+        "bullets": [
+          "Reduced API p95 latency by 35% across 12 services.",
+          "Led a team of 4 engineers delivering a billing platform in Java and Spring Boot.",
+          "Wrote runbooks and handled on-call rotations.",
+          "Migrated nightly batch jobs to Kafka consumers."
+        ]
+      },
+      "after": {
+        "company": "Northwind Systems",
+        "title": "Senior Backend Engineer",
+        "location": "Lagos, Nigeria",
+        "start_date": "2021-03",
+        "end_date": null,
+        "is_current": true,
+        "bullets": [
+          "Led a team of 4 engineers delivering a billing platform in Java and Spring Boot.",
+          "Migrated nightly batch jobs to Kafka consumers.",
+          "Cut API p95 latency by 35% across 12 services.",
+          "Wrote runbooks and handled on-call rotations."
+        ]
+      },
+      "rationale": "Led with the team and Kafka work the posting asks for."
+    },
+    {
+      "id": "c3",
+      "section": "EXPERIENCE",
+      "op": "REPLACE",
+      "path": "experience[1]",
+      "before": {
+        "company": "Brightpath Labs",
+        "title": "Software Engineer",
+        "location": null,
+        "start_date": "2017-06",
+        "end_date": "2021-02",
+        "is_current": false,
+        "bullets": [
+          "Built REST APIs on PostgreSQL for a logistics product.",
+          "Containerised services with Docker."
+        ]
+      },
+      "after": {
+        "company": "Brightpath Labs",
+        "title": "Software Engineer",
+        "location": null,
+        "start_date": "2017-06",
+        "end_date": "2021-02",
+        "is_current": false,
+        "bullets": [
+          "Designed RESTful APIs on Postgres for a logistics product.",
+          "Containerised services with Docker."
+        ]
+      },
+      "rationale": "Reordered or reworded to match the job."
+    },
+    {
+      "id": "c4",
+      "section": "SKILLS",
+      "op": "REPLACE",
+      "path": "skills",
+      "before": [
+        "Java",
+        "Spring Boot",
+        "PostgreSQL",
+        "Docker",
+        "REST APIs",
+        "Node.js",
+        "Kafka",
+        "Git"
+      ],
+      "after": [
+        "Java",
+        "Spring Boot",
+        "Kafka",
+        "PostgreSQL",
+        "REST APIs",
+        "Docker",
+        "Git",
+        "Kubernetes"
+      ],
+      "rationale": "Moved Kafka and PostgreSQL up."
+    }
+  ],
+  "fact_check": {
+    "passed": true,
+    "blocking": 0,
+    "warnings": 1,
+    "flags": [
+      {
+        "code": "NEW_SKILL",
+        "severity": "WARNING",
+        "path": "skills[7]",
+        "value": "Kubernetes",
+        "message": "This skill or technology is not in your resume."
+      }
+    ],
+    "checker_version": "fact_check/v1"
+  },
+  "job_text_redactions": 0,
+  "usage": [
+    {
+      "user_id": "00000000-0000-4000-8000-000000000001",
+      "feature": "tailor_resume",
+      "provider": "fake",
+      "model": "fake-strong",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_usd": "0",
+      "latency_ms": 0,
+      "prompt_version": "tailor_resume/v1",
+      "call_id": "00000000-0000-4000-8000-0000000000c1",
+      "pricing_version": "fake"
+    }
+  ]
+}

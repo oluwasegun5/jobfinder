@@ -83,4 +83,16 @@ class OpenApiDocsTests {
 				"\"/notifications/unsubscribe/{token}\"", "SavedSearchRequest", "NotificationPreferencesRequest", "UnsubscribeInfo");
 	}
 
+	@Test
+	void apiDocsDescribeTheDocumentEndpoints() throws Exception {
+		String body = mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(status().isOk())
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+
+		assertThat(body).contains("\"/jobs/{id}/tailor\"", "\"/documents\"", "\"/documents/{id}\"",
+				"\"/documents/{id}/approve\"", "DraftResponse", "PatchRequest", "FactCheckView", "FlagView");
+	}
+
 }

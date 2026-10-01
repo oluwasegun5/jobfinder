@@ -36,7 +36,7 @@ AI_SERVICE_TOKEN=$(openssl rand -hex 32) RABBITMQ_ENABLED=false uv run uvicorn a
 |---|---|---|
 | `AI_SERVICE_TOKEN` | — (required, ≥ 32 chars) | shared secret sent by core-api in `X-Service-Token` |
 | `ANTHROPIC_API_KEY` | unset | LLM routes return 503 until set |
-| `LLM_PROVIDER` | `anthropic` | `anthropic` or `fake`: a deterministic keyword heuristic that answers only `/v1/score-matches` (provider `fake`, model `fake-heuristic-v1`, cost 0), for keyless local runs and evals. Never the default; CV parsing and diagnostics need `anthropic` |
+| `LLM_PROVIDER` | `anthropic` | `anthropic` or `fake`: a deterministic keyword heuristic that answers `/v1/score-matches` and `/v1/tailor-resume` (provider `fake`; the tailoring only reorders what the resume already says), for keyless local runs and evals. Never the default; CV parsing and diagnostics need `anthropic` |
 | `SCORE_MATCHES_MAX_JOBS_PER_CALL` | `6` | jobs scored per model call; a request of up to 50 jobs is split under this and the character budget |
 | `SCORE_MATCHES_MAX_INPUT_CHARS` | `24000` | input budget of one call (about four characters per token) |
 | `SCORE_MATCHES_DESCRIPTION_CHARS` | `3000` | job descriptions are cut to this before prompting |
@@ -69,6 +69,16 @@ AI_SERVICE_TOKEN=$(openssl rand -hex 32) RABBITMQ_ENABLED=false uv run uvicorn a
   once; a job the model still gets wrong comes back `status: failed` with an `error_code` and no score (core-api then
   serves its recall score, flagged unranked) and never fails the whole request. `usage` has one record per model call.
   core-api calls this for the matching engine (docs/adr/0026-matching-engine.md).
+
+- `POST /v1/tailor-resume` `{user_id, prompt_version, resume, job, options}` → `{prompt_version, model, resume, changes, fact_check, job_text_redactions, usage}`:
+  tailors a structured resume to a job with the strong model and the versioned prompt `app/prompts/tailor_resume/v<n>.md`
+  that the request pins (unknown versions: 400 `unknown_prompt_version`). The job text is untrusted: limited, sanitised
+  (instructions to an AI are redacted) and delimited with a random nonce; the contact block never reaches the model.
+  `changes` are computed by code (unit, op, path, before, after, rationale). `fact_check` is the separate deterministic
+  check of the result against the source resume (BLOCKING for an invented employer, school, degree, date range,
+  credential, project or link; WARNING for a new skill, metric or number). A draft with BLOCKING flags is still returned.
+- `POST /v1/fact-check` `{source, candidate, job_description?}` → the same `fact_check` object, with no model and no
+  cost; core-api re-runs it on every edit of a draft (docs/adr/0029-resume-tailoring.md).
 
 ## Embeddings
 

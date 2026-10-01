@@ -102,3 +102,48 @@ def test_score_matches_response_matches_the_contract_core_api_stubs(
         SCORE_CONTRACT.parent.mkdir(parents=True, exist_ok=True)
         SCORE_CONTRACT.write_text(json.dumps(actual, indent=2) + "\n", encoding="utf-8")
     assert actual == json.loads(SCORE_CONTRACT.read_text(encoding="utf-8"))
+
+
+_RESOURCES = Path(__file__).resolve().parents[2] / "core-api/src/test/resources/ai-service"
+
+
+def _pin(name: str, actual: dict[str, Any]) -> None:
+    contract = _RESOURCES / name
+    if os.environ.get("UPDATE_CONTRACTS") or not contract.exists():
+        contract.parent.mkdir(parents=True, exist_ok=True)
+        contract.write_text(json.dumps(actual, indent=2) + "\n", encoding="utf-8")
+    assert actual == json.loads(contract.read_text(encoding="utf-8"))
+
+
+def test_tailor_resume_response_matches_the_contract_core_api_stubs(
+    client: TestClient, fake_provider: FakeProvider
+) -> None:
+    """A faithful tailoring with one rewording and a warning: the shapes core-api's client reads.
+
+    If this fails, the response shape of POST /v1/tailor-resume changed. Update core-api's
+    AiServiceTailoringClient if needed, then regenerate with UPDATE_CONTRACTS=1.
+    """
+    from tests.fixtures import tailoring as fx
+
+    reply = fx.faithful()
+    reply["skills"].append("Kubernetes")  # a WARNING flag, so the flag shape is pinned too
+    fake_provider.queue(fx.llm_reply(reply))
+
+    response = client.post("/v1/tailor-resume", json=fx.request_body())
+
+    assert response.status_code == 200
+    _pin("tailor-resume-ok.json", _without_volatile(response.json()))
+
+
+def test_fact_check_response_matches_the_contract_core_api_stubs(client: TestClient) -> None:
+    """POST /v1/fact-check on a draft with an invented degree and an invented skill."""
+    from tests.fixtures import tailoring as fx
+
+    candidate = fx.faithful()
+    candidate["education"][0]["degree"] = "PhD"
+    candidate["skills"].append("Kubernetes")
+
+    response = client.post("/v1/fact-check", json={"source": fx.SOURCE, "candidate": candidate})
+
+    assert response.status_code == 200
+    _pin("fact-check-failed.json", response.json())

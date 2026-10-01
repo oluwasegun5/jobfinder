@@ -736,6 +736,77 @@
         }
       }
     },
+    "/jobs/{id}/tailor": {
+      "post": {
+        "tags": [
+          "document-controller"
+        ],
+        "operationId": "tailor",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TailorRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/{id}/approve": {
+      "post": {
+        "tags": [
+          "document-controller"
+        ],
+        "operationId": "approve",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/verify-email": {
       "post": {
         "tags": [
@@ -1017,6 +1088,98 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/IngestionRunStartedResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/{id}": {
+      "get": {
+        "tags": [
+          "document-controller"
+        ],
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "document-controller"
+        ],
+        "operationId": "deleteDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "document-controller"
+        ],
+        "operationId": "patch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftResponse"
                 }
               }
             }
@@ -1553,6 +1716,62 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/FeedPage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents": {
+      "get": {
+        "tags": [
+          "document-controller"
+        ],
+        "operationId": "list_1",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "GENERATING",
+                "DRAFT",
+                "FACT_CHECK_FAILED",
+                "APPROVED"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 100,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse"
                 }
               }
             }
@@ -2829,6 +3048,189 @@
           }
         }
       },
+      "TailorOptions": {
+        "type": "object",
+        "properties": {
+          "rewriteSummary": {
+            "type": "boolean"
+          },
+          "maxBulletsPerRole": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 25,
+            "minimum": 1
+          }
+        }
+      },
+      "TailorRequest": {
+        "type": "object",
+        "properties": {
+          "options": {
+            "$ref": "#/components/schemas/TailorOptions"
+          }
+        }
+      },
+      "ChangeView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "section": {
+            "type": "string"
+          },
+          "op": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "before": {},
+          "after": {},
+          "rationale": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACCEPTED",
+              "REJECTED"
+            ]
+          },
+          "edited": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DraftResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "TAILORED_RESUME"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "GENERATING",
+              "DRAFT",
+              "FACT_CHECK_FAILED",
+              "APPROVED"
+            ]
+          },
+          "job": {
+            "$ref": "#/components/schemas/JobRef"
+          },
+          "baseResumeVersionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "promptVersion": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeView"
+            }
+          },
+          "factCheck": {
+            "$ref": "#/components/schemas/FactCheckView"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "approvedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "FactCheckView": {
+        "type": "object",
+        "properties": {
+          "passed": {
+            "type": "boolean"
+          },
+          "blocking": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "warnings": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlagView"
+            }
+          },
+          "checkerVersion": {
+            "type": "string"
+          }
+        }
+      },
+      "FlagView": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "changeId": {
+            "type": "string"
+          }
+        }
+      },
+      "JobRef": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          }
+        }
+      },
       "TokenRequest": {
         "type": "object",
         "properties": {
@@ -3001,6 +3403,62 @@
             "type": "string"
           }
         }
+      },
+      "Operation": {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "SET_STATE",
+              "EDIT"
+            ]
+          },
+          "changeId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "path": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 0
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACCEPTED",
+              "REJECTED"
+            ]
+          },
+          "after": {
+            "description": "A string (headline, summary), an array of strings (skills) or an entry object."
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "PatchRequest": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "operations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Operation"
+            },
+            "maxItems": 50,
+            "minItems": 0
+          }
+        },
+        "required": [
+          "operations"
+        ]
       },
       "SavedSearchList": {
         "type": "object",
@@ -3490,6 +3948,68 @@
           },
           "period": {
             "type": "string"
+          }
+        }
+      },
+      "ListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SummaryResponse"
+            }
+          }
+        }
+      },
+      "SummaryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "TAILORED_RESUME"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "GENERATING",
+              "DRAFT",
+              "FACT_CHECK_FAILED",
+              "APPROVED"
+            ]
+          },
+          "job": {
+            "$ref": "#/components/schemas/JobRef"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "blocking": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "warnings": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "approvedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },

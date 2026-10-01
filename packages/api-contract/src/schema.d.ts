@@ -228,6 +228,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/jobs/{id}/tailor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["tailor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/verify-email": {
         parameters: {
             query?: never;
@@ -404,6 +436,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/documents/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get"];
+        put?: never;
+        post?: never;
+        delete: operations["deleteDocument"];
+        options?: never;
+        head?: never;
+        patch: operations["patch"];
+        trace?: never;
+    };
     "/saved-jobs": {
         parameters: {
             query?: never;
@@ -508,6 +556,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["feed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -937,6 +1001,75 @@ export interface components {
             scope?: "SAVED_SEARCH" | "DIGESTS" | "INSTANT_ALERTS" | "MARKETING";
             savedSearchName?: string;
         };
+        TailorOptions: {
+            rewriteSummary?: boolean;
+            /** Format: int32 */
+            maxBulletsPerRole?: number;
+        };
+        TailorRequest: {
+            options?: components["schemas"]["TailorOptions"];
+        };
+        ChangeView: {
+            id?: string;
+            section?: string;
+            op?: string;
+            path?: string;
+            before?: unknown;
+            after?: unknown;
+            rationale?: string;
+            /** @enum {string} */
+            state?: "ACCEPTED" | "REJECTED";
+            edited?: boolean;
+        };
+        DraftResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            type?: "TAILORED_RESUME";
+            /** @enum {string} */
+            status?: "GENERATING" | "DRAFT" | "FACT_CHECK_FAILED" | "APPROVED";
+            job?: components["schemas"]["JobRef"];
+            /** Format: uuid */
+            baseResumeVersionId?: string;
+            promptVersion?: string;
+            model?: string;
+            /** Format: int32 */
+            version?: number;
+            content?: {
+                [key: string]: unknown;
+            };
+            changes?: components["schemas"]["ChangeView"][];
+            factCheck?: components["schemas"]["FactCheckView"];
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: date-time */
+            approvedAt?: string;
+        };
+        FactCheckView: {
+            passed?: boolean;
+            /** Format: int32 */
+            blocking?: number;
+            /** Format: int32 */
+            warnings?: number;
+            flags?: components["schemas"]["FlagView"][];
+            checkerVersion?: string;
+        };
+        FlagView: {
+            code?: string;
+            severity?: string;
+            path?: string;
+            value?: string;
+            message?: string;
+            changeId?: string;
+        };
+        JobRef: {
+            /** Format: uuid */
+            id?: string;
+            title?: string;
+            company?: string;
+        };
         TokenRequest: {
             token: string;
         };
@@ -984,6 +1117,21 @@ export interface components {
         IngestionRunStartedResponse: {
             source?: string;
             status?: string;
+        };
+        Operation: {
+            /** @enum {string} */
+            op: "SET_STATE" | "EDIT";
+            changeId?: string;
+            path?: string;
+            /** @enum {string} */
+            state?: "ACCEPTED" | "REJECTED";
+            /** @description A string (headline, summary), an array of strings (skills) or an entry object. */
+            after?: unknown;
+        };
+        PatchRequest: {
+            /** Format: int32 */
+            version?: number;
+            operations: components["schemas"]["Operation"][];
         };
         SavedSearchList: {
             items?: components["schemas"]["SavedSearchView"][];
@@ -1152,6 +1300,30 @@ export interface components {
             max?: number;
             currency?: string;
             period?: string;
+        };
+        ListResponse: {
+            items?: components["schemas"]["SummaryResponse"][];
+        };
+        SummaryResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            type?: "TAILORED_RESUME";
+            /** @enum {string} */
+            status?: "GENERATING" | "DRAFT" | "FACT_CHECK_FAILED" | "APPROVED";
+            job?: components["schemas"]["JobRef"];
+            /** Format: int32 */
+            version?: number;
+            /** Format: int32 */
+            blocking?: number;
+            /** Format: int32 */
+            warnings?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: date-time */
+            approvedAt?: string;
         };
         AllowanceResponse: {
             dailyCap?: number;
@@ -1792,6 +1964,54 @@ export interface operations {
             };
         };
     };
+    tailor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["TailorRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DraftResponse"];
+                };
+            };
+        };
+    };
+    approve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DraftResponse"];
+                };
+            };
+        };
+    };
     verifyEmail: {
         parameters: {
             query?: never;
@@ -2052,6 +2272,74 @@ export interface operations {
             };
         };
     };
+    get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DraftResponse"];
+                };
+            };
+        };
+    };
+    deleteDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DraftResponse"];
+                };
+            };
+        };
+    };
     saved: {
         parameters: {
             query?: {
@@ -2228,6 +2516,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["FeedPage"];
+                };
+            };
+        };
+    };
+    list_1: {
+        parameters: {
+            query?: {
+                jobId?: string;
+                status?: "GENERATING" | "DRAFT" | "FACT_CHECK_FAILED" | "APPROVED";
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ListResponse"];
                 };
             };
         };
