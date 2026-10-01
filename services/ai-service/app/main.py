@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import Depends, FastAPI
 
-from app.api import diagnostics, health, parse_resume
+from app.api import diagnostics, health, parse_resume, score_matches
 from app.api.errors import register_error_handlers
 from app.config import EmbeddingProviderName, Settings, get_settings
 from app.embeddings import EmbeddingProvider, build_embedding_provider
@@ -119,4 +119,5 @@ def create_app(
     app.include_router(health.router)
     app.include_router(diagnostics.router)
     app.include_router(parse_resume.router)
+    app.include_router(score_matches.router)
     return app

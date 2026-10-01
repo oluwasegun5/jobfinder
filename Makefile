@@ -1,6 +1,6 @@
 COMPOSE := docker compose -f infra/docker-compose.yml --env-file .env
 
-.PHONY: up down logs test fmt lint contract embeddings-backfill search-perf
+.PHONY: up down logs test fmt lint contract embeddings-backfill search-perf match-eval
 
 up:
 	$(COMPOSE) up -d --wait
@@ -32,6 +32,13 @@ embeddings-backfill:
 	@token=$$(grep '^AI_SERVICE_TOKEN=' .env | cut -d= -f2-); port=$$(grep '^CORE_API_PORT=' .env | cut -d= -f2-); \
 	curl -fsS -X POST -H "X-Service-Token: $$token" \
 	  "http://localhost:$${port:-8080}/internal/v1/embeddings/backfill?scope=$(or $(SCOPE),ALL)"; echo
+
+# Score distribution of the matching engine over the synthetic fixtures (docs/adr/0026-matching-engine.md): per-stage
+# histogram and percentiles, rank correlation between stage 2 and stage 3, share unranked. Keyless by default (the
+# deterministic heuristic provider). Real stage 3: make match-eval ARGS='--provider anthropic' with ANTHROPIC_API_KEY
+# set; real stage-2 vectors: ARGS='--embedding voyage' with VOYAGE_API_KEY.
+match-eval:
+	cd services/ai-service && uv run python -m evals.match_eval $(ARGS)
 
 # The job search latency bar (docs/adr/0023-job-search.md): loads 20,000 generated jobs into a throwaway Postgres
 # (Testcontainers; Docker must be running), runs a mix of searches and fails if p95 reaches 300 ms. Takes a few

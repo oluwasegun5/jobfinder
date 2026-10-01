@@ -1,0 +1,126 @@
+{
+  "candidates": [
+    {
+      "id": "backend-senior",
+      "headline": "Senior backend engineer building payment systems",
+      "summary": "Eight years designing Java services on Postgres and Kafka, owning production reliability.",
+      "seniority": "SENIOR",
+      "years_experience": 8,
+      "target_titles": [
+        "Backend Engineer",
+        "Platform Engineer"
+      ],
+      "skills": [
+        "Java",
+        "Spring Boot",
+        "PostgreSQL",
+        "Kafka",
+        "Docker",
+        "AWS",
+        "REST APIs",
+        "Redis"
+      ],
+      "experience": [
+        {
+          "title": "Senior Backend Engineer",
+          "company": "Example Pay",
+          "period": "2021-2025",
+          "bullets": [
+            "Built settlement services handling millions of events a day.",
+            "Cut p99 latency by 40 percent with query and cache tuning."
+          ]
+        },
+        {
+          "title": "Java Developer",
+          "company": "Sample Bank",
+          "period": "2017-2021",
+          "bullets": [
+            "Maintained account services in Spring Boot."
+          ]
+        }
+      ],
+      "education": [
+        "BSc Computer Science, Example University"
+      ],
+      "certifications": []
+    },
+    {
+      "id": "data-mid",
+      "headline": "Data scientist focused on forecasting and experimentation",
+      "summary": "Four years turning messy data into models, with Python, SQL and Spark in production.",
+      "seniority": "MID",
+      "years_experience": 4,
+      "target_titles": [
+        "Data Scientist",
+        "Machine Learning Engineer"
+      ],
+      "skills": [
+        "Python",
+        "SQL",
+        "pandas",
+        "Machine Learning",
+        "Spark",
+        "Statistics",
+        "Airflow"
+      ],
+      "experience": [
+        {
+          "title": "Data Scientist",
+          "company": "Example Retail",
+          "period": "2022-2025",
+          "bullets": [
+            "Built demand forecasts that cut stock-outs by 12 percent.",
+            "Ran A/B tests for pricing changes."
+          ]
+        },
+        {
+          "title": "Data Analyst",
+          "company": "Sample Media",
+          "period": "2020-2022",
+          "bullets": [
+            "Owned weekly reporting in SQL."
+          ]
+        }
+      ],
+      "education": [
+        "MSc Statistics, Example University"
+      ],
+      "certifications": []
+    },
+    {
+      "id": "frontend-junior",
+      "headline": "Frontend developer who cares about accessible interfaces",
+      "summary": "Two years building React apps in TypeScript, with a design-system mindset.",
+      "seniority": "JUNIOR",
+      "years_experience": 2,
+      "target_titles": [
+        "Frontend Developer",
+        "UI Engineer"
+      ],
+      "skills": [
+        "TypeScript",
+        "React",
+        "CSS",
+        "HTML",
+        "Jest",
+        "Accessibility",
+        "Figma"
+      ],
+      "experience": [
+        {
+          "title": "Frontend Developer",
+          "company": "Example Studio",
+          "period": "2023-2025",
+          "bullets": [
+            "Shipped a React component library used by four products.",
+            "Raised Lighthouse accessibility scores above 95."
+          ]
+        }
+      ],
+      "education": [
+        "BSc Information Systems, Example University"
+      ],
+      "certifications": []
+    }
+  ]
+}

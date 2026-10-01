@@ -51,6 +51,10 @@ class SecurityConfig {
             "/auth/signup", "/auth/verify-email", "/auth/resend-verification", "/auth/login",
             "/auth/google", "/auth/refresh", "/auth/logout", "/auth/forgot-password", "/auth/reset-password" };
 
+    // One-click unsubscribe (docs/adr/0028-notifications.md): the link in an email carries a signed token and must work
+    // without signing in. GET only describes what the link does; POST (RFC 8058 one-click) does it.
+    private static final String UNSUBSCRIBE = "/notifications/unsubscribe/*";
+
     // The API docs and health are part of the local/CI contract flow. Gate the docs before production (ADR 0011).
     private static final String[] PUBLIC_OPERATIONAL = {
             "/actuator/health", "/actuator/health/**", "/actuator/info",
@@ -64,6 +68,8 @@ class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, PUBLIC_AUTH_POSTS).permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_OPERATIONAL).permitAll()
+                        .requestMatchers(HttpMethod.GET, UNSUBSCRIBE).permitAll()
+                        .requestMatchers(HttpMethod.POST, UNSUBSCRIBE).permitAll()
                         // Admin console API (PLAN.md section 9: admin endpoints are role-gated).
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())

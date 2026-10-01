@@ -158,6 +158,106 @@ app:
     daily-cap-credits: ${AI_DAILY_CAP_CREDITS:500}
     micro-usd-per-credit: ${AI_MICRO_USD_PER_CREDIT:1000}
 
+  matching:
+    # The matching engine (docs/adr/0026-matching-engine.md). The prompt version is part of the score cache key and is
+    # sent to ai-service with every request.
+    prompt-version: ${MATCHING_PROMPT_VERSION:match_scoring/v1}
+    # Stage 2 recalls this many jobs by embedding similarity; stage 3 has the model re-rank the best rerank-top.
+    recall-limit: 300
+    rerank-top: 30
+    # The stage-2 blend. Each between 0 and 1 and together exactly 1 (startup fails otherwise).
+    weights:
+      vector: 0.6
+      skills: 0.3
+      recency: 0.1
+    # The age at which a job's recency component halves.
+    recency-half-life: 21d
+    # Seniority steps either side of the candidate's own that stage 1 allows (5 or more allows every level).
+    seniority-band: 1
+    llm:
+      # Jobs per request to ai-service, and the description length that is hashed and sent.
+      batch-size: 10
+      description-chars: 3000
+      connect-timeout: 2s
+      read-timeout: 120s
+    retention:
+      superseded-after: 14d
+      max-age: 90d
+    batch:
+      # The nightly run for active users (signed in within active-within, with a parsed primary resume, saved
+      # preferences and a resume embedding). Off with MATCHING_BATCH_ENABLED=false.
+      enabled: ${MATCHING_BATCH_ENABLED:true}
+      cron: ${MATCHING_BATCH_CRON:0 30 2 * * *}
+      zone: UTC
+      active-within: 14d
+      max-users-per-run: 500
+      max-ai-requests-per-run: 3000
+      user-page-size: 100
+      lock-at-most-for: 2h
+
+  feed:
+    # The "For you" feed (docs/adr/0027-feed-and-feedback.md): ranks and pages through the user's best pool-size matches.
+    pool-size: 100
+    # Saves, hides and applications move jobs by company and title similarity. Points are added to the 0 to 100 match
+    # score (hidden subtracts), scaled by age (half-life) and, for titles, by the Jaccard similarity of the normalized
+    # words (at least title-threshold). Penalties and boosts are each capped, so feedback reorders but never empties.
+    feedback:
+      window: 90d
+      half-life: 30d
+      max-signals-per-action: 100
+      title-threshold: 0.5
+      hidden-company: 15
+      hidden-title: 15
+      saved-company: 5
+      saved-title: 6
+      applied-company: 4
+      applied-title: 5
+      max-penalty: 30
+      max-boost: 15
+
+  notifications:
+    # Saved searches, digests, instant alerts and unsubscribe links (docs/adr/0028-notifications.md). Every email is
+    # optional mail: sent only to active, verified users who asked for it, with a one-click unsubscribe link.
+    web-base-url: ${WEB_BASE_URL:http://localhost:3000}
+    # Where a mail client can reach core-api for the RFC 8058 one-click POST; blank = the web app's /api/core proxy.
+    public-api-url: ${NOTIFICATIONS_PUBLIC_API_URL:}
+    mail-from: ${NOTIFICATIONS_MAIL_FROM:no-reply@jobfinder.local}
+    # Signs unsubscribe tokens (at least 32 characters). Blank derives a key from JWT_SECRET.
+    unsubscribe-secret: ${NOTIFICATIONS_UNSUBSCRIBE_SECRET:}
+    max-saved-searches: 20
+    unsubscribe-token-ttl: 730d
+    # Jobs stored within this long of a run are left to the next one (an ingestion transaction may still be committing).
+    settle-delay: 2m
+    digest:
+      # Off with NOTIFICATIONS_DIGEST_ENABLED=false. Runs hourly at minute 5 and sends the digests whose hour (in the
+      # user's time zone) has come; one later than max-lateness is skipped rather than sent late.
+      enabled: ${NOTIFICATIONS_DIGEST_ENABLED:true}
+      cron: ${NOTIFICATIONS_DIGEST_CRON:0 5 * * * *}
+      zone: UTC
+      max-items: 10
+      # The lowest feed score (0 to 100) of a "strong" match, and how long ago the model may have scored it.
+      min-score: 70
+      lookback: 14d
+      max-lateness: 6h
+      user-page-size: 200
+      lock-at-most-for: 30m
+    instant:
+      # Off with NOTIFICATIONS_INSTANT_ENABLED=false (no match alerts, no INSTANT saved-search polling).
+      enabled: ${NOTIFICATIONS_INSTANT_ENABLED:true}
+      poll-interval: 10m
+      # At most this many alert emails per user in any 24 hours, each listing at most max-items-per-alert jobs.
+      max-per-day: 3
+      max-items-per-alert: 5
+      lookback: 36h
+      lock-at-most-for: 10m
+    delivery:
+      # A failed email is retried (waiting initial-backoff, then doubling) up to max-attempts in all, while its window is
+      # open. Log rows older than log-retention are deleted.
+      max-attempts: 3
+      initial-backoff: 15m
+      stale-after: 30m
+      log-retention: 180d
+
 springdoc:
   # The service-to-service endpoints (service token, not user tokens) are not part of the public API.
   paths-to-exclude: /internal/**

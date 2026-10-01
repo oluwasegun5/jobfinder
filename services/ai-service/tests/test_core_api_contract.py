@@ -54,3 +54,51 @@ def test_parse_resume_response_matches_the_contract_core_api_stubs(
         CONTRACT.parent.mkdir(parents=True, exist_ok=True)
         CONTRACT.write_text(json.dumps(actual, indent=2) + "\n", encoding="utf-8")
     assert actual == json.loads(CONTRACT.read_text(encoding="utf-8"))
+
+
+SCORE_CONTRACT = (
+    Path(__file__).resolve().parents[2]
+    / "core-api/src/test/resources/ai-service/score-matches-ok.json"
+)
+
+
+def test_score_matches_response_matches_the_contract_core_api_stubs(
+    client: TestClient, fake_provider: FakeProvider
+) -> None:
+    """One scored job and one the model skipped: both result shapes core-api's client must read.
+
+    If this fails, the response shape of POST /v1/score-matches changed. Update core-api's
+    AiServiceMatchClient if needed, then regenerate the file with UPDATE_CONTRACTS=1.
+    """
+    scored, skipped = uuid.UUID(int=1), uuid.UUID(int=2)
+    fake_provider.queue(
+        json.dumps(
+            {
+                "results": [
+                    {
+                        "job_id": str(scored),
+                        "score": 82,
+                        "strengths": ["Five years of Java, which the role requires."],
+                        "gaps": ["No Kubernetes listed."],
+                    }
+                ]
+            }
+        )
+    )
+    body = {
+        "user_id": str(USER_ID),
+        "candidate": {"headline": "Backend engineer", "skills": ["Java"]},
+        "jobs": [
+            {"id": str(scored), "title": "Backend Engineer", "skills": ["Java", "Kubernetes"]},
+            {"id": str(skipped), "title": "Platform Engineer"},
+        ],
+    }
+
+    response = client.post("/v1/score-matches", json=body)
+
+    assert response.status_code == 200
+    actual = _without_volatile(response.json())
+    if os.environ.get("UPDATE_CONTRACTS") or not SCORE_CONTRACT.exists():
+        SCORE_CONTRACT.parent.mkdir(parents=True, exist_ok=True)
+        SCORE_CONTRACT.write_text(json.dumps(actual, indent=2) + "\n", encoding="utf-8")
+    assert actual == json.loads(SCORE_CONTRACT.read_text(encoding="utf-8"))

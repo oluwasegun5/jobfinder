@@ -17,6 +17,7 @@ from app.llm import (
     LLMProviderError,
     LLMRefusalError,
 )
+from app.matching.service import UnknownPromptVersionError
 from app.parsing.errors import ResumeInputError
 
 logger = logging.getLogger(__name__)
@@ -92,6 +93,13 @@ async def _handle_input_error(request: Request, exc: Exception) -> JSONResponse:
     return _problem(exc.status_code, "Unusable file", exc.message, code=exc.code)
 
 
+async def _handle_unknown_prompt(request: Request, exc: Exception) -> JSONResponse:
+    assert isinstance(exc, UnknownPromptVersionError)  # noqa: S101 - narrowing for the type checker
+    logger.warning("Unknown prompt version requested on %s: %s", request.url.path, exc.version)
+    return _problem(400, "Unknown prompt version", str(exc), code="unknown_prompt_version")
+
+
 def register_error_handlers(app: FastAPI) -> None:
+    app.add_exception_handler(UnknownPromptVersionError, _handle_unknown_prompt)
     app.add_exception_handler(LLMError, _handle_llm_error)
     app.add_exception_handler(ResumeInputError, _handle_input_error)

@@ -36,6 +36,10 @@ AI_SERVICE_TOKEN=$(openssl rand -hex 32) RABBITMQ_ENABLED=false uv run uvicorn a
 |---|---|---|
 | `AI_SERVICE_TOKEN` | — (required, ≥ 32 chars) | shared secret sent by core-api in `X-Service-Token` |
 | `ANTHROPIC_API_KEY` | unset | LLM routes return 503 until set |
+| `LLM_PROVIDER` | `anthropic` | `anthropic` or `fake`: a deterministic keyword heuristic that answers only `/v1/score-matches` (provider `fake`, model `fake-heuristic-v1`, cost 0), for keyless local runs and evals. Never the default; CV parsing and diagnostics need `anthropic` |
+| `SCORE_MATCHES_MAX_JOBS_PER_CALL` | `6` | jobs scored per model call; a request of up to 50 jobs is split under this and the character budget |
+| `SCORE_MATCHES_MAX_INPUT_CHARS` | `24000` | input budget of one call (about four characters per token) |
+| `SCORE_MATCHES_DESCRIPTION_CHARS` | `3000` | job descriptions are cut to this before prompting |
 | `LLM_MODEL_FAST` / `LLM_MODEL_STRONG` | `claude-haiku-4-5` / `claude-sonnet-5` | PLAN.md §7 model routing |
 | `LLM_PRICING` | haiku + sonnet-5 list prices | JSON `{model: {input_per_mtok, output_per_mtok}}` |
 | `RABBITMQ_HOST` / `_PORT` / `_USER` / `_PASSWORD` / `_VHOST`, `RABBITMQ_ENABLED` | `localhost` / `5672` / `guest` / `guest` / `/`, `true` | |
@@ -57,6 +61,14 @@ AI_SERVICE_TOKEN=$(openssl rand -hex 32) RABBITMQ_ENABLED=false uv run uvicorn a
   trusted; max 6 MB). Returns `{structured, warnings, prompt_version, usage}` where `structured` is validated
   against `app/parsing/schema.py`, `warnings` lists skills/employers the CV text does not support, and `usage` has
   one record per LLM call. core-api calls this from its `resumes.parse` queue worker (docs/adr/0016).
+
+- `POST /v1/score-matches` `{user_id, prompt_version, candidate, jobs[1..50]}` → `{prompt_version, model, results, usage}`:
+  scores each job 0-100 for the candidate with a short list of strengths and gaps, using the versioned prompt
+  `app/prompts/match_scoring/v<n>.md` that the request pins (unknown versions: 400 `unknown_prompt_version`). The
+  candidate and the postings are untrusted text, delimited and bounded. Model output is validated strictly and retried
+  once; a job the model still gets wrong comes back `status: failed` with an `error_code` and no score (core-api then
+  serves its recall score, flagged unranked) and never fails the whole request. `usage` has one record per model call.
+  core-api calls this for the matching engine (docs/adr/0026-matching-engine.md).
 
 ## Embeddings
 
@@ -86,6 +98,22 @@ uv run python -m evals.parse_resume --dir path/to/anonymised/cvs    # print pars
 
 It prints per-fixture scores (contact, experience, education, skills F1), model cost, and exits 1 below
 `--min-score` (default 0.85) or if the prompt-injection fixture leaks anything into the output.
+
+To see how the matching engine's scores are distributed (run it when the prompt, the weights or the heuristic change;
+keyless by default, and the sample output is kept in docs/adr/0026-matching-engine.md):
+
+```bash
+make match-eval                                          # from the repo root
+uv run python -m evals.match_eval --json                 # the same numbers as JSON
+ANTHROPIC_API_KEY=... uv run python -m evals.match_eval --provider anthropic   # real stage 3 (costs cents)
+VOYAGE_API_KEY=... uv run python -m evals.match_eval --embedding voyage        # real stage-2 vectors
+```
+
+It runs the three matching stages over three invented candidates and 48 invented jobs in `evals/fixtures/match/`
+(a Python mirror of core-api's stage-2 blend, checked against the same golden cases as the Java tests, then this
+service's own scoring over the top 30 jobs) and prints per-stage histograms and percentiles, the Spearman rank
+correlation between stage 2 and stage 3, and the share of jobs left unranked. With the fake provider the stage-3
+numbers show the report's shape only; they say nothing about the prompt or a model.
 
 If the response shape of `/v1/parse-resume` changes, regenerate the contract file core-api's tests stub with:
 `UPDATE_CONTRACTS=1 uv run pytest tests/test_core_api_contract.py`.

@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/saved-searches/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["savedSearch"];
+        put: operations["replaceSavedSearch"];
+        post?: never;
+        delete: operations["deleteSavedSearch"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/resumes/{id}/primary": {
         parameters: {
             query?: never;
@@ -68,6 +84,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/notifications/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["preferences_1"];
+        put: operations["savePreferences_1"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/jobs/{id}/save": {
         parameters: {
             query?: never;
@@ -100,6 +132,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/jobs/{id}/applied": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["applied"];
+        post?: never;
+        delete: operations["notApplied"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/ingestion/sources/{code}/enabled": {
         parameters: {
             query?: never;
@@ -110,6 +158,22 @@ export interface paths {
         get?: never;
         put: operations["setEnabled"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/saved-searches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["savedSearches"];
+        put?: never;
+        post: operations["createSavedSearch"];
         delete?: never;
         options?: never;
         head?: never;
@@ -142,6 +206,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["reparse"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/unsubscribe/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["describeUnsubscribe"];
+        put?: never;
+        post: operations["performUnsubscribe"];
         delete?: never;
         options?: never;
         head?: never;
@@ -404,6 +484,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/jobs/{id}/match": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["match"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["feed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/billing/allowance": {
         parameters: {
             query?: never;
@@ -571,6 +683,34 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        SavedSearchCriteria: {
+            q?: string;
+            workMode?: ("REMOTE" | "HYBRID" | "ONSITE")[];
+            employmentType?: ("FULL_TIME" | "PART_TIME" | "CONTRACT" | "TEMPORARY" | "INTERNSHIP")[];
+            seniority?: ("INTERN" | "JUNIOR" | "MID" | "SENIOR" | "LEAD" | "EXECUTIVE")[];
+            country?: string[];
+            location?: string;
+            minSalary?: number;
+            salaryCurrency?: string;
+        };
+        SavedSearchRequest: {
+            name: string;
+            criteria: components["schemas"]["SavedSearchCriteria"];
+            /** @enum {string} */
+            frequency: "INSTANT" | "DAILY" | "WEEKLY" | "OFF";
+        };
+        SavedSearchView: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            criteria?: components["schemas"]["SavedSearchCriteria"];
+            /** @enum {string} */
+            frequency?: "INSTANT" | "DAILY" | "WEEKLY" | "OFF";
+            /** Format: date-time */
+            lastRunAt?: string;
+            /** Format: date-time */
+            createdAt?: string;
+        };
         ResumeResponse: {
             /** Format: uuid */
             id?: string;
@@ -704,6 +844,36 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        NotificationPreferencesRequest: {
+            emailEnabled: boolean;
+            digestEnabled: boolean;
+            /** @enum {string} */
+            digestFrequency: "DAILY" | "WEEKLY";
+            /** Format: int32 */
+            digestHour: number;
+            /** Format: int32 */
+            digestWeekday: number;
+            timezone?: string;
+            instantEnabled: boolean;
+            /** Format: int32 */
+            instantThreshold: number;
+        };
+        NotificationPreferencesView: {
+            emailEnabled?: boolean;
+            digestEnabled?: boolean;
+            /** @enum {string} */
+            digestFrequency?: "DAILY" | "WEEKLY";
+            /** Format: int32 */
+            digestHour?: number;
+            /** Format: int32 */
+            digestWeekday?: number;
+            timezone?: string;
+            instantEnabled?: boolean;
+            /** Format: int32 */
+            instantThreshold?: number;
+            digestsUnsubscribed?: boolean;
+            allUnsubscribed?: boolean;
+        };
         SetSourceEnabledRequest: {
             enabled: boolean;
         };
@@ -762,6 +932,11 @@ export interface components {
             occurrences?: number;
             detail?: string;
         };
+        UnsubscribeInfo: {
+            /** @enum {string} */
+            scope?: "SAVED_SEARCH" | "DIGESTS" | "INSTANT_ALERTS" | "MARKETING";
+            savedSearchName?: string;
+        };
         TokenRequest: {
             token: string;
         };
@@ -810,6 +985,9 @@ export interface components {
             source?: string;
             status?: string;
         };
+        SavedSearchList: {
+            items?: components["schemas"]["SavedSearchView"][];
+        };
         CompanyRef: {
             /** Format: uuid */
             id?: string;
@@ -836,6 +1014,7 @@ export interface components {
             status?: string;
             summary?: string;
             saved?: boolean;
+            applied?: boolean;
             /** Format: double */
             similarity?: number;
             /** Format: date-time */
@@ -881,6 +1060,7 @@ export interface components {
             listings?: components["schemas"]["Listing"][];
             saved?: boolean;
             hidden?: boolean;
+            applied?: boolean;
             similarAvailable?: boolean;
         };
         Listing: {
@@ -888,6 +1068,90 @@ export interface components {
             sourceKind?: string;
             url?: string;
             attribution?: components["schemas"]["Attribution"];
+        };
+        MatchResponse: {
+            /** Format: uuid */
+            jobId?: string;
+            /** @enum {string} */
+            status?: "LLM_SCORED" | "UNRANKED" | "NOT_LLM_SCORED";
+            /** @enum {string} */
+            reason?: "DAILY_CAP_REACHED" | "LLM_UNAVAILABLE" | "LLM_FAILED" | "JOB_EXPIRED";
+            /** Format: int32 */
+            score?: number;
+            /** Format: double */
+            stage2Score?: number;
+            /** Format: int32 */
+            llmScore?: number;
+            strengths?: string[];
+            gaps?: string[];
+            model?: string;
+            promptVersion?: string;
+            /** Format: date-time */
+            scoredAt?: string;
+        };
+        AdjustmentReason: {
+            /** @enum {string} */
+            code?: "HIDDEN_SAME_COMPANY" | "HIDDEN_SIMILAR_TITLE" | "SAVED_SAME_COMPANY" | "SAVED_SIMILAR_TITLE" | "APPLIED_SAME_COMPANY" | "APPLIED_SIMILAR_TITLE" | "PENALTY_CAPPED" | "BOOST_CAPPED";
+            /** Format: double */
+            points?: number;
+            /** Format: int32 */
+            count?: number;
+            example?: string;
+        };
+        FeedItem: {
+            job?: components["schemas"]["JobCard"];
+            /** Format: int32 */
+            matchScore?: number;
+            /** @enum {string} */
+            scoreSource?: "LLM_SCORED" | "STAGE2_ONLY";
+            /** Format: double */
+            feedScore?: number;
+            /** Format: double */
+            adjustment?: number;
+            reasons?: components["schemas"]["AdjustmentReason"][];
+            strengths?: string[];
+            gaps?: string[];
+            /** @enum {string} */
+            fallbackReason?: "DAILY_CAP_REACHED" | "LLM_UNAVAILABLE" | "LLM_FAILED" | "JOB_EXPIRED";
+            model?: string;
+            /** Format: date-time */
+            scoredAt?: string;
+        };
+        FeedPage: {
+            items?: components["schemas"]["FeedItem"][];
+            nextCursor?: string;
+            /** @enum {string} */
+            emptyReason?: "NO_RESUME" | "NO_PREFERENCES" | "RESUME_PROCESSING" | "NO_MATCHES";
+        };
+        JobCard: {
+            /** Format: uuid */
+            id?: string;
+            title?: string;
+            company?: components["schemas"]["JobCardCompany"];
+            location?: string;
+            city?: string;
+            country?: string;
+            workMode?: string;
+            employmentType?: string;
+            seniority?: string;
+            salary?: components["schemas"]["JobCardSalary"];
+            /** Format: date-time */
+            postedAt?: string;
+            status?: string;
+            summary?: string;
+            saved?: boolean;
+            applied?: boolean;
+        };
+        JobCardCompany: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+        };
+        JobCardSalary: {
+            min?: number;
+            max?: number;
+            currency?: string;
+            period?: string;
         };
         AllowanceResponse: {
             dailyCap?: number;
@@ -953,6 +1217,74 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    savedSearch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SavedSearchView"];
+                };
+            };
+        };
+    };
+    replaceSavedSearch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SavedSearchView"];
+                };
+            };
+        };
+    };
+    deleteSavedSearch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     setPrimary: {
         parameters: {
             query?: never;
@@ -1111,6 +1443,50 @@ export interface operations {
             };
         };
     };
+    preferences_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NotificationPreferencesView"];
+                };
+            };
+        };
+    };
+    savePreferences_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationPreferencesRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NotificationPreferencesView"];
+                };
+            };
+        };
+    };
     save: {
         parameters: {
             query?: never;
@@ -1191,6 +1567,46 @@ export interface operations {
             };
         };
     };
+    applied: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    notApplied: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     setEnabled: {
         parameters: {
             query?: never;
@@ -1213,6 +1629,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["IngestionSourceResponse"];
+                };
+            };
+        };
+    };
+    savedSearches: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SavedSearchList"];
+                };
+            };
+        };
+    };
+    createSavedSearch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SavedSearchView"];
                 };
             };
         };
@@ -1284,6 +1744,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ResumeResponse"];
+                };
+            };
+        };
+    };
+    describeUnsubscribe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UnsubscribeInfo"];
+                };
+            };
+        };
+    };
+    performUnsubscribe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UnsubscribeInfo"];
                 };
             };
         };
@@ -1679,6 +2183,51 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["JobPage"];
+                };
+            };
+        };
+    };
+    match: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MatchResponse"];
+                };
+            };
+        };
+    };
+    feed: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FeedPage"];
                 };
             };
         };

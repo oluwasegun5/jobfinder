@@ -159,6 +159,45 @@ class JobSearchRepository {
                 rs.getObject("sort_at", OffsetDateTime.class).toString(), 0));
     }
 
+    /**
+     * The newest active jobs ingestion first stored in ({@code after}, {@code until}] that pass the filters (and the
+     * keyword, if any), for saved searches. Jobs the user hid or applied to are left out. Needs a transaction.
+     */
+    List<UUID> newSince(UUID userId, String query, JobFilters filters, Instant after, Instant until, int limit) {
+        limitTime();
+        Map<String, Object> params = new HashMap<>();
+        StringBuilder sql = new StringBuilder("select j.id from jobs j where j.status = 'ACTIVE'\n");
+        newSinceConditions(sql, params, userId, query, filters, after, until);
+        sql.append(" order by j.sort_at desc, j.id desc limit :limit");
+        params.put("limit", limit);
+        return run(sql, params, (rs, row) -> rs.getObject("id", UUID.class));
+    }
+
+    /** How many jobs {@link #newSince} would find, without the limit. */
+    int countNewSince(UUID userId, String query, JobFilters filters, Instant after, Instant until) {
+        limitTime();
+        Map<String, Object> params = new HashMap<>();
+        StringBuilder sql = new StringBuilder("select count(*) from jobs j where j.status = 'ACTIVE'\n");
+        newSinceConditions(sql, params, userId, query, filters, after, until);
+        return run(sql, params, (rs, row) -> rs.getInt(1)).get(0);
+    }
+
+    private static void newSinceConditions(StringBuilder sql, Map<String, Object> params, UUID userId, String query,
+            JobFilters filters, Instant after, Instant until) {
+        visibleTo(sql, params, userId, filters, until);
+        sql.append("""
+                   and not exists (select 1 from user_job_actions p
+                                    where p.user_id = :userId and p.job_id = j.id and p.action = 'APPLIED')
+                   and j.created_at > cast(:after as timestamptz) and j.created_at <= cast(:until as timestamptz)
+                """);
+        params.put("after", utc(after));
+        params.put("until", utc(until));
+        if (query != null) {
+            sql.append(" and j.search @@ websearch_to_tsquery('english', :q)\n");
+            params.put("q", query);
+        }
+    }
+
     SimilarSource similarSource(UUID jobId) {
         return jdbc.sql("select embedding is not null as embedded, embedding_model from jobs where id = :id")
                 .param("id", jobId)
@@ -286,7 +325,9 @@ class JobSearchRepository {
                        j.work_mode, j.employment_type, j.seniority, j.salary_min, j.salary_max, j.salary_currency,
                        j.salary_period, j.posted_at, j.status, left(j.description_text, 400) as summary,
                        exists (select 1 from user_job_actions a
-                                where a.user_id = :userId and a.job_id = j.id and a.action = 'SAVED') as saved
+                                where a.user_id = :userId and a.job_id = j.id and a.action = 'SAVED') as saved,
+                       exists (select 1 from user_job_actions a
+                                where a.user_id = :userId and a.job_id = j.id and a.action = 'APPLIED') as applied
                   from jobs j join companies c on c.id = j.company_id
                  where j.id in (:ids)
                 """)
@@ -299,7 +340,7 @@ class JobSearchRepository {
                             rs.getString("work_mode"), rs.getString("employment_type"), rs.getString("seniority"),
                             salary(rs), instant(rs.getObject("posted_at", OffsetDateTime.class)),
                             rs.getString("status"), summaryText(rs.getString("summary")), rs.getBoolean("saved"),
-                            null, null);
+                            rs.getBoolean("applied"), null, null);
                     result.put(summary.id(), summary);
                     return null;
                 }).list();
@@ -316,7 +357,9 @@ class JobSearchRepository {
                        exists (select 1 from user_job_actions a
                                 where a.user_id = :userId and a.job_id = j.id and a.action = 'SAVED') as saved,
                        exists (select 1 from user_job_actions a
-                                where a.user_id = :userId and a.job_id = j.id and a.action = 'HIDDEN') as hidden
+                                where a.user_id = :userId and a.job_id = j.id and a.action = 'HIDDEN') as hidden,
+                       exists (select 1 from user_job_actions a
+                                where a.user_id = :userId and a.job_id = j.id and a.action = 'APPLIED') as applied
                   from jobs j join companies c on c.id = j.company_id
                  where j.id = :id
                 """)
@@ -328,7 +371,8 @@ class JobSearchRepository {
                         salary(rs), instant(rs.getObject("posted_at", OffsetDateTime.class)),
                         instant(rs.getObject("expires_at", OffsetDateTime.class)), rs.getString("status"),
                         rs.getString("description_text"), texts(rs.getArray("skills")), rs.getString("apply_url"),
-                        List.of(), rs.getBoolean("saved"), rs.getBoolean("hidden"), rs.getBoolean("embedded")))
+                        List.of(), rs.getBoolean("saved"), rs.getBoolean("hidden"), rs.getBoolean("applied"),
+                        rs.getBoolean("embedded")))
                 .optional();
     }
 
@@ -358,6 +402,16 @@ class JobSearchRepository {
 
     void unhide(UUID userId, UUID jobId) {
         remove(userId, jobId, "HIDDEN");
+    }
+
+    /** Records that the user applied (and un-hides the job: a job applied to is not one they want out of sight). */
+    void markApplied(UUID userId, UUID jobId, Instant now) {
+        remove(userId, jobId, "HIDDEN");
+        insert(userId, jobId, "APPLIED", now);
+    }
+
+    void unmarkApplied(UUID userId, UUID jobId) {
+        remove(userId, jobId, "APPLIED");
     }
 
     private void insert(UUID userId, UUID jobId, String action, Instant now) {

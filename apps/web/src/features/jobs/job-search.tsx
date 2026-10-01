@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { FormError } from "@/features/auth/form-parts";
 import { problemCode, problemMessage } from "@/features/auth/api-errors";
 import { ApiProblem } from "@/features/profile/queries";
+import { SaveSearch } from "@/features/notifications/save-search";
 import { Field } from "@/features/profile/fields";
 
 import { JobCard } from "./job-card";
@@ -214,6 +215,7 @@ export function JobSearch() {
           <SlidersHorizontal /> Filters{count > 0 ? ` (${count})` : ""}
         </Button>
       </div>
+      {!filters.similarTo && <SaveSearch filters={filters} />}
       {showFilters && (
         <div id="job-filters">
           <FilterPanel

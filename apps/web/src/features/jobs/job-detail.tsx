@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Bookmark, BookmarkCheck, ExternalLink, EyeOff, Eye, Sparkles } from "lucide-react";
+import { ArrowLeft, Bookmark, BookmarkCheck, Check, ExternalLink, EyeOff, Eye, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -43,7 +43,7 @@ export function JobDetailView({ id }: { id: string }) {
   const data = job.data;
   const title = data.title ?? "Untitled job";
   const apply = safeHref(data.applyUrl);
-  const act = (action: "save" | "unsave" | "hide" | "unhide") => {
+  const act = (action: "save" | "unsave" | "hide" | "unhide" | "apply" | "unapply") => {
     setError(undefined);
     state.mutate(
       { id, action },
@@ -87,6 +87,14 @@ export function JobDetailView({ id }: { id: string }) {
           onClick={() => act(data.saved ? "unsave" : "save")}
         >
           {data.saved ? <BookmarkCheck /> : <Bookmark />} {data.saved ? "Saved" : "Save"}
+        </Button>
+        <Button
+          variant="outline"
+          aria-pressed={data.applied ?? false}
+          disabled={state.isPending}
+          onClick={() => act(data.applied ? "unapply" : "apply")}
+        >
+          <Check /> {data.applied ? "Applied" : "Mark as applied"}
         </Button>
         <Button variant="ghost" disabled={state.isPending} onClick={() => act(data.hidden ? "unhide" : "hide")}>
           {data.hidden ? <Eye /> : <EyeOff />} {data.hidden ? "Unhide" : "Hide"}

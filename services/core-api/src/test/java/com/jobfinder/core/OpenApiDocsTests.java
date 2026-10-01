@@ -55,7 +55,7 @@ class OpenApiDocsTests {
 				.getContentAsString();
 
 		assertThat(body).contains("\"/jobs\"", "\"/jobs/{id}\"", "\"/jobs/{id}/similar\"", "\"/jobs/{id}/save\"",
-				"\"/jobs/{id}/hide\"", "\"/saved-jobs\"", "\"nextCursor\"", "\"attribution\"", "\"postedWithinDays\"");
+				"\"/jobs/{id}/hide\"", "\"/jobs/{id}/match\"", "\"/saved-jobs\"", "\"nextCursor\"", "\"attribution\"", "\"postedWithinDays\"");
 	}
 
 	@Test
@@ -69,6 +69,18 @@ class OpenApiDocsTests {
 		assertThat(body).contains("\"/admin/billing/costs\"", "CostReportResponse", "\"/billing/allowance\"",
 				"AllowanceResponse", "\"/resumes/{id}/reparse\"");
 		assertThat(body).doesNotContain("/internal/v1/billing");
+	}
+
+	@Test
+	void apiDocsDescribeTheNotificationEndpoints() throws Exception {
+		String body = mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(status().isOk())
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+
+		assertThat(body).contains("\"/saved-searches\"", "\"/saved-searches/{id}\"", "\"/notifications/preferences\"",
+				"\"/notifications/unsubscribe/{token}\"", "SavedSearchRequest", "NotificationPreferencesRequest", "UnsubscribeInfo");
 	}
 
 }

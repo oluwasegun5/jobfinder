@@ -69,21 +69,22 @@ final class JobDtos {
 
     /**
      * A job in a list. {@code summary} is the start of the description as plain text. {@code similarity} is set
-     * only in similar-jobs results (1 is identical). {@code savedAt} only in the saved list.
+     * only in similar-jobs results (1 is identical). {@code savedAt} only in the saved list. {@code saved} and
+     * {@code applied} are the caller's own state.
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     record JobSummary(UUID id, String title, CompanyRef company, String location, String city, String country,
             String workMode, String employmentType, String seniority, Salary salary, Instant postedAt, String status,
-            String summary, boolean saved, Double similarity, Instant savedAt) {
+            String summary, boolean saved, boolean applied, Double similarity, Instant savedAt) {
 
         JobSummary withSimilarity(Double value) {
             return new JobSummary(id, title, company, location, city, country, workMode, employmentType, seniority,
-                    salary, postedAt, status, summary, saved, value, savedAt);
+                    salary, postedAt, status, summary, saved, applied, value, savedAt);
         }
 
         JobSummary withSavedAt(Instant value) {
             return new JobSummary(id, title, company, location, city, country, workMode, employmentType, seniority,
-                    salary, postedAt, status, summary, saved, similarity, value);
+                    salary, postedAt, status, summary, saved, applied, similarity, value);
         }
     }
 
@@ -111,6 +112,6 @@ final class JobDtos {
     record JobDetail(UUID id, String title, CompanyRef company, String location, String city, String country,
             String workMode, String employmentType, String seniority, Salary salary, Instant postedAt,
             Instant expiresAt, String status, String description, List<String> skills, String applyUrl,
-            List<Listing> listings, boolean saved, boolean hidden, boolean similarAvailable) {
+            List<Listing> listings, boolean saved, boolean hidden, boolean applied, boolean similarAvailable) {
     }
 }
