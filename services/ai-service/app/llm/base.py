@@ -1,10 +1,10 @@
 """Provider-agnostic LLM interface (PLAN.md D7). All LLM calls go through an LLMProvider."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
 from enum import StrEnum
 from typing import Protocol, runtime_checkable
-from uuid import UUID
+from uuid import UUID, uuid4
 
 
 class ModelTier(StrEnum):
@@ -38,6 +38,10 @@ class LLMUsage:
     cost_usd: Decimal
     latency_ms: int
     prompt_version: str
+    # Idempotency key for the ledger: core-api records each call_id once, however often it is sent.
+    call_id: UUID = field(default_factory=uuid4)
+    # Version of the pinned price list that produced cost_usd (settings.llm_pricing_version).
+    pricing_version: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,7 +51,15 @@ class LLMResponse:
 
 
 class LLMError(Exception):
-    """Base error for anything that goes wrong talking to an LLM."""
+    """Base error for anything that goes wrong talking to an LLM.
+
+    `usage` lists the calls that completed (and were billed) before the failure, so the caller can
+    still report them to the ledger: a validation retry that fails, or a refusal, costs money too.
+    """
+
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
+        self.usage: list[LLMUsage] = []
 
 
 class LLMConfigurationError(LLMError):

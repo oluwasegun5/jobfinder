@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     llm_max_retries: int = Field(default=2, ge=0)
     # JSON object in env, e.g. {"claude-haiku-4-5": {"input_per_mtok": 1, "output_per_mtok": 5}}
     llm_pricing: dict[str, ModelPricing] = Field(default_factory=_default_pricing)
+    # Version label of the price list above. Bump it whenever a price changes: every usage record
+    # carries it, so the ledger can tell which prices a cost was computed with.
+    llm_pricing_version: str = Field(default="2026-10-01", min_length=1, max_length=40)
 
     rabbitmq_enabled: bool = True
     rabbitmq_host: str = "localhost"

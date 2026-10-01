@@ -20,6 +20,9 @@ class UsageRecord(BaseModel):
     cost_usd: Decimal
     latency_ms: int
     prompt_version: str
+    # Ledger idempotency key (core-api records each call_id once) and the price list version.
+    call_id: UUID
+    pricing_version: str
 
     @classmethod
     def from_usage(cls, usage: LLMUsage) -> "UsageRecord":
@@ -33,4 +36,6 @@ class UsageRecord(BaseModel):
             cost_usd=usage.cost_usd,
             latency_ms=usage.latency_ms,
             prompt_version=usage.prompt_version,
+            call_id=usage.call_id,
+            pricing_version=usage.pricing_version,
         )

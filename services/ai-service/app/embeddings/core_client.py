@@ -64,8 +64,13 @@ class ResultItem(_Wire):
 
 
 class UsageRecord(_Wire):
-    """One provider call, for core-api's usage log (the billing ledger comes in Phase 3)."""
+    """One billed provider call, for core-api's ledger (docs/adr/0025-ai-usage-ledger.md).
 
+    `call_id` is the idempotency key: core-api records each id once however often it is sent, so a
+    retried write-back never charges twice. `user_id` is None for system work (job embeddings).
+    """
+
+    call_id: UUID
     user_id: UUID | None
     feature: str
     provider: str
@@ -73,6 +78,7 @@ class UsageRecord(_Wire):
     input_tokens: int
     cost_usd: Decimal
     latency_ms: int
+    pricing_version: str
 
 
 class Stored(_Wire):
@@ -128,6 +134,14 @@ class CoreApiClient:
             raise CoreApiError(
                 "core-api returned an unexpected results response", retryable=False
             ) from e
+
+    async def record_usage(self, usage: list[UsageRecord]) -> None:
+        """Reports billed calls whose results could not be stored."""
+        await self._call(
+            "PUT",
+            "/internal/v1/billing/usage",
+            {"usage": [u.model_dump(by_alias=True, mode="json") for u in usage]},
+        )
 
     async def _call(self, method: str, path: str, payload: dict[str, object]) -> object:
         try:

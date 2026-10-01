@@ -9,6 +9,7 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from app.api.schemas import UsageRecord
 from app.llm import (
     LLMConfigurationError,
     LLMError,
@@ -24,8 +25,15 @@ _PROBLEM_JSON = "application/problem+json"
 
 
 def _problem(
-    status: int, title: str, detail: str, *, code: str, retryable: bool = False
+    status: int,
+    title: str,
+    detail: str,
+    *,
+    code: str,
+    retryable: bool = False,
+    usage: list[UsageRecord] | None = None,
 ) -> JSONResponse:
+    # `usage` lists LLM calls that were billed before the failure; core-api records them anyway.
     return JSONResponse(
         status_code=status,
         media_type=_PROBLEM_JSON,
@@ -36,21 +44,33 @@ def _problem(
             "detail": detail,
             "code": code,
             "retryable": retryable,
+            "usage": [u.model_dump(mode="json") for u in usage or []],
         },
     )
 
 
 async def _handle_llm_error(request: Request, exc: Exception) -> JSONResponse:
     logger.warning("LLM error on %s: %s", request.url.path, type(exc).__name__)
+    assert isinstance(exc, LLMError)  # noqa: S101 - narrowing for the type checker
+    usage = [UsageRecord.from_usage(u) for u in exc.usage]
     match exc:
         case LLMConfigurationError():
-            return _problem(503, "LLM provider not configured", str(exc), code="llm_not_configured")
+            return _problem(
+                503, "LLM provider not configured", str(exc), code="llm_not_configured", usage=usage
+            )
         case LLMProviderError():
             return _problem(
-                502, "LLM provider error", str(exc), code="llm_unavailable", retryable=exc.retryable
+                502,
+                "LLM provider error",
+                str(exc),
+                code="llm_unavailable",
+                retryable=exc.retryable,
+                usage=usage,
             )
         case LLMRefusalError():
-            return _problem(422, "LLM refused the request", str(exc), code="llm_refused")
+            return _problem(
+                422, "LLM refused the request", str(exc), code="llm_refused", usage=usage
+            )
         case LLMOutputValidationError():
             return _problem(
                 502,
@@ -58,9 +78,12 @@ async def _handle_llm_error(request: Request, exc: Exception) -> JSONResponse:
                 str(exc),
                 code="llm_output_invalid",
                 retryable=True,
+                usage=usage,
             )
         case _:
-            return _problem(500, "LLM error", "Unexpected LLM failure", code="llm_error")
+            return _problem(
+                500, "LLM error", "Unexpected LLM failure", code="llm_error", usage=usage
+            )
 
 
 async def _handle_input_error(request: Request, exc: Exception) -> JSONResponse:

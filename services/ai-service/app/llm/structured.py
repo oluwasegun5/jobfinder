@@ -5,7 +5,7 @@ from dataclasses import dataclass, replace
 
 from pydantic import BaseModel, ValidationError
 
-from app.llm.base import LLMOutputValidationError, LLMProvider, LLMRequest, LLMUsage
+from app.llm.base import LLMError, LLMOutputValidationError, LLMProvider, LLMRequest, LLMUsage
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,12 @@ async def generate_structured[T: BaseModel](
     current = request
     last_error: ValidationError | None = None
     for attempt in range(1, _MAX_ATTEMPTS + 1):
-        response = await provider.generate(current)
+        try:
+            response = await provider.generate(current)
+        except LLMError as e:
+            # A failed retry must not hide the (billed) first attempt.
+            e.usage = [*usage, *e.usage]
+            raise
         usage.append(response.usage)
         try:
             return StructuredResult(
@@ -63,6 +68,8 @@ async def generate_structured[T: BaseModel](
                     f"required schema ({problems}). Reply with only the JSON object."
                 ),
             )
-    raise LLMOutputValidationError(
+    failure = LLMOutputValidationError(
         f"{schema.__name__} validation failed after {_MAX_ATTEMPTS} attempts"
-    ) from last_error
+    )
+    failure.usage = usage
+    raise failure from last_error

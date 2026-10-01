@@ -63,32 +63,34 @@ class AnthropicProvider:
             raise LLMProviderError("Could not reach Anthropic API", retryable=True) from e
         latency_ms = int((time.perf_counter() - started) * 1000)
 
+        input_tokens = message.usage.input_tokens
+        output_tokens = message.usage.output_tokens
+        usage = LLMUsage(
+            user_id=request.user_id,
+            feature=request.feature,
+            provider=self.name,
+            model=model,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cost_usd=estimate_cost_usd(
+                self._settings.llm_pricing, model, input_tokens, output_tokens
+            ),
+            latency_ms=latency_ms,
+            prompt_version=request.prompt_version,
+            pricing_version=self._settings.llm_pricing_version,
+        )
         if message.stop_reason == "refusal":
-            raise LLMRefusalError("Model declined the request")
+            # The provider billed the call even though the model declined.
+            refusal = LLMRefusalError("Model declined the request")
+            refusal.usage = [usage]
+            raise refusal
         if message.stop_reason == "max_tokens":
             logger.warning(
                 "LLM output truncated at max_tokens (feature=%s, model=%s)", request.feature, model
             )
 
         text = "".join(block.text for block in message.content if block.type == "text")
-        input_tokens = message.usage.input_tokens
-        output_tokens = message.usage.output_tokens
-        return LLMResponse(
-            text=text,
-            usage=LLMUsage(
-                user_id=request.user_id,
-                feature=request.feature,
-                provider=self.name,
-                model=model,
-                input_tokens=input_tokens,
-                output_tokens=output_tokens,
-                cost_usd=estimate_cost_usd(
-                    self._settings.llm_pricing, model, input_tokens, output_tokens
-                ),
-                latency_ms=latency_ms,
-                prompt_version=request.prompt_version,
-            ),
-        )
+        return LLMResponse(text=text, usage=usage)
 
     async def aclose(self) -> None:
         if self._client is not None:
