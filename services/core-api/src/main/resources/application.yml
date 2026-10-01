@@ -151,6 +151,13 @@ app:
     model: ${EMBEDDING_MODEL:voyage-4}
     dimension: ${EMBEDDING_DIMENSION:1024}
 
+  billing:
+    # The AI usage ledger and the per-user daily cap (docs/adr/0025-ai-usage-ledger.md). The cap is the most credits
+    # one user's AI calls may consume per UTC day (0 turns it off); a credit stands for micro-usd-per-credit
+    # millionths of a dollar (1000: a tenth of a cent), so the default cap is $0.50 a day per user.
+    daily-cap-credits: ${AI_DAILY_CAP_CREDITS:500}
+    micro-usd-per-credit: ${AI_MICRO_USD_PER_CREDIT:1000}
+
 springdoc:
   # The service-to-service endpoints (service token, not user tokens) are not part of the public API.
   paths-to-exclude: /internal/**
