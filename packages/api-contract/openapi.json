@@ -489,6 +489,36 @@
         }
       }
     },
+    "/admin/ingestion/targets": {
+      "post": {
+        "tags": [
+          "admin-ingestion-controller"
+        ],
+        "operationId": "addTarget",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddTargetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TargetResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/resumes/{id}/download-url": {
       "get": {
         "tags": [
@@ -1373,6 +1403,55 @@
         "required": [
           "idToken"
         ]
+      },
+      "AddTargetRequest": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 0
+          },
+          "identifier": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
+          },
+          "companyName": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "companyName",
+          "identifier",
+          "source"
+        ]
+      },
+      "TargetResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source": {
+            "type": "string"
+          },
+          "identifier": {
+            "type": "string"
+          },
+          "companyName": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "created": {
+            "type": "boolean"
+          }
+        }
       },
       "DownloadUrlResponse": {
         "type": "object",
