@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.UUID;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -37,9 +39,15 @@ final class EmbeddingDtos {
             @NotEmpty List<@NotNull Float> embedding) {
     }
 
-    /** What one provider call cost; logged here until the billing ledger exists (Phase 3). */
-    record UsageRecord(UUID userId, @NotBlank String feature, @NotBlank String provider, @NotBlank String model,
-            long inputTokens, BigDecimal costUsd, long latencyMs) {
+    /**
+     * What one provider call cost, for the billing ledger (ADR 0025). {@code callId} is ai-service's id for the call:
+     * the ledger records each id once, so a retried write-back never charges twice (older senders may leave it out,
+     * see {@link EmbeddingService}). {@code userId} is null for system work (job embeddings).
+     */
+    record UsageRecord(UUID callId, UUID userId, @NotBlank @Size(max = 60) String feature,
+            @NotBlank @Size(max = 40) String provider, @NotBlank @Size(max = 100) String model,
+            @Min(0) long inputTokens, @DecimalMin("0") BigDecimal costUsd, @Min(0) long latencyMs,
+            @Size(max = 40) String pricingVersion) {
     }
 
     record ResultsRequest(@NotNull EmbeddingKind kind, @NotBlank String model, int dimension,
