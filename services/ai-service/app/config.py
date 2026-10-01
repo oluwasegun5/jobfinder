@@ -10,6 +10,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class ProviderName(StrEnum):
     ANTHROPIC = "anthropic"
+    # Deterministic, keyless stand-in for local runs and evals: it only answers match_scoring, from
+    # the overlap between the candidate and the job (docs/adr/0026-matching-engine.md). Never the
+    # default.
+    FAKE = "fake"
 
 
 class EmbeddingProviderName(StrEnum):
@@ -53,6 +57,14 @@ class Settings(BaseSettings):
     # Version label of the price list above. Bump it whenever a price changes: every usage record
     # carries it, so the ledger can tell which prices a cost was computed with.
     llm_pricing_version: str = Field(default="2026-10-01", min_length=1, max_length=40)
+
+    # Match scoring (docs/adr/0026-matching-engine.md). One LLM call scores up to this many jobs; a
+    # call's input (candidate plus jobs) stays under the character budget (about four characters per
+    # token), so a request of many jobs is split into several calls. Job descriptions are cut to the
+    # given length first.
+    score_matches_max_jobs_per_call: int = Field(default=6, gt=0, le=50)
+    score_matches_max_input_chars: int = Field(default=24000, ge=2000)
+    score_matches_description_chars: int = Field(default=3000, ge=200)
 
     rabbitmq_enabled: bool = True
     rabbitmq_host: str = "localhost"

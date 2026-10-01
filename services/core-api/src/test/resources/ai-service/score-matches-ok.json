@@ -1,0 +1,41 @@
+{
+  "prompt_version": "match_scoring/v1",
+  "model": "fake-fast",
+  "results": [
+    {
+      "job_id": "00000000-0000-0000-0000-000000000001",
+      "status": "scored",
+      "score": 82,
+      "strengths": [
+        "Five years of Java, which the role requires."
+      ],
+      "gaps": [
+        "No Kubernetes listed."
+      ],
+      "error_code": null
+    },
+    {
+      "job_id": "00000000-0000-0000-0000-000000000002",
+      "status": "failed",
+      "score": null,
+      "strengths": [],
+      "gaps": [],
+      "error_code": "llm_output_incomplete"
+    }
+  ],
+  "usage": [
+    {
+      "user_id": "00000000-0000-4000-8000-000000000001",
+      "feature": "match_scoring",
+      "provider": "fake",
+      "model": "fake-fast",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_usd": "0",
+      "latency_ms": 0,
+      "prompt_version": "match_scoring/v1",
+      "call_id": "00000000-0000-4000-8000-0000000000c1",
+      "pricing_version": "fake"
+    }
+  ]
+}
