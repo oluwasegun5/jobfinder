@@ -212,6 +212,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/resumes/{id}/render": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["renderResume"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/notifications/unsubscribe/{token}": {
         parameters: {
             query?: never;
@@ -238,6 +254,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["tailor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/{id}/render": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["renderDocument"];
         delete?: never;
         options?: never;
         head?: never;
@@ -572,6 +604,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["list_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/{id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listFiles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/{id}/files/{fileId}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["download"];
         put?: never;
         post?: never;
         delete?: never;
@@ -996,6 +1060,34 @@ export interface components {
             occurrences?: number;
             detail?: string;
         };
+        RenderRequest: {
+            /** @enum {string} */
+            template?: "ATS" | "STYLED";
+            /** @enum {string} */
+            format?: "PDF" | "DOCX";
+            /** @enum {string} */
+            pageSize?: "A4" | "LETTER";
+        };
+        RenderedFileResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            template?: "ATS" | "STYLED";
+            /** @enum {string} */
+            format?: "PDF" | "DOCX";
+            /** @enum {string} */
+            pageSize?: "A4" | "LETTER";
+            filename?: string;
+            contentType?: string;
+            /** Format: int64 */
+            sizeBytes?: number;
+            /** @description Hex SHA-256 of the file, to verify a download */
+            sha256?: string;
+            downloadUrl?: string;
+            /** Format: date-time */
+            expiresAt?: string;
+            cached?: boolean;
+        };
         UnsubscribeInfo: {
             /** @enum {string} */
             scope?: "SAVED_SEARCH" | "DIGESTS" | "INSTANT_ALERTS" | "MARKETING";
@@ -1324,6 +1416,23 @@ export interface components {
             updatedAt?: string;
             /** Format: date-time */
             approvedAt?: string;
+        };
+        RenderedFileSummary: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            template?: "ATS" | "STYLED";
+            /** @enum {string} */
+            format?: "PDF" | "DOCX";
+            /** @enum {string} */
+            pageSize?: "A4" | "LETTER";
+            filename?: string;
+            contentType?: string;
+            /** Format: int64 */
+            sizeBytes?: number;
+            sha256?: string;
+            /** Format: date-time */
+            createdAt?: string;
         };
         AllowanceResponse: {
             dailyCap?: number;
@@ -1920,6 +2029,32 @@ export interface operations {
             };
         };
     };
+    renderResume: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RenderRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RenderedFileResponse"];
+                };
+            };
+        };
+    };
     describeUnsubscribe: {
         parameters: {
             query?: never;
@@ -1986,6 +2121,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["DraftResponse"];
+                };
+            };
+        };
+    };
+    renderDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RenderRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RenderedFileResponse"];
                 };
             };
         };
@@ -2540,6 +2701,51 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ListResponse"];
+                };
+            };
+        };
+    };
+    listFiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RenderedFileSummary"][];
+                };
+            };
+        };
+    };
+    download: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                fileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RenderedFileResponse"];
                 };
             };
         };
