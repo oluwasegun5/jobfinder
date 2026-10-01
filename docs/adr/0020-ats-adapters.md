@@ -111,20 +111,21 @@ retried with backoff.
 - **How the tokens were chosen and checked**: candidate company names (tech companies that hire remotely, and
   companies that hire in Africa) were tried against each board's endpoint, and a token was kept only if the board
   answered `200` with at least one open job on 2026-10-01. Nothing was added from memory without that call. Of the
-  matches, 27 were then removed because the token turned out to belong to a different company or to a
+  matches, 28 were then removed because the token turned out to belong to a different company or to a
   test board (for example a board called "Sterling Brands" under the token `sterling`, or a board whose only job
-  was "Test UAT"). Company names come from the board itself where it states one (Greenhouse's board name,
+  was "Test UAT"; `copia` on Lever turned out to be a US software company, not the Kenyan Copia, which a real
+  run showed because its jobs were all in the US). Company names come from the board itself where it states one (Greenhouse's board name,
   SmartRecruiters, Recruitee, Workable) and were written by hand for Lever and Ashby, which do not.
-- **Result: 540 company names tried, 297 matches found, 270 targets in the seed**
-  (Greenhouse 134, Ashby 94, Lever 20, SmartRecruiters 13, Workable 7, Recruitee 2). Workable and Recruitee are thin because most of the names tried are companies on the other
+- **Result: 540 company names tried, 297 matches found, 269 targets in the seed**
+  (Greenhouse 134, Ashby 94, Lever 19, SmartRecruiters 13, Workable 7, Recruitee 2). Workable and Recruitee are thin because most of the names tried are companies on the other
   boards, and Workable's host stopped answering during the check, so only about 60 names were tried against it.
 - **"Resolves" is not "is the company we meant".** Tokens are slugs chosen by each employer, so a verified token
-  can in principle be a namesake. The list was read once by hand; it is a starting list, and the admin endpoint is
+  can be a namesake, and the real run found one that the first review had missed. The list was read twice by hand; it is a starting list, and the admin endpoint is
   how it is corrected.
 
 ## Consequences
 - Each adapter is one class and a fixture test; they inherit scheduling, locking, retry, rate limiting, the
-  breaker, raw storage, normalization and expiry from ADR 0018 and 0019. 270 targets means each source's
+  breaker, raw storage, normalization and expiry from ADR 0018 and 0019. 269 targets means each source's
   run makes one or more calls per board every six hours (the default interval); the largest Greenhouse boards are
   several megabytes, which the response cap and the per-source limit keep in check.
 - Seeded Workable and SmartRecruiters boards will occasionally answer `429`; that costs a retry, and if it
