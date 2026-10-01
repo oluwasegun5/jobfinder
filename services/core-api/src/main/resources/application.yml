@@ -195,6 +195,21 @@ app:
       user-page-size: 100
       lock-at-most-for: 2h
 
+  documents:
+    # Resume tailoring (docs/adr/0029-resume-tailoring.md). The prompt version is sent to ai-service with every request and
+    # stored with every draft; changing it means a new prompt file in ai-service.
+    prompt-version: ${TAILORING_PROMPT_VERSION:tailor_resume/v1}
+    tailoring:
+      connect-timeout: 2s
+      # One strong-model call that writes a whole resume.
+      read-timeout: 120s
+      description-chars: 20000
+      # A GENERATING draft this old belongs to a request that died; the next request replaces it.
+      generation-timeout: 5m
+    fact-check:
+      connect-timeout: 2s
+      read-timeout: 15s
+
   feed:
     # The "For you" feed (docs/adr/0027-feed-and-feedback.md): ranks and pages through the user's best pool-size matches.
     pool-size: 100
