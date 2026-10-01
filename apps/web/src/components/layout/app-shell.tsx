@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, Briefcase, Coins, DatabaseZap, KanbanSquare, LayoutDashboard, Menu, Sparkles, UserRound, X } from "lucide-react";
+import { Bell, Bookmark, BookmarkCheck, Briefcase, Coins, DatabaseZap, KanbanSquare, LayoutDashboard, Menu, Sparkles, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ComponentType, type ReactNode } from "react";
@@ -23,8 +23,10 @@ const navItems: NavItem[] = [
   { label: "For you", icon: Sparkles, href: "/feed" },
   { label: "Jobs", icon: Briefcase, href: "/jobs" },
   { label: "Saved jobs", icon: Bookmark, href: "/saved-jobs" },
+  { label: "Saved searches", icon: BookmarkCheck, href: "/saved-searches" },
   { label: "Applications", icon: KanbanSquare },
   { label: "Profile", icon: UserRound, href: "/profile" },
+  { label: "Notifications", icon: Bell, href: "/settings/notifications" },
 ];
 
 /** Shown to administrators only (core-api enforces the role; this just keeps the menu honest). */

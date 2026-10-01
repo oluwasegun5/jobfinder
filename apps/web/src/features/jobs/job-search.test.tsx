@@ -175,3 +175,23 @@ describe("JobSearch", () => {
     expect(await screen.findByText("Java Engineer")).toBeInTheDocument();
   });
 });
+
+describe("JobSearch saved searches", () => {
+  it("offers to save a search that has a keyword or filters", async () => {
+    setup({ "GET /jobs": () => json({ items: [] }) }, "q=java&workMode=REMOTE");
+    await screen.findByText("No jobs found");
+    expect(screen.getByRole("button", { name: "Save this search" })).toBeEnabled();
+  });
+
+  it("will not save an empty search", async () => {
+    setup({ "GET /jobs": () => json({ items: [] }) });
+    await screen.findByText("No jobs found");
+    expect(screen.getByRole("button", { name: "Save this search" })).toBeDisabled();
+  });
+
+  it("has no save action in the similar-jobs view", async () => {
+    setup({ [`GET /jobs/${A}/similar`]: () => json({ items: [] }) }, `similarTo=${A}`);
+    await screen.findByText("No jobs found");
+    expect(screen.queryByRole("button", { name: "Save this search" })).not.toBeInTheDocument();
+  });
+});
