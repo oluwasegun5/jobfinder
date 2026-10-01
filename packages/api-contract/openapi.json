@@ -15,6 +15,98 @@
     }
   ],
   "paths": {
+    "/saved-searches/{id}": {
+      "get": {
+        "tags": [
+          "notification-controller"
+        ],
+        "operationId": "savedSearch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSearchView"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "notification-controller"
+        ],
+        "operationId": "replaceSavedSearch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavedSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSearchView"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "notification-controller"
+        ],
+        "operationId": "deleteSavedSearch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
     "/resumes/{id}/primary": {
       "put": {
         "tags": [
@@ -212,6 +304,54 @@
         }
       }
     },
+    "/notifications/preferences": {
+      "get": {
+        "tags": [
+          "notification-controller"
+        ],
+        "operationId": "preferences_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferencesView"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "notification-controller"
+        ],
+        "operationId": "savePreferences_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationPreferencesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferencesView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/jobs/{id}/save": {
       "put": {
         "tags": [
@@ -390,6 +530,54 @@
         }
       }
     },
+    "/saved-searches": {
+      "get": {
+        "tags": [
+          "notification-controller"
+        ],
+        "operationId": "savedSearches",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSearchList"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "notification-controller"
+        ],
+        "operationId": "createSavedSearch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavedSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSearchView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/resumes": {
       "get": {
         "tags": [
@@ -483,6 +671,64 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/ResumeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/unsubscribe/{token}": {
+      "get": {
+        "tags": [
+          "notification-controller"
+        ],
+        "operationId": "describeUnsubscribe",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnsubscribeInfo"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "notification-controller"
+        ],
+        "operationId": "performUnsubscribe",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnsubscribeInfo"
                 }
               }
             }
@@ -1615,6 +1861,141 @@
   },
   "components": {
     "schemas": {
+      "SavedSearchCriteria": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "workMode": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "REMOTE",
+                "HYBRID",
+                "ONSITE"
+              ]
+            },
+            "maxItems": 3,
+            "minItems": 0
+          },
+          "employmentType": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "FULL_TIME",
+                "PART_TIME",
+                "CONTRACT",
+                "TEMPORARY",
+                "INTERNSHIP"
+              ]
+            },
+            "maxItems": 5,
+            "minItems": 0
+          },
+          "seniority": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "INTERN",
+                "JUNIOR",
+                "MID",
+                "SENIOR",
+                "LEAD",
+                "EXECUTIVE"
+              ]
+            },
+            "maxItems": 6,
+            "minItems": 0
+          },
+          "country": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z]{2}$"
+            },
+            "maxItems": 20,
+            "minItems": 0
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "minSalary": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "salaryCurrency": {
+            "type": "string",
+            "pattern": "^[A-Za-z]{3}$"
+          }
+        }
+      },
+      "SavedSearchRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "criteria": {
+            "$ref": "#/components/schemas/SavedSearchCriteria"
+          },
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "INSTANT",
+              "DAILY",
+              "WEEKLY",
+              "OFF"
+            ]
+          }
+        },
+        "required": [
+          "criteria",
+          "frequency",
+          "name"
+        ]
+      },
+      "SavedSearchView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "criteria": {
+            "$ref": "#/components/schemas/SavedSearchCriteria"
+          },
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "INSTANT",
+              "DAILY",
+              "WEEKLY",
+              "OFF"
+            ]
+          },
+          "lastRunAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "ResumeResponse": {
         "type": "object",
         "properties": {
@@ -2184,6 +2565,101 @@
           }
         }
       },
+      "NotificationPreferencesRequest": {
+        "type": "object",
+        "properties": {
+          "emailEnabled": {
+            "type": "boolean"
+          },
+          "digestEnabled": {
+            "type": "boolean"
+          },
+          "digestFrequency": {
+            "type": "string",
+            "enum": [
+              "DAILY",
+              "WEEKLY"
+            ]
+          },
+          "digestHour": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 23,
+            "minimum": 0
+          },
+          "digestWeekday": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 7,
+            "minimum": 1
+          },
+          "timezone": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 0
+          },
+          "instantEnabled": {
+            "type": "boolean"
+          },
+          "instantThreshold": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 50
+          }
+        },
+        "required": [
+          "digestEnabled",
+          "digestFrequency",
+          "digestHour",
+          "digestWeekday",
+          "emailEnabled",
+          "instantEnabled",
+          "instantThreshold"
+        ]
+      },
+      "NotificationPreferencesView": {
+        "type": "object",
+        "properties": {
+          "emailEnabled": {
+            "type": "boolean"
+          },
+          "digestEnabled": {
+            "type": "boolean"
+          },
+          "digestFrequency": {
+            "type": "string",
+            "enum": [
+              "DAILY",
+              "WEEKLY"
+            ]
+          },
+          "digestHour": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "digestWeekday": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "instantEnabled": {
+            "type": "boolean"
+          },
+          "instantThreshold": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "digestsUnsubscribed": {
+            "type": "boolean"
+          },
+          "allUnsubscribed": {
+            "type": "boolean"
+          }
+        }
+      },
       "SetSourceEnabledRequest": {
         "type": "object",
         "properties": {
@@ -2332,6 +2808,23 @@
             "format": "int32"
           },
           "detail": {
+            "type": "string"
+          }
+        }
+      },
+      "UnsubscribeInfo": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "SAVED_SEARCH",
+              "DIGESTS",
+              "INSTANT_ALERTS",
+              "MARKETING"
+            ]
+          },
+          "savedSearchName": {
             "type": "string"
           }
         }
@@ -2506,6 +2999,17 @@
           },
           "status": {
             "type": "string"
+          }
+        }
+      },
+      "SavedSearchList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SavedSearchView"
+            }
           }
         }
       },

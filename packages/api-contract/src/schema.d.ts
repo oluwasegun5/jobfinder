@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/saved-searches/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["savedSearch"];
+        put: operations["replaceSavedSearch"];
+        post?: never;
+        delete: operations["deleteSavedSearch"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/resumes/{id}/primary": {
         parameters: {
             query?: never;
@@ -61,6 +77,22 @@ export interface paths {
         };
         get: operations["preferences"];
         put: operations["savePreferences"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["preferences_1"];
+        put: operations["savePreferences_1"];
         post?: never;
         delete?: never;
         options?: never;
@@ -132,6 +164,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/saved-searches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["savedSearches"];
+        put?: never;
+        post: operations["createSavedSearch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/resumes": {
         parameters: {
             query?: never;
@@ -158,6 +206,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["reparse"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/unsubscribe/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["describeUnsubscribe"];
+        put?: never;
+        post: operations["performUnsubscribe"];
         delete?: never;
         options?: never;
         head?: never;
@@ -619,6 +683,34 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        SavedSearchCriteria: {
+            q?: string;
+            workMode?: ("REMOTE" | "HYBRID" | "ONSITE")[];
+            employmentType?: ("FULL_TIME" | "PART_TIME" | "CONTRACT" | "TEMPORARY" | "INTERNSHIP")[];
+            seniority?: ("INTERN" | "JUNIOR" | "MID" | "SENIOR" | "LEAD" | "EXECUTIVE")[];
+            country?: string[];
+            location?: string;
+            minSalary?: number;
+            salaryCurrency?: string;
+        };
+        SavedSearchRequest: {
+            name: string;
+            criteria: components["schemas"]["SavedSearchCriteria"];
+            /** @enum {string} */
+            frequency: "INSTANT" | "DAILY" | "WEEKLY" | "OFF";
+        };
+        SavedSearchView: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            criteria?: components["schemas"]["SavedSearchCriteria"];
+            /** @enum {string} */
+            frequency?: "INSTANT" | "DAILY" | "WEEKLY" | "OFF";
+            /** Format: date-time */
+            lastRunAt?: string;
+            /** Format: date-time */
+            createdAt?: string;
+        };
         ResumeResponse: {
             /** Format: uuid */
             id?: string;
@@ -752,6 +844,36 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        NotificationPreferencesRequest: {
+            emailEnabled: boolean;
+            digestEnabled: boolean;
+            /** @enum {string} */
+            digestFrequency: "DAILY" | "WEEKLY";
+            /** Format: int32 */
+            digestHour: number;
+            /** Format: int32 */
+            digestWeekday: number;
+            timezone?: string;
+            instantEnabled: boolean;
+            /** Format: int32 */
+            instantThreshold: number;
+        };
+        NotificationPreferencesView: {
+            emailEnabled?: boolean;
+            digestEnabled?: boolean;
+            /** @enum {string} */
+            digestFrequency?: "DAILY" | "WEEKLY";
+            /** Format: int32 */
+            digestHour?: number;
+            /** Format: int32 */
+            digestWeekday?: number;
+            timezone?: string;
+            instantEnabled?: boolean;
+            /** Format: int32 */
+            instantThreshold?: number;
+            digestsUnsubscribed?: boolean;
+            allUnsubscribed?: boolean;
+        };
         SetSourceEnabledRequest: {
             enabled: boolean;
         };
@@ -810,6 +932,11 @@ export interface components {
             occurrences?: number;
             detail?: string;
         };
+        UnsubscribeInfo: {
+            /** @enum {string} */
+            scope?: "SAVED_SEARCH" | "DIGESTS" | "INSTANT_ALERTS" | "MARKETING";
+            savedSearchName?: string;
+        };
         TokenRequest: {
             token: string;
         };
@@ -857,6 +984,9 @@ export interface components {
         IngestionRunStartedResponse: {
             source?: string;
             status?: string;
+        };
+        SavedSearchList: {
+            items?: components["schemas"]["SavedSearchView"][];
         };
         CompanyRef: {
             /** Format: uuid */
@@ -1087,6 +1217,74 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    savedSearch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SavedSearchView"];
+                };
+            };
+        };
+    };
+    replaceSavedSearch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SavedSearchView"];
+                };
+            };
+        };
+    };
+    deleteSavedSearch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     setPrimary: {
         parameters: {
             query?: never;
@@ -1245,6 +1443,50 @@ export interface operations {
             };
         };
     };
+    preferences_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NotificationPreferencesView"];
+                };
+            };
+        };
+    };
+    savePreferences_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationPreferencesRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NotificationPreferencesView"];
+                };
+            };
+        };
+    };
     save: {
         parameters: {
             query?: never;
@@ -1391,6 +1633,50 @@ export interface operations {
             };
         };
     };
+    savedSearches: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SavedSearchList"];
+                };
+            };
+        };
+    };
+    createSavedSearch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SavedSearchView"];
+                };
+            };
+        };
+    };
     list: {
         parameters: {
             query?: never;
@@ -1458,6 +1744,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ResumeResponse"];
+                };
+            };
+        };
+    };
+    describeUnsubscribe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UnsubscribeInfo"];
+                };
+            };
+        };
+    };
+    performUnsubscribe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UnsubscribeInfo"];
                 };
             };
         };
