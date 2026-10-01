@@ -35,4 +35,15 @@ class OpenApiDocsTests {
 		assertThat(body).contains("\"/actuator/health\"");
 	}
 
+	@Test
+	void apiDocsIncludeTheAdminIngestionTargetEndpoint() throws Exception {
+		String body = mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(status().isOk())
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+
+		assertThat(body).contains("\"/admin/ingestion/targets\"").contains("AddTargetRequest");
+	}
+
 }

@@ -64,6 +64,8 @@ class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, PUBLIC_AUTH_POSTS).permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_OPERATIONAL).permitAll()
+                        // Admin console API (PLAN.md section 9: admin endpoints are role-gated).
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
