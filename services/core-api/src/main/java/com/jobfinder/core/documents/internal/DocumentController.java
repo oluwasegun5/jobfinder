@@ -87,7 +87,7 @@ class DocumentController {
     /** Deletes a draft. An approved document cannot be deleted (409 {@code document_approved}). */
     @DeleteMapping("/documents/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void delete(@PathVariable UUID id) {
+    void deleteDocument(@PathVariable UUID id) {
         documents.delete(CurrentUser.require().id(), id);
     }
 }

@@ -94,7 +94,10 @@ final class DocumentDtos {
      * accepts the change.
      */
     record Operation(@NotNull OperationType op, @Size(max = 20) String changeId, @Size(max = 60) String path,
-            ChangeState state, JsonNode after) {
+            ChangeState state,
+            @io.swagger.v3.oas.annotations.media.Schema(implementation = Object.class,
+                    description = "A string (headline, summary), an array of strings (skills) or an entry object.")
+            JsonNode after) {
     }
 
     /** {@code version} is the draft version the client was looking at; an older one is refused (409). */
