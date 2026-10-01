@@ -129,6 +129,9 @@ services:
       # AI usage ledger and per-user daily cap (docs/adr/0025-ai-usage-ledger.md).
       AI_DAILY_CAP_CREDITS: ${AI_DAILY_CAP_CREDITS:-500}
       AI_MICRO_USD_PER_CREDIT: ${AI_MICRO_USD_PER_CREDIT:-1000}
+      # The matching engine and its nightly run (docs/adr/0026-matching-engine.md).
+      MATCHING_BATCH_ENABLED: ${MATCHING_BATCH_ENABLED:-true}
+      MATCHING_BATCH_CRON: ${MATCHING_BATCH_CRON:-0 30 2 * * *}
       MAIL_HOST: mailpit
       MAIL_PORT: 1025
       # core-api talks to the object store over the compose network; browsers get pre-signed URLs
