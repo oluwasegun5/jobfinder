@@ -215,6 +215,49 @@ app:
       max-penalty: 30
       max-boost: 15
 
+  notifications:
+    # Saved searches, digests, instant alerts and unsubscribe links (docs/adr/0028-notifications.md). Every email is
+    # optional mail: sent only to active, verified users who asked for it, with a one-click unsubscribe link.
+    web-base-url: ${WEB_BASE_URL:http://localhost:3000}
+    # Where a mail client can reach core-api for the RFC 8058 one-click POST; blank = the web app's /api/core proxy.
+    public-api-url: ${NOTIFICATIONS_PUBLIC_API_URL:}
+    mail-from: ${NOTIFICATIONS_MAIL_FROM:no-reply@jobfinder.local}
+    # Signs unsubscribe tokens (at least 32 characters). Blank derives a key from JWT_SECRET.
+    unsubscribe-secret: ${NOTIFICATIONS_UNSUBSCRIBE_SECRET:}
+    max-saved-searches: 20
+    unsubscribe-token-ttl: 730d
+    # Jobs stored within this long of a run are left to the next one (an ingestion transaction may still be committing).
+    settle-delay: 2m
+    digest:
+      # Off with NOTIFICATIONS_DIGEST_ENABLED=false. Runs hourly at minute 5 and sends the digests whose hour (in the
+      # user's time zone) has come; one later than max-lateness is skipped rather than sent late.
+      enabled: ${NOTIFICATIONS_DIGEST_ENABLED:true}
+      cron: ${NOTIFICATIONS_DIGEST_CRON:0 5 * * * *}
+      zone: UTC
+      max-items: 10
+      # The lowest feed score (0 to 100) of a "strong" match, and how long ago the model may have scored it.
+      min-score: 70
+      lookback: 14d
+      max-lateness: 6h
+      user-page-size: 200
+      lock-at-most-for: 30m
+    instant:
+      # Off with NOTIFICATIONS_INSTANT_ENABLED=false (no match alerts, no INSTANT saved-search polling).
+      enabled: ${NOTIFICATIONS_INSTANT_ENABLED:true}
+      poll-interval: 10m
+      # At most this many alert emails per user in any 24 hours, each listing at most max-items-per-alert jobs.
+      max-per-day: 3
+      max-items-per-alert: 5
+      lookback: 36h
+      lock-at-most-for: 10m
+    delivery:
+      # A failed email is retried (waiting initial-backoff, then doubling) up to max-attempts in all, while its window is
+      # open. Log rows older than log-retention are deleted.
+      max-attempts: 3
+      initial-backoff: 15m
+      stale-after: 30m
+      log-retention: 180d
+
 springdoc:
   # The service-to-service endpoints (service token, not user tokens) are not part of the public API.
   paths-to-exclude: /internal/**

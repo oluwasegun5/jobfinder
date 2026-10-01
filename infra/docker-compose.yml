@@ -132,6 +132,12 @@ services:
       # The matching engine and its nightly run (docs/adr/0026-matching-engine.md).
       MATCHING_BATCH_ENABLED: ${MATCHING_BATCH_ENABLED:-true}
       MATCHING_BATCH_CRON: ${MATCHING_BATCH_CRON:-0 30 2 * * *}
+      # Digests, instant alerts and unsubscribe links (docs/adr/0028-notifications.md).
+      NOTIFICATIONS_DIGEST_ENABLED: ${NOTIFICATIONS_DIGEST_ENABLED:-true}
+      NOTIFICATIONS_DIGEST_CRON: ${NOTIFICATIONS_DIGEST_CRON:-0 5 * * * *}
+      NOTIFICATIONS_INSTANT_ENABLED: ${NOTIFICATIONS_INSTANT_ENABLED:-true}
+      NOTIFICATIONS_UNSUBSCRIBE_SECRET: ${NOTIFICATIONS_UNSUBSCRIBE_SECRET:-}
+      NOTIFICATIONS_MAIL_FROM: ${NOTIFICATIONS_MAIL_FROM:-no-reply@jobfinder.local}
       MAIL_HOST: mailpit
       MAIL_PORT: 1025
       # core-api talks to the object store over the compose network; browsers get pre-signed URLs
