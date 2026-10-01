@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +23,7 @@ import com.jobfinder.core.jobs.JobMatchSource;
 import com.jobfinder.core.jobs.RecalledJob;
 import com.jobfinder.core.matching.FallbackReason;
 import com.jobfinder.core.matching.MatchResult;
+import com.jobfinder.core.matching.MatchesRefreshed;
 import com.jobfinder.core.matching.MatchService;
 import com.jobfinder.core.matching.MatchStatus;
 import com.jobfinder.core.matching.RankedMatches;
@@ -77,10 +79,12 @@ class MatchingPipeline implements MatchService {
     private final AiUsageGate gate;
     private final MatchingProperties properties;
     private final MeterRegistry meters;
+    private final ApplicationEventPublisher events;
 
     MatchingPipeline(CandidateProfiles profiles, ResumeEmbeddings embeddings, JobMatchSource jobs,
             PreferenceFilters filters, Stage2Scorer stage2, Snapshots snapshots, MatchScoreStore store,
-            AiMatchClient ai, AiUsageGate gate, MatchingProperties properties, MeterRegistry meters) {
+            AiMatchClient ai, AiUsageGate gate, MatchingProperties properties, MeterRegistry meters,
+            ApplicationEventPublisher events) {
         this.profiles = profiles;
         this.embeddings = embeddings;
         this.jobs = jobs;
@@ -92,6 +96,7 @@ class MatchingPipeline implements MatchService {
         this.gate = gate;
         this.properties = properties;
         this.meters = meters;
+        this.events = events;
     }
 
     @Override
@@ -166,9 +171,21 @@ class MatchingPipeline implements MatchService {
 
         Reranked reranked = rerank(userId, candidate, snapshot, items);
         List<MatchResult> ordered = order(reranked.results());
+        if (reranked.llmScored() > 0) {
+            publishRefreshed(userId, reranked.llmScored());
+        }
         return new RankedMatches(userId, candidate.resumeVersionId(), ordered, new RankedMatches.Stats(
                 recalled.size(), items.size(), reranked.cached(), reranked.llmScored(), reranked.unranked(),
                 reranked.notScored(), reranked.requests(), reranked.capped()));
+    }
+
+    /** Tells the listeners (instant alerts, ADR 0028) that the user's cached matches changed; never fails the run. */
+    private void publishRefreshed(UUID userId, int newlyScored) {
+        try {
+            events.publishEvent(new MatchesRefreshed(userId, Instant.now(), newlyScored));
+        } catch (RuntimeException e) {
+            log.warn("A listener of MatchesRefreshed failed for user {}", userId, e);
+        }
     }
 
     @Override

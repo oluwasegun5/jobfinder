@@ -159,6 +159,45 @@ class JobSearchRepository {
                 rs.getObject("sort_at", OffsetDateTime.class).toString(), 0));
     }
 
+    /**
+     * The newest active jobs ingestion first stored in ({@code after}, {@code until}] that pass the filters (and the
+     * keyword, if any), for saved searches. Jobs the user hid or applied to are left out. Needs a transaction.
+     */
+    List<UUID> newSince(UUID userId, String query, JobFilters filters, Instant after, Instant until, int limit) {
+        limitTime();
+        Map<String, Object> params = new HashMap<>();
+        StringBuilder sql = new StringBuilder("select j.id from jobs j where j.status = 'ACTIVE'\n");
+        newSinceConditions(sql, params, userId, query, filters, after, until);
+        sql.append(" order by j.sort_at desc, j.id desc limit :limit");
+        params.put("limit", limit);
+        return run(sql, params, (rs, row) -> rs.getObject("id", UUID.class));
+    }
+
+    /** How many jobs {@link #newSince} would find, without the limit. */
+    int countNewSince(UUID userId, String query, JobFilters filters, Instant after, Instant until) {
+        limitTime();
+        Map<String, Object> params = new HashMap<>();
+        StringBuilder sql = new StringBuilder("select count(*) from jobs j where j.status = 'ACTIVE'\n");
+        newSinceConditions(sql, params, userId, query, filters, after, until);
+        return run(sql, params, (rs, row) -> rs.getInt(1)).get(0);
+    }
+
+    private static void newSinceConditions(StringBuilder sql, Map<String, Object> params, UUID userId, String query,
+            JobFilters filters, Instant after, Instant until) {
+        visibleTo(sql, params, userId, filters, until);
+        sql.append("""
+                   and not exists (select 1 from user_job_actions p
+                                    where p.user_id = :userId and p.job_id = j.id and p.action = 'APPLIED')
+                   and j.created_at > cast(:after as timestamptz) and j.created_at <= cast(:until as timestamptz)
+                """);
+        params.put("after", utc(after));
+        params.put("until", utc(until));
+        if (query != null) {
+            sql.append(" and j.search @@ websearch_to_tsquery('english', :q)\n");
+            params.put("q", query);
+        }
+    }
+
     SimilarSource similarSource(UUID jobId) {
         return jdbc.sql("select embedding is not null as embedded, embedding_model from jobs where id = :id")
                 .param("id", jobId)

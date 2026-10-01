@@ -3,6 +3,7 @@ package com.jobfinder.core.feed.internal;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.jobfinder.core.feed.FeedMatch;
+import com.jobfinder.core.feed.FeedMatches;
 import com.jobfinder.core.feed.internal.FeedDtos.EmptyReason;
 import com.jobfinder.core.feed.internal.FeedDtos.FeedItem;
 import com.jobfinder.core.feed.internal.FeedDtos.FeedPage;
@@ -39,7 +42,7 @@ import tools.jackson.databind.json.JsonMapper;
  * {@link MatchService#rankedMatches} once; everything else is cached scores plus arithmetic.
  */
 @Service
-class FeedService {
+class FeedService implements FeedMatches {
 
     private static final Logger log = LoggerFactory.getLogger(FeedService.class);
 
@@ -120,6 +123,40 @@ class FeedService {
                     last.stage2Millis(), last.match().jobId()).encode(json);
         }
         return new FeedPage(items, next, null);
+    }
+
+    /**
+     * The strong, model-scored part of the feed for the notifications module: the cached pool ranked exactly as
+     * {@link #page} ranks it, filtered, and never topped up by a model call (not even the first-look one).
+     */
+    @Override
+    public List<FeedMatch> strongMatches(UUID userId, Instant scoredAfter, double minScore, Collection<UUID> exclude,
+            int limit) {
+        Optional<Candidate> candidate = profiles.candidate(userId);
+        if (candidate.isEmpty() || !candidate.get().hasPreferences() || limit < 1) {
+            return List.of();
+        }
+        RankedMatches pool;
+        try {
+            pool = matches.cachedMatches(userId, properties.poolSize());
+        } catch (ApiException e) {
+            log.debug("No strong matches for a notification: {}", e.code());
+            return List.of();
+        }
+        List<FeedMatch> found = new ArrayList<>();
+        for (Entry e : rank(userId, pool, Instant.ofEpochMilli(clock.millis()))) {
+            MatchResult m = e.match();
+            if (m.status() != MatchStatus.LLM_SCORED || m.scoredAt() == null || !m.scoredAt().isAfter(scoredAfter)
+                    || e.feedScore() < minScore || exclude.contains(m.jobId())) {
+                continue;
+            }
+            found.add(new FeedMatch(m.jobId(), Math.round(e.feedScore() * 100.0) / 100.0, m.score(), m.strengths(),
+                    m.scoredAt()));
+            if (found.size() >= limit) {
+                break;
+            }
+        }
+        return found;
     }
 
     /**
