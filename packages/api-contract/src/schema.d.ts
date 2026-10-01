@@ -404,6 +404,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/jobs/{id}/match": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["match"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/billing/allowance": {
         parameters: {
             query?: never;
@@ -888,6 +904,26 @@ export interface components {
             sourceKind?: string;
             url?: string;
             attribution?: components["schemas"]["Attribution"];
+        };
+        MatchResponse: {
+            /** Format: uuid */
+            jobId?: string;
+            /** @enum {string} */
+            status?: "LLM_SCORED" | "UNRANKED" | "NOT_LLM_SCORED";
+            /** @enum {string} */
+            reason?: "DAILY_CAP_REACHED" | "LLM_UNAVAILABLE" | "LLM_FAILED" | "JOB_EXPIRED";
+            /** Format: int32 */
+            score?: number;
+            /** Format: double */
+            stage2Score?: number;
+            /** Format: int32 */
+            llmScore?: number;
+            strengths?: string[];
+            gaps?: string[];
+            model?: string;
+            promptVersion?: string;
+            /** Format: date-time */
+            scoredAt?: string;
         };
         AllowanceResponse: {
             dailyCap?: number;
@@ -1679,6 +1715,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["JobPage"];
+                };
+            };
+        };
+    };
+    match: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MatchResponse"];
                 };
             };
         };
