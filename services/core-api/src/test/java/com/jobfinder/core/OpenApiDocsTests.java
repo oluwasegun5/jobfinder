@@ -55,7 +55,7 @@ class OpenApiDocsTests {
 				.getContentAsString();
 
 		assertThat(body).contains("\"/jobs\"", "\"/jobs/{id}\"", "\"/jobs/{id}/similar\"", "\"/jobs/{id}/save\"",
-				"\"/jobs/{id}/hide\"", "\"/saved-jobs\"", "\"nextCursor\"", "\"attribution\"", "\"postedWithinDays\"");
+				"\"/jobs/{id}/hide\"", "\"/jobs/{id}/match\"", "\"/saved-jobs\"", "\"nextCursor\"", "\"attribution\"", "\"postedWithinDays\"");
 	}
 
 	@Test

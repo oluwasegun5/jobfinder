@@ -1,0 +1,15 @@
+{
+  "comment": "Shared by core-api Stage2ScorerTests and ai-service tests/test_match_eval.py so the Java blend and the eval's Python mirror are checked against the same hand-computed numbers. Weights 0.6/0.3/0.1, half-life 21 days; expected scores are on a 0-100 scale.",
+  "weights": {"vector": 0.6, "skills": 0.3, "recency": 0.1},
+  "half_life_days": 21,
+  "cases": [
+    {"name": "perfect and brand new", "cosine": 1.0, "resume_skills": ["Java"], "job_skills": ["java"], "age_days": 0, "expected": 100.0},
+    {"name": "mixed, one half-life old", "cosine": 0.8, "resume_skills": ["java"], "job_skills": ["Java", "Go"], "age_days": 21, "expected": 68.0},
+    {"name": "negative similarity counts as zero", "cosine": -0.7, "resume_skills": ["java"], "job_skills": ["java"], "age_days": 0, "expected": 40.0},
+    {"name": "no embedding, remainder rescaled", "cosine": null, "resume_skills": ["java"], "job_skills": ["java"], "age_days": 0, "expected": 100.0},
+    {"name": "job lists no skills, remainder rescaled", "cosine": 0.5, "resume_skills": ["java"], "job_skills": [], "age_days": 0, "expected": 57.14285714285714},
+    {"name": "old job, a quarter of the skills", "cosine": 0.9, "resume_skills": ["a"], "job_skills": ["a", "b", "c", "d"], "age_days": 63, "expected": 62.75},
+    {"name": "only recency is known", "cosine": null, "resume_skills": [], "job_skills": [], "age_days": 21, "expected": 50.0},
+    {"name": "skills compare case and spacing insensitively", "cosine": 0.0, "resume_skills": ["  Spring   Boot "], "job_skills": ["spring boot", "SPRING BOOT", "Kafka"], "age_days": 0, "expected": 25.0}
+  ]
+}
