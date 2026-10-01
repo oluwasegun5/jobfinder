@@ -92,6 +92,18 @@ class SourceStore {
         return jdbc.sql(SELECT + " where code = :code").param("code", code).query(sourceMapper).optional();
     }
 
+    List<SourceRow> findAll() {
+        return jdbc.sql(SELECT + " order by code").query(sourceMapper).list();
+    }
+
+    /** @return whether a source with the code exists */
+    boolean setEnabled(String code, boolean enabled) {
+        return jdbc.sql("update sources set enabled = :enabled, updated_at = now() where code = :code")
+                .param("enabled", enabled)
+                .param("code", code)
+                .update() == 1;
+    }
+
     List<SourceRow> findEnabled() {
         return jdbc.sql(SELECT + " where enabled order by code").query(sourceMapper).list();
     }

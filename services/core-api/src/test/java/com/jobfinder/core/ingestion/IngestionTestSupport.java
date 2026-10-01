@@ -26,8 +26,12 @@ import com.jobfinder.core.TestcontainersConfiguration;
         "app.ingestion.scheduler.initial-delay-ms=3600000",
         "app.ingestion.defaults.retry-initial-backoff=10ms",
         "app.ingestion.defaults.requests-per-second=1000",
-        "app.ingestion.defaults.breaker-minimum-calls=3" })
+        "app.ingestion.defaults.breaker-minimum-calls=3",
+        // Source alerts are emailed (to Mailpit) in every ingestion test; the alert tests read them from there.
+        "app.ingestion.alerts.recipients=" + IngestionTestSupport.ALERT_RECIPIENT })
 public abstract class IngestionTestSupport {
+
+    public static final String ALERT_RECIPIENT = "ingestion-alerts@example.test";
 
     protected static final String FAKE = "FAKE";
     protected static final String FAKE_RETRY = "FAKE_RETRY";
@@ -62,6 +66,7 @@ public abstract class IngestionTestSupport {
             jdbc.update("delete from jobs where id in (select job_id from job_sources "
                     + "where source_id = (select id from sources where code = ?))", code);
             jdbc.update("delete from raw_job_postings where source_id = (select id from sources where code = ?)", code);
+            jdbc.update("delete from source_alerts where source_id = (select id from sources where code = ?)", code);
             jdbc.update("delete from ingestion_runs where source_id = (select id from sources where code = ?)", code);
             jdbc.update("delete from source_targets where source_id = (select id from sources where code = ?)", code);
             jdbc.update("update sources set enabled = true, config = '{}'::jsonb, last_run_at = null, "

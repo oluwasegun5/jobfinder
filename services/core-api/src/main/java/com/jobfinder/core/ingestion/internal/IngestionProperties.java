@@ -1,6 +1,7 @@
 package com.jobfinder.core.ingestion.internal;
 
 import java.time.Duration;
+import java.util.List;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
@@ -17,7 +18,8 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  */
 @ConfigurationProperties("app.ingestion")
 record IngestionProperties(@DefaultValue Scheduler scheduler, @DefaultValue("30m") Duration lockAtMostFor,
-        @DefaultValue Defaults defaults, @DefaultValue Expiry expiry, @DefaultValue Seed seed) {
+        @DefaultValue Defaults defaults, @DefaultValue Expiry expiry, @DefaultValue Seed seed,
+        @DefaultValue Alerts alerts) {
 
     IngestionProperties {
         if (lockAtMostFor.isNegative() || lockAtMostFor.isZero()) {
@@ -26,6 +28,33 @@ record IngestionProperties(@DefaultValue Scheduler scheduler, @DefaultValue("30m
     }
 
     record Scheduler(@DefaultValue("true") boolean enabled) {
+    }
+
+    /**
+     * Source alerts (ADR 0024). With no {@code recipients} an alert is only logged. {@code errorRateThreshold} is
+     * the share of a run's targets that failed above which the run breaches the error-rate rule, ignored for a run
+     * of fewer than {@code errorRateMinTargets} targets unless every target failed. {@code zeroJobsMinPrevious} is
+     * how many postings the previous clean run must have fetched for an empty run to count as a drop to zero.
+     * {@code reAlertInterval} is how long a source that stays in breach waits before it is announced again; zero
+     * or negative announces it only once. {@code from} and {@code webBaseUrl} shape the email.
+     */
+    record Alerts(@DefaultValue List<String> recipients, @DefaultValue("no-reply@jobfinder.local") String from,
+            @DefaultValue("http://localhost:3000") String webBaseUrl,
+            @DefaultValue("0.2") double errorRateThreshold, @DefaultValue("5") int errorRateMinTargets,
+            @DefaultValue("5") int zeroJobsMinPrevious, @DefaultValue("24h") Duration reAlertInterval) {
+
+        Alerts {
+            if (errorRateThreshold < 0 || errorRateThreshold >= 1) {
+                throw new IllegalArgumentException(
+                        "app.ingestion.alerts.error-rate-threshold must be at least 0 and below 1");
+            }
+            if (errorRateMinTargets < 1) {
+                throw new IllegalArgumentException("app.ingestion.alerts.error-rate-min-targets must be at least 1");
+            }
+            if (zeroJobsMinPrevious < 1) {
+                throw new IllegalArgumentException("app.ingestion.alerts.zero-jobs-min-previous must be at least 1");
+            }
+        }
     }
 
     /**
