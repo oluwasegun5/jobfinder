@@ -81,7 +81,8 @@ async function handle(request: BackgroundRequest, senderUrl: string | undefined,
 chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
   // Only messages from our own extension's scripts and pages (never from another extension or a web page).
   if (sender.id !== chrome.runtime.id || typeof message !== "object" || message === null) return false;
-  const fromContentScript = sender.tab !== undefined;
+  // Our own pages (the popup) have a chrome-extension:// URL; a content script reports the web page it runs in.
+  const fromContentScript = !(sender.url ?? "").startsWith(chrome.runtime.getURL(""));
   handle(message as BackgroundRequest, sender.url, fromContentScript).then(sendResponse, (error: unknown) => {
     sendResponse(failure(error));
   });

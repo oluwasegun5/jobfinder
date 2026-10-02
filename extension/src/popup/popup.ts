@@ -43,7 +43,13 @@ function view(status: StatusResponse): void {
 }
 
 async function refresh(): Promise<void> {
-  view(await send<StatusResponse>({ type: "status" }));
+  try {
+    view(await send<StatusResponse>({ type: "status" }));
+  } catch {
+    // The service worker was not reachable (it may be starting): show the sign-in form rather than a blank popup.
+    view({ signedIn: false });
+    say("Could not reach the extension background. Try again.", true);
+  }
 }
 
 loginForm.addEventListener("submit", (event) => {
