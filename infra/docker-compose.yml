@@ -179,6 +179,7 @@ services:
       AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:?set AI_SERVICE_TOKEN in .env (see .env.example)}
       LLM_PROVIDER: ${LLM_PROVIDER:-anthropic}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_WORKSPACE_ID: ${ANTHROPIC_WORKSPACE_ID:-}
       LLM_MODEL_FAST: ${LLM_MODEL_FAST:-claude-haiku-4-5}
       LLM_MODEL_STRONG: ${LLM_MODEL_STRONG:-claude-sonnet-5}
       # Label of the price list in app/config.py (LLM_PRICING); bump it when a price changes (ADR 0025).

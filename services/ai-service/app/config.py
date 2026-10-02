@@ -47,6 +47,8 @@ class Settings(BaseSettings):
 
     llm_provider: ProviderName = ProviderName.ANTHROPIC
     anthropic_api_key: SecretStr | None = None
+    # Only for API keys not scoped to a workspace: sent as the anthropic-workspace-id header.
+    anthropic_workspace_id: str | None = None
     # Model routing (PLAN.md §7): never hard-code model names in business logic.
     llm_model_fast: str = "claude-haiku-4-5"
     llm_model_strong: str = "claude-sonnet-5"
@@ -115,7 +117,7 @@ class Settings(BaseSettings):
             raise ValueError("EMBEDDING_MODEL must start with 'fake-' when EMBEDDING_PROVIDER=fake")
         return self
 
-    @field_validator("anthropic_api_key", "voyage_api_key", mode="before")
+    @field_validator("anthropic_api_key", "voyage_api_key", "anthropic_workspace_id", mode="before")
     @classmethod
     def _blank_key_is_unset(cls, value: object) -> object:
         # Compose passes ANTHROPIC_API_KEY="" (or VOYAGE_API_KEY="") when it is not configured.
