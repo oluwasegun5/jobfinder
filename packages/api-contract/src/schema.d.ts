@@ -836,6 +836,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/extension/apply-context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["applyContext"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/documents": {
         parameters: {
             query?: never;
@@ -2052,6 +2068,27 @@ export interface components {
             max?: number;
             currency?: string;
             period?: string;
+        };
+        ApplyContext: {
+            job?: components["schemas"]["ApplyContextJob"];
+            /** Format: uuid */
+            applicationId?: string;
+            /** @enum {string} */
+            applicationStatus?: "SAVED" | "APPLIED" | "SCREENING" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN";
+            packSummary?: components["schemas"]["ApplyContextPack"];
+        };
+        ApplyContextJob: {
+            /** Format: uuid */
+            id?: string;
+            title?: string;
+            company?: string;
+        };
+        ApplyContextPack: {
+            /** Format: uuid */
+            id?: string;
+            status?: string;
+            /** Format: int32 */
+            version?: number;
         };
         ListResponse: {
             items?: components["schemas"]["SummaryResponse"][];
@@ -3879,6 +3916,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["FeedPage"];
+                };
+            };
+        };
+    };
+    applyContext: {
+        parameters: {
+            query: {
+                url: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApplyContext"];
                 };
             };
         };

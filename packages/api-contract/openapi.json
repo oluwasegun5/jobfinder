@@ -2533,6 +2533,38 @@
         }
       }
     },
+    "/extension/apply-context": {
+      "get": {
+        "tags": [
+          "extension-controller"
+        ],
+        "operationId": "applyContext",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 2000,
+              "minLength": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplyContext"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/documents": {
       "get": {
         "tags": [
@@ -6152,6 +6184,64 @@
           },
           "period": {
             "type": "string"
+          }
+        }
+      },
+      "ApplyContext": {
+        "type": "object",
+        "properties": {
+          "job": {
+            "$ref": "#/components/schemas/ApplyContextJob"
+          },
+          "applicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "applicationStatus": {
+            "type": "string",
+            "enum": [
+              "SAVED",
+              "APPLIED",
+              "SCREENING",
+              "INTERVIEW",
+              "OFFER",
+              "REJECTED",
+              "WITHDRAWN"
+            ]
+          },
+          "packSummary": {
+            "$ref": "#/components/schemas/ApplyContextPack"
+          }
+        }
+      },
+      "ApplyContextJob": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          }
+        }
+      },
+      "ApplyContextPack": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
