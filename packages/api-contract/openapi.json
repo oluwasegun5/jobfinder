@@ -936,6 +936,36 @@
         }
       }
     },
+    "/interview-prep": {
+      "post": {
+        "tags": [
+          "interview-controller"
+        ],
+        "operationId": "generate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratePrepRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterviewPrepView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/documents/{id}/render": {
       "post": {
         "tags": [
@@ -2246,6 +2276,37 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/MatchResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/interview-prep/{id}": {
+      "get": {
+        "tags": [
+          "interview-controller"
+        ],
+        "operationId": "get_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterviewPrepView"
                 }
               }
             }
@@ -4275,6 +4336,131 @@
           },
           "error": {
             "$ref": "#/components/schemas/PartError"
+          }
+        }
+      },
+      "GeneratePrepRequest": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "jobId"
+        ]
+      },
+      "BriefClaimView": {
+        "type": "object",
+        "properties": {
+          "statement": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "string"
+          }
+        }
+      },
+      "BriefSectionView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "claims": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BriefClaimView"
+            }
+          }
+        }
+      },
+      "CompanyBriefView": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BriefSectionView"
+            }
+          },
+          "unknowns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "droppedClaims": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "InterviewPrepView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jobTitle": {
+            "type": "string"
+          },
+          "jobCompany": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "promptVersion": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InterviewQuestionView"
+            }
+          },
+          "companyBrief": {
+            "$ref": "#/components/schemas/CompanyBriefView"
+          }
+        }
+      },
+      "InterviewQuestionView": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "difficulty": {
+            "type": "string"
           }
         }
       },

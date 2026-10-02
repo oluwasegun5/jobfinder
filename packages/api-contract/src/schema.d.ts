@@ -308,6 +308,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/interview-prep": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["generate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/documents/{id}/render": {
         parameters: {
             query?: never;
@@ -716,6 +732,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["match"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/interview-prep/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1411,6 +1443,48 @@ export interface components {
             state?: "PENDING" | "READY" | "FAILED" | "BLOCKED_BY_CAP" | "MISSING";
             document?: components["schemas"]["DraftResponse"];
             error?: components["schemas"]["PartError"];
+        };
+        GeneratePrepRequest: {
+            /** Format: uuid */
+            jobId: string;
+        };
+        BriefClaimView: {
+            statement?: string;
+            source?: string;
+            evidence?: string;
+        };
+        BriefSectionView: {
+            id?: string;
+            title?: string;
+            claims?: components["schemas"]["BriefClaimView"][];
+        };
+        CompanyBriefView: {
+            model?: string;
+            sections?: components["schemas"]["BriefSectionView"][];
+            unknowns?: string[];
+            /** Format: int32 */
+            droppedClaims?: number;
+        };
+        InterviewPrepView: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            jobId?: string;
+            jobTitle?: string;
+            jobCompany?: string;
+            status?: string;
+            promptVersion?: string;
+            model?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            questions?: components["schemas"]["InterviewQuestionView"][];
+            companyBrief?: components["schemas"]["CompanyBriefView"];
+        };
+        InterviewQuestionView: {
+            category?: string;
+            question?: string;
+            rationale?: string;
+            difficulty?: string;
         };
         TokenRequest: {
             token: string;
@@ -2634,6 +2708,30 @@ export interface operations {
             };
         };
     };
+    generate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeneratePrepRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InterviewPrepView"];
+                };
+            };
+        };
+    };
     renderDocument: {
         parameters: {
             query?: never;
@@ -3405,6 +3503,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MatchResponse"];
+                };
+            };
+        };
+    };
+    get_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InterviewPrepView"];
                 };
             };
         };
