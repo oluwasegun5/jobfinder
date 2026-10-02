@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Bookmark, BookmarkCheck, Check, ExternalLink, EyeOff, Eye, Sparkles } from "lucide-react";
+import { ArrowLeft, Bookmark, BookmarkCheck, Check, ExternalLink, EyeOff, Eye, FilePenLine, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -80,6 +80,12 @@ export function JobDetailView({ id }: { id: string }) {
             <span className="sr-only">(opens in a new tab)</span>
           </a>
         )}
+        <Link
+          href={`/jobs/${id}/tailor`}
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <FilePenLine className="size-4" aria-hidden /> Tailor for this job
+        </Link>
         <Button
           variant="outline"
           aria-pressed={data.saved ?? false}
