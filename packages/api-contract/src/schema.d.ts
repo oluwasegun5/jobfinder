@@ -1524,16 +1524,6 @@ export interface components {
             document?: components["schemas"]["DraftResponse"];
             error?: components["schemas"]["PartError"];
         };
-        StartSessionRequest: {
-            /** Format: uuid */
-            jobId: string;
-            /** Format: uuid */
-            applicationId?: string;
-            /** Format: uuid */
-            prepId?: string;
-            /** Format: int32 */
-            maxTurns?: number;
-        };
         AveragesView: {
             /** Format: double */
             structure?: number;
@@ -1628,6 +1618,16 @@ export interface components {
             feedback?: components["schemas"]["FeedbackView"];
             /** Format: date-time */
             createdAt?: string;
+        };
+        StartSessionRequest: {
+            /** Format: uuid */
+            jobId: string;
+            /** Format: uuid */
+            applicationId?: string;
+            /** Format: uuid */
+            prepId?: string;
+            /** Format: int32 */
+            maxTurns?: number;
         };
         AnswerRequest: {
             answer: string;
@@ -2995,8 +2995,17 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description The caller already had an open session for the job: it is returned as it is, with no model call and no charge */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SessionView"];
+                };
+            };
+            /** @description A new session was started */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };

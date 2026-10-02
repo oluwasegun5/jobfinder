@@ -997,7 +997,17 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "The caller already had an open session for the job: it is returned as it is, with no model call and no charge",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionView"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "A new session was started",
             "content": {
               "*/*": {
                 "schema": {
@@ -4547,32 +4557,6 @@
           }
         }
       },
-      "StartSessionRequest": {
-        "type": "object",
-        "properties": {
-          "jobId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "applicationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "prepId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "maxTurns": {
-            "type": "integer",
-            "format": "int32",
-            "maximum": 20,
-            "minimum": 1
-          }
-        },
-        "required": [
-          "jobId"
-        ]
-      },
       "AveragesView": {
         "type": "object",
         "properties": {
@@ -4828,6 +4812,32 @@
             "format": "date-time"
           }
         }
+      },
+      "StartSessionRequest": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "applicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "prepId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "maxTurns": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 20,
+            "minimum": 1
+          }
+        },
+        "required": [
+          "jobId"
+        ]
       },
       "AnswerRequest": {
         "type": "object",
