@@ -21,4 +21,10 @@ class PackReader implements ApplicationPacks {
     public Optional<UUID> jobOf(UUID userId, UUID packId) {
         return packs.find(userId, packId).map(PackStore.PackRow::jobId);
     }
+
+    @Override
+    public Optional<PackSummary> latestFor(UUID userId, UUID jobId) {
+        return packs.list(userId, jobId, 1).stream()
+                .map(p -> new PackSummary(p.id(), p.status().name(), p.version())).findFirst();
+    }
 }
