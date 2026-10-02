@@ -3,7 +3,8 @@
   "private": true,
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "extension"
   ],
   "engines": {
     "node": ">=22"
@@ -13,6 +14,10 @@
     "web:dev": "npm run dev -w web",
     "web:test": "npm run test -w web",
     "web:lint": "npm run lint -w web && npm run typecheck -w web",
-    "web:e2e": "npm run test:e2e -w web"
+    "web:e2e": "npm run test:e2e -w web",
+    "extension:build": "npm run build -w @jobfinder/extension",
+    "extension:test": "npm run test -w @jobfinder/extension",
+    "extension:lint": "npm run lint -w @jobfinder/extension && npm run typecheck -w @jobfinder/extension",
+    "extension:e2e": "npm run test:e2e -w @jobfinder/extension"
   }
 }
