@@ -484,6 +484,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_1"];
+        put?: never;
+        post: operations["create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["changeStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/reminders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listReminders"];
+        put?: never;
+        post: operations["addReminder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/follow-up-draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["followUpDraft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/application-packs/{id}/retry": {
         parameters: {
             query?: never;
@@ -546,6 +610,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["patch"];
+        trace?: never;
+    };
+    "/applications/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_1"];
+        put?: never;
+        post?: never;
+        delete: operations["delete"];
+        options?: never;
+        head?: never;
+        patch: operations["update"];
         trace?: never;
     };
     "/saved-jobs": {
@@ -667,7 +747,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_1"];
+        get: operations["list_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -881,7 +961,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["delete"];
+        delete: operations["delete_1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -898,6 +978,22 @@ export interface paths {
         put?: never;
         post?: never;
         delete: operations["deleteMe"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/reminders/{reminderId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["cancelReminder"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1346,6 +1442,117 @@ export interface components {
         GoogleLoginRequest: {
             idToken: string;
         };
+        CreateRequest: {
+            /** Format: uuid */
+            jobId?: string;
+            title?: string;
+            company?: string;
+            url?: string;
+            /** @enum {string} */
+            status?: "SAVED" | "APPLIED" | "SCREENING" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN";
+            /** Format: date-time */
+            appliedAt?: string;
+            notes?: string;
+            /** Format: uuid */
+            packId?: string;
+            /** Format: uuid */
+            resumeDocumentId?: string;
+            /** Format: uuid */
+            coverLetterDocumentId?: string;
+            /** Format: uuid */
+            screeningAnswersDocumentId?: string;
+        };
+        ApplicationDetail: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            jobId?: string;
+            title?: string;
+            company?: string;
+            url?: string;
+            /** @enum {string} */
+            status?: "SAVED" | "APPLIED" | "SCREENING" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN";
+            notes?: string;
+            /** Format: date-time */
+            appliedAt?: string;
+            /** Format: uuid */
+            packId?: string;
+            /** Format: uuid */
+            resumeDocumentId?: string;
+            /** Format: uuid */
+            coverLetterDocumentId?: string;
+            /** Format: uuid */
+            screeningAnswersDocumentId?: string;
+            /** Format: date-time */
+            statusChangedAt?: string;
+            /** Format: date-time */
+            nextReminderAt?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            events?: components["schemas"]["EventView"][];
+            reminders?: components["schemas"]["ReminderView"][];
+        };
+        EventView: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            from?: "SAVED" | "APPLIED" | "SCREENING" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN";
+            /** @enum {string} */
+            to?: "SAVED" | "APPLIED" | "SCREENING" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN";
+            note?: string;
+            /** Format: date-time */
+            at?: string;
+        };
+        ReminderView: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            applicationId?: string;
+            /** @enum {string} */
+            kind?: "FOLLOW_UP" | "INTERVIEW" | "CUSTOM";
+            note?: string;
+            /** Format: date-time */
+            dueAt?: string;
+            /** @enum {string} */
+            state?: "PENDING" | "SENT" | "CANCELLED";
+            /** Format: date-time */
+            sentAt?: string;
+            /** @enum {string} */
+            cancelReason?: "USER" | "APPLICATION_CLOSED" | "EMAIL_DISABLED" | "NO_RECIPIENT" | "SEND_FAILED";
+            /** Format: date-time */
+            createdAt?: string;
+        };
+        StatusRequest: {
+            /** @enum {string} */
+            status: "SAVED" | "APPLIED" | "SCREENING" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN";
+            note?: string;
+        };
+        ReminderRequest: {
+            /** Format: date-time */
+            dueAt: string;
+            /** @enum {string} */
+            kind?: "FOLLOW_UP" | "INTERVIEW" | "CUSTOM";
+            note?: string;
+        };
+        FollowUpRequest: {
+            /** @enum {string} */
+            tone?: "FORMAL" | "WARM" | "CONCISE";
+            /** @enum {string} */
+            length?: "SHORT" | "STANDARD" | "LONG";
+            notes?: string;
+        };
+        FollowUpDraft: {
+            subject?: string;
+            body?: string;
+            /** @enum {string} */
+            tone?: "FORMAL" | "WARM" | "CONCISE";
+            /** @enum {string} */
+            length?: "SHORT" | "STANDARD" | "LONG";
+            model?: string;
+            promptVersion?: string;
+        };
         RetryRequest: {
             parts?: ("TAILORED_RESUME" | "COVER_LETTER" | "SCREENING_ANSWERS")[];
         };
@@ -1381,6 +1588,14 @@ export interface components {
             /** Format: int32 */
             version?: number;
             operations: components["schemas"]["Operation"][];
+        };
+        UpdateRequest: {
+            title?: string;
+            company?: string;
+            url?: string;
+            notes?: string;
+            /** Format: date-time */
+            appliedAt?: string;
         };
         SavedSearchList: {
             items?: components["schemas"]["SavedSearchView"][];
@@ -1605,6 +1820,9 @@ export interface components {
             email?: string;
             role?: string;
             emailVerified?: boolean;
+        };
+        ReminderList: {
+            items?: components["schemas"]["ReminderView"][];
         };
         PackList: {
             items?: components["schemas"]["PackSummary"][];
@@ -2620,6 +2838,154 @@ export interface operations {
             };
         };
     };
+    list_1: {
+        parameters: {
+            query?: {
+                status?: ("SAVED" | "APPLIED" | "SCREENING" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN")[];
+                grouped?: boolean;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ListResponse"];
+                };
+            };
+        };
+    };
+    create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApplicationDetail"];
+                };
+            };
+        };
+    };
+    changeStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApplicationDetail"];
+                };
+            };
+        };
+    };
+    listReminders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReminderList"];
+                };
+            };
+        };
+    };
+    addReminder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReminderRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReminderView"];
+                };
+            };
+        };
+    };
+    followUpDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["FollowUpRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FollowUpDraft"];
+                };
+            };
+        };
+    };
     retryPack: {
         parameters: {
             query?: never;
@@ -2774,6 +3140,74 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["DraftResponse"];
+                };
+            };
+        };
+    };
+    get_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApplicationDetail"];
+                };
+            };
+        };
+    };
+    delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApplicationDetail"];
                 };
             };
         };
@@ -2958,7 +3392,7 @@ export interface operations {
             };
         };
     };
-    list_1: {
+    list_2: {
         parameters: {
             query?: {
                 jobId?: string;
@@ -3258,7 +3692,7 @@ export interface operations {
             };
         };
     };
-    delete: {
+    delete_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -3289,6 +3723,27 @@ export interface operations {
         responses: {
             /** @description OK */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    cancelReminder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                reminderId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
