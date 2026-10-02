@@ -1,0 +1,60 @@
+{
+  "prompt_version": "mock_interview/v1",
+  "model": "fake-strong",
+  "feedback": {
+    "structure": 4,
+    "relevance": 5,
+    "specificity": 4,
+    "star": {
+      "score": 5,
+      "situation": true,
+      "task": true,
+      "action": true,
+      "result": true
+    },
+    "overall": 4,
+    "strengths": [
+      {
+        "text": "You tested both options with real measurements.",
+        "quote": "I built a small prototype of both options and measured them with 5000 messages."
+      },
+      {
+        "text": "You ended with a measured result.",
+        "quote": "which cut duplicate orders by 30 percent"
+      }
+    ],
+    "improvements": [
+      {
+        "text": "Say what the disagreement was about in one sentence.",
+        "quote": null
+      }
+    ],
+    "evidence": [
+      "I built a small prototype of both options and measured them with 5000 messages.",
+      "which cut duplicate orders by 30 percent"
+    ]
+  },
+  "next_question": {
+    "category": "behavioral",
+    "question": "Describe a time you had to learn a new tool quickly.",
+    "source": "generated"
+  },
+  "dropped_claims": 0,
+  "answer_redactions": 0,
+  "scores_capped": false,
+  "usage": [
+    {
+      "user_id": "00000000-0000-4000-8000-000000000001",
+      "feature": "mock_interview",
+      "provider": "fake",
+      "model": "fake-strong",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_usd": "0",
+      "latency_ms": 0,
+      "prompt_version": "mock_interview/v1",
+      "call_id": "00000000-0000-4000-8000-0000000000c1",
+      "pricing_version": "fake"
+    }
+  ]
+}

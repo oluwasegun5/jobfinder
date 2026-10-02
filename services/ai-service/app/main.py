@@ -9,6 +9,7 @@ from app.api import (
     diagnostics,
     health,
     interview,
+    mock_interview,
     parse_resume,
     score_matches,
     tailor_resume,
@@ -131,4 +132,5 @@ def create_app(
     app.include_router(tailor_resume.router)
     app.include_router(writing.router)
     app.include_router(interview.router)
+    app.include_router(mock_interview.router)
     return app

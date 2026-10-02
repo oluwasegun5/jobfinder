@@ -1,0 +1,44 @@
+{
+  "prompt_version": "mock_interview/v1",
+  "model": "fake-fast",
+  "turns_answered": 3,
+  "averages": {
+    "structure": 3.0,
+    "relevance": 4.0,
+    "specificity": 2.67,
+    "star_completeness": 5.0,
+    "overall": 3.0
+  },
+  "top_strengths": [
+    "You gave a clear example.",
+    "You stayed on the question.",
+    "You named the right tool."
+  ],
+  "top_improvements": [
+    "Explain how you would test it.",
+    "Open with a short summary.",
+    "Add a measurable result."
+  ],
+  "narrative": "You answered three questions and were clearest on relevance but weaker on specificity.",
+  "next_steps": [
+    "Prepare two examples with a measurable result.",
+    "Practise opening answers with a one-sentence summary.",
+    "Rehearse technical answers aloud and time them."
+  ],
+  "fallback_used": false,
+  "usage": [
+    {
+      "user_id": "00000000-0000-4000-8000-000000000001",
+      "feature": "mock_interview_summary",
+      "provider": "fake",
+      "model": "fake-fast",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_usd": "0",
+      "latency_ms": 0,
+      "prompt_version": "mock_interview/v1",
+      "call_id": "00000000-0000-4000-8000-0000000000c1",
+      "pricing_version": "fake"
+    }
+  ]
+}

@@ -92,6 +92,11 @@ class Settings(BaseSettings):
     interview_questions_max_tokens: int = Field(default=3500, gt=0)
     interview_brief_max_tokens: int = Field(default=2500, gt=0)
 
+    # Mock interview (docs/adr/0034-mock-interview.md): one call per answer (feedback, and the next
+    # question when the prep has none left) on the strong model, one summary call on the fast model.
+    mock_turn_max_tokens: int = Field(default=2000, gt=0)
+    mock_summary_max_tokens: int = Field(default=1200, gt=0)
+
     rabbitmq_enabled: bool = True
     rabbitmq_host: str = "localhost"
     rabbitmq_port: int = Field(default=5672, gt=0)

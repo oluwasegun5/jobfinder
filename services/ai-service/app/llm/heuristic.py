@@ -1,8 +1,9 @@
 """A keyless stand-in for the model, for local runs and evals (`LLM_PROVIDER=fake`).
 
 It answers the match-scoring, tailor-resume, cover-letter, screening-answers, follow-up-email and
-interview-prep prompts (the writing ones in `heuristic_writing`, templates over the resume's own
-facts; interview prep in `heuristic_interview`), with
+interview-prep and mock-interview prompts (the writing ones in `heuristic_writing`, templates
+over the resume's own facts; interview prep in `heuristic_interview`, mock interviews in
+`heuristic_mock`), with
 deterministic heuristics over the same data blocks a real model would read. Tailoring
 (docs/adr/0029-resume-tailoring.md) only reorders: skills and each role's bullets are sorted by
 their word overlap with the job, and no text is reworded, so its output is always faithful to the
@@ -22,6 +23,8 @@ from decimal import Decimal
 from app.llm.base import LLMConfigurationError, LLMRequest, LLMResponse, LLMUsage
 from app.llm.heuristic_interview import brief as interview_brief
 from app.llm.heuristic_interview import questions as interview_questions
+from app.llm.heuristic_mock import summary as mock_summary
+from app.llm.heuristic_mock import turn as mock_turn
 from app.llm.heuristic_writing import cover_letter, follow_up, screening
 from app.matching.message import parse_message
 from app.matching.schema import Candidate, JobPosting
@@ -35,6 +38,8 @@ _SCREENING_FEATURE = "screening_answers"
 _FOLLOW_UP_FEATURE = "follow_up_email"
 _INTERVIEW_QUESTIONS_FEATURE = "interview_questions"
 _INTERVIEW_BRIEF_FEATURE = "interview_brief"
+_MOCK_TURN_FEATURE = "mock_interview"
+_MOCK_SUMMARY_FEATURE = "mock_interview_summary"
 _WORD = re.compile(r"[a-z0-9+#.]+")
 _STOP = frozenset(
     {"and", "the", "for", "with", "of", "to", "in", "at", "a", "an", "or", "sr", "jr"}
@@ -133,6 +138,10 @@ class HeuristicProvider:
             text = json.dumps(interview_questions(request.user_message))
         elif request.feature == _INTERVIEW_BRIEF_FEATURE:
             text = json.dumps(interview_brief(request.user_message))
+        elif request.feature == _MOCK_TURN_FEATURE:
+            text = json.dumps(mock_turn(request.user_message))
+        elif request.feature == _MOCK_SUMMARY_FEATURE:
+            text = json.dumps(mock_summary(request.user_message))
         elif request.feature == _FEATURE:
             candidate, jobs = parse_message(request.user_message)
             results = []
@@ -146,7 +155,8 @@ class HeuristicProvider:
             raise LLMConfigurationError(
                 f"LLM_PROVIDER=fake only supports {_FEATURE}, {_TAILOR_FEATURE}, "
                 f"{_COVER_LETTER_FEATURE}, {_SCREENING_FEATURE}, {_FOLLOW_UP_FEATURE}, "
-                f"{_INTERVIEW_QUESTIONS_FEATURE} and {_INTERVIEW_BRIEF_FEATURE}; set "
+                f"{_INTERVIEW_QUESTIONS_FEATURE}, {_INTERVIEW_BRIEF_FEATURE}, {_MOCK_TURN_FEATURE} "
+                f"and {_MOCK_SUMMARY_FEATURE}; set "
                 f"LLM_PROVIDER=anthropic for {request.feature}"
             )
         return LLMResponse(
