@@ -1,0 +1,36 @@
+{
+  "passed": false,
+  "blocking": 2,
+  "warnings": 2,
+  "flags": [
+    {
+      "code": "PLACEHOLDER",
+      "severity": "BLOCKING",
+      "path": "paragraphs[0]",
+      "value": "[Your Name]",
+      "message": "This text still contains a placeholder that must be filled in or removed."
+    },
+    {
+      "code": "NEW_EXPERIENCE_YEARS",
+      "severity": "BLOCKING",
+      "path": "paragraphs[0]",
+      "value": "25 years",
+      "message": "This length of experience does not match your resume."
+    },
+    {
+      "code": "NEW_TERM",
+      "severity": "WARNING",
+      "path": "paragraphs[0]",
+      "value": "Your",
+      "message": "This name does not appear in your resume."
+    },
+    {
+      "code": "NEW_TERM",
+      "severity": "WARNING",
+      "path": "paragraphs[0]",
+      "value": "Name",
+      "message": "This name does not appear in your resume."
+    }
+  ],
+  "checker_version": "fact_check/v1"
+}

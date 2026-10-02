@@ -70,11 +70,11 @@ class AiTailoringClient {
     static final String FEATURE = "tailor_resume";
 
     private static final Logger log = LoggerFactory.getLogger(AiTailoringClient.class);
-    private static final int MAX_RESPONSE_BYTES = 4 * 1024 * 1024;
+    static final int MAX_RESPONSE_BYTES = 4 * 1024 * 1024;
     private static final Set<String> SECTIONS = Set.of("HEADLINE", "SUMMARY", "EXPERIENCE", "EDUCATION", "SKILLS",
             "PROJECTS", "CERTIFICATIONS");
     private static final Set<String> OPS = Set.of("REPLACE", "ADD", "REMOVE");
-    private static final Set<String> SEVERITIES = Set.of("BLOCKING", "WARNING");
+    static final Set<String> SEVERITIES = Set.of("BLOCKING", "WARNING");
     private static final int MAX_CHANGES = 120;
     private static final int MAX_FLAGS = 200;
 
@@ -93,7 +93,7 @@ class AiTailoringClient {
                 documents.factCheck().readTimeout());
     }
 
-    private static RestClient client(DocumentsAiProperties properties, Duration connect, Duration read) {
+    static RestClient client(DocumentsAiProperties properties, Duration connect, Duration read) {
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(
                 HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(connect).build());
         factory.setReadTimeout(read);
@@ -169,7 +169,7 @@ class AiTailoringClient {
                 || response.path("changes").size() > MAX_CHANGES) {
             return Optional.empty();
         }
-        Optional<FactCheck> factCheck = factCheck(response.get("fact_check"));
+        Optional<FactCheck> factCheck = parseFactCheck(response.get("fact_check"));
         if (factCheck.isEmpty()) {
             return Optional.empty();
         }
@@ -210,7 +210,7 @@ class AiTailoringClient {
                             throw new InvalidContentException();
                         }
                         JsonNode tree = bytes.length > MAX_RESPONSE_BYTES ? null : readTree(bytes);
-                        Optional<FactCheck> parsed = status == 200 && tree != null ? factCheck(tree)
+                        Optional<FactCheck> parsed = status == 200 && tree != null ? parseFactCheck(tree)
                                 : Optional.empty();
                         return parsed.orElseThrow(() -> new AiUnavailableException(
                                 "ai-service fact check answered " + status, null));
@@ -220,7 +220,8 @@ class AiTailoringClient {
         }
     }
 
-    private Optional<FactCheck> factCheck(JsonNode node) {
+    /** A fact-check body, checked: the counts are derived from the flags, not taken on trust. */
+    Optional<FactCheck> parseFactCheck(JsonNode node) {
         if (node == null || !node.isObject() || !node.path("passed").isBoolean() || !node.path("blocking").isInt()
                 || !node.path("warnings").isInt() || !node.path("flags").isArray()
                 || node.path("flags").size() > MAX_FLAGS) {
@@ -252,15 +253,15 @@ class AiTailoringClient {
                 node.path("checker_version").asString("")));
     }
 
-    private static String clip(String value, int max) {
+    static String clip(String value, int max) {
         return value.length() <= max ? value : value.substring(0, max);
     }
 
-    private static JsonNode nullable(JsonNode node) {
+    static JsonNode nullable(JsonNode node) {
         return node == null || node.isNull() ? null : node;
     }
 
-    private JsonNode readTree(byte[] body) {
+    JsonNode readTree(byte[] body) {
         try {
             return json.readTree(body);
         } catch (JacksonException e) {
@@ -269,11 +270,16 @@ class AiTailoringClient {
     }
 
     private void recordUsage(UUID userId, JsonNode usage, AiCallStatus status) {
+        recordUsage(userId, usage, status, FEATURE);
+    }
+
+    /** Records every call of an ai-service {@code usage} array under {@code feature} (ours, not the service's label). */
+    void recordUsage(UUID userId, JsonNode usage, AiCallStatus status, String feature) {
         if (usage == null || !usage.isArray()) {
             return;
         }
         for (JsonNode call : usage) {
-            Optional<AiUsage> parsed = toUsage(userId, call, status);
+            Optional<AiUsage> parsed = toUsage(userId, call, status, feature);
             if (parsed.isEmpty()) {
                 log.warn("Skipping a malformed ai-service usage entry");
                 continue;
@@ -289,7 +295,7 @@ class AiTailoringClient {
         }
     }
 
-    private static Optional<AiUsage> toUsage(UUID userId, JsonNode u, AiCallStatus status) {
+    private static Optional<AiUsage> toUsage(UUID userId, JsonNode u, AiCallStatus status, String feature) {
         try {
             UUID callId = u.path("call_id").isString() ? UUID.fromString(u.get("call_id").asString())
                     : UUID.randomUUID();
@@ -297,7 +303,7 @@ class AiTailoringClient {
                 return Optional.empty();
             }
             // The ledger's feature is ours, whatever label the service puts on its calls.
-            return Optional.of(new AiUsage("ai-service:" + callId, userId, FEATURE, u.get("provider").asString(),
+            return Optional.of(new AiUsage("ai-service:" + callId, userId, feature, u.get("provider").asString(),
                     u.get("model").asString(), number(u.get("input_tokens")).longValue(),
                     number(u.get("output_tokens")).longValue(), number(u.get("cost_usd")),
                     number(u.get("latency_ms")).longValue(),

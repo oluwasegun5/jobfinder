@@ -27,12 +27,17 @@ final class FileNames {
 
     /** {@code Full_Name_Resume[_Company].ext}. */
     static String of(String fullName, String company, String extension) {
+        return of(fullName, "Resume", company, extension);
+    }
+
+    /** {@code Full_Name_<kind>[_Company].ext}, kind being a fixed word such as Resume or Cover_Letter. */
+    static String of(String fullName, String kind, String company, String extension) {
         List<String> parts = new ArrayList<>();
         String name = part(fullName);
         if (!name.isEmpty()) {
             parts.add(name);
         }
-        parts.add("Resume");
+        parts.add(kind);
         String employer = part(company);
         if (!employer.isEmpty()) {
             parts.add(employer);

@@ -101,6 +101,69 @@ final class DocxRenderer {
         }
     }
 
+    /** A cover letter: Title and Contact Info for the sender, then Normal and Body Text paragraphs in reading order. */
+    byte[] renderLetter(LetterModel m, RenderTemplate template, PageFormat page) {
+        boolean styled = template == RenderTemplate.STYLED;
+        try (XWPFDocument doc = new XWPFDocument()) {
+            BigInteger numId = numbering(doc);
+            styles(doc, styled, numId);
+            CTStyle bodyText = style("BodyText", "Body Text", STStyleType.PARAGRAPH, "Normal");
+            spacing(bodyText.addNewPPr(), 0, 160);
+            doc.getStyles().addStyle(new XWPFStyle(bodyText, doc.getStyles()));
+            page(doc, page);
+
+            if (!m.name().isEmpty()) {
+                paragraph(doc, "Title").createRun().setText(m.name());
+            }
+            for (String contact : m.contactLines()) {
+                paragraph(doc, "ContactInfo").createRun().setText(contact);
+            }
+            for (int i = 0; i < m.recipientLines().size(); i++) {
+                XWPFParagraph p = paragraph(doc, "Normal");
+                if (i == 0) {
+                    p.setSpacingBefore(280);
+                }
+                XWPFRun run = p.createRun();
+                run.setText(m.recipientLines().get(i));
+                run.setBold(m.recipientLines().get(i).startsWith("Re: "));
+            }
+            if (!m.salutation().isEmpty()) {
+                XWPFParagraph p = paragraph(doc, "BodyText");
+                p.setSpacingBefore(280);
+                p.createRun().setText(m.salutation());
+            }
+            for (String text : m.paragraphs()) {
+                paragraph(doc, "BodyText").createRun().setText(text);
+            }
+            if (!m.closing().isEmpty()) {
+                XWPFParagraph p = paragraph(doc, "Normal");
+                p.setSpacingBefore(120);
+                p.createRun().setText(m.closing());
+            }
+            if (!m.signature().isEmpty()) {
+                XWPFParagraph p = paragraph(doc, "Normal");
+                p.setSpacingBefore(480);
+                XWPFRun run = p.createRun();
+                run.setText(m.signature());
+                run.setBold(true);
+            }
+
+            var core = doc.getProperties().getCoreProperties();
+            core.setTitle(m.name().isEmpty() ? "Cover letter" : m.name() + " - Cover letter");
+            if (!m.name().isEmpty()) {
+                core.setCreator(m.name());
+            }
+            core.setSubjectProperty("Cover letter");
+            doc.getProperties().getExtendedProperties().setApplication("JobFinder");
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            doc.write(out);
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     // --------------------------------------------------------------------------------------------------- content
 
     private void entries(XWPFDocument doc, java.util.List<Entry> entries, boolean styled, BigInteger numId,

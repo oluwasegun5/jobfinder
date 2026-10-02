@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.jobfinder.core.documents.internal.DocumentDtos.DocumentStatus;
+import com.jobfinder.core.documents.internal.DocumentDtos.DocumentType;
 import com.jobfinder.core.documents.internal.DocumentDtos.DraftResponse;
 import com.jobfinder.core.documents.internal.DocumentDtos.ListResponse;
 import com.jobfinder.core.documents.internal.DocumentDtos.PatchRequest;
@@ -53,11 +54,15 @@ class DocumentController {
         return ResponseEntity.status(outcome.created() ? HttpStatus.CREATED : HttpStatus.OK).body(response);
     }
 
-    /** The caller's documents, newest first, optionally for one job or in one status. */
+    /**
+     * The caller's documents, newest first, optionally for one job, of one type or in one status. Superseded drafts
+     * (the history of regenerated letters and answers) are left out unless {@code status=SUPERSEDED} is asked for.
+     */
     @GetMapping("/documents")
-    ListResponse list(@RequestParam(required = false) UUID jobId, @RequestParam(required = false) DocumentStatus status,
+    ListResponse list(@RequestParam(required = false) UUID jobId, @RequestParam(required = false) DocumentType type,
+            @RequestParam(required = false) DocumentStatus status,
             @RequestParam(required = false) @Min(1) @Max(100) Integer limit) {
-        return documents.toList(documents.list(CurrentUser.require().id(), jobId, status, limit));
+        return documents.toList(documents.list(CurrentUser.require().id(), jobId, type, status, limit));
     }
 
     @GetMapping("/documents/{id}")

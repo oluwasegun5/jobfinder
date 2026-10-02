@@ -34,7 +34,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Renders resumes to PDF or DOCX, caches the files and hands out download links (docs/adr/0030-document-rendering.md).
+ * Renders resumes and cover letters to PDF or DOCX, caches the files and hands out download links (docs/adr/0030-document-rendering.md).
  * Every method takes the caller's user ID and scopes by it: someone else's document or resume is a 404.
  *
  * <p>Not transactional as a whole, like the CV service: object storage is not part of the database transaction, so
@@ -89,27 +89,35 @@ class RenderService {
     /** An approved document (never a draft). 404 if it is not the caller's, 409 {@code document_not_approved}. */
     Result renderDocument(UUID userId, UUID documentId, RenderRequest request) {
         ApprovedDocument document = approvedDocument(userId, documentId);
-        if (!"TAILORED_RESUME".equals(document.type())) {
+        requireRenderable(document);
+        return render(userId, SourceType.DOCUMENT, document.id(), model(document.type(), parse(document.contentJson())),
+                document.contentJson(), document.jobCompany(), request);
+    }
+
+    /** A tailored resume or a cover letter; screening answers are structured data, read from the documents API. */
+    private static void requireRenderable(ApprovedDocument document) {
+        if (!"TAILORED_RESUME".equals(document.type()) && !"COVER_LETTER".equals(document.type())) {
             throw new ApiException(HttpStatus.CONFLICT, "document_not_renderable",
-                    "This kind of document cannot be rendered as a resume.");
+                    "This kind of document cannot be rendered. Only resumes and cover letters can.");
         }
-        return render(userId, SourceType.DOCUMENT, document.id(), document.contentJson(), document.jobCompany(),
-                request);
     }
 
     /** The files rendered so far from an approved document (same 404 and 409 as rendering it). */
     List<RenderedFileSummary> listDocumentFiles(UUID userId, UUID documentId) {
         ApprovedDocument document = approvedDocument(userId, documentId);
-        String name = fileModel(document).name();
+        requireRenderable(document);
+        Printable model = fileModel(document);
         return store.list(userId, SourceType.DOCUMENT, document.id()).stream().map(row -> new RenderedFileSummary(
                 row.id(), row.template(), row.format(), row.pageSize(),
-                FileNames.of(name, document.jobCompany(), row.format().extension()), row.format().contentType(),
+                FileNames.of(model.name(), model.fileKind(), document.jobCompany(), row.format().extension()),
+                row.format().contentType(),
                 row.sizeBytes(), row.fileSha256(), row.createdAt())).toList();
     }
 
     /** A fresh short-lived link to a file rendered from the caller's approved document; 404 for any other file. */
     RenderedFileResponse downloadDocumentFile(UUID userId, UUID documentId, UUID fileId) {
         ApprovedDocument document = approvedDocument(userId, documentId);
+        requireRenderable(document);
         RenderedFileStore.Row row = store.get(userId, SourceType.DOCUMENT, document.id(), fileId).orElseThrow(
                 () -> new ApiException(HttpStatus.NOT_FOUND, "file_not_found", "File not found."));
         if (!storage.exists(row.storageKey())) {
@@ -119,8 +127,12 @@ class RenderService {
         return respond(row, fileModel(document), document.jobCompany(), true).file();
     }
 
-    private ResumeModel fileModel(ApprovedDocument document) {
-        return ResumeModel.parse(parse(document.contentJson()));
+    private Printable fileModel(ApprovedDocument document) {
+        return model(document.type(), parse(document.contentJson()));
+    }
+
+    private static Printable model(String type, JsonNode content) {
+        return "COVER_LETTER".equals(type) ? LetterModel.parse(content) : ResumeModel.parse(content);
     }
 
     /** The latest content of one of the caller's own resumes, whether tailored or not. */
@@ -131,13 +143,12 @@ class RenderService {
             throw new ApiException(HttpStatus.CONFLICT, "resume_content_required",
                     "This CV has no content yet. Wait for it to be parsed, or fill it in, then export it.");
         }
-        return render(userId, SourceType.RESUME_VERSION, resume.versionId(), resume.structuredJson(), null, request);
+        return render(userId, SourceType.RESUME_VERSION, resume.versionId(),
+                ResumeModel.parse(parse(resume.structuredJson())), resume.structuredJson(), null, request);
     }
 
-    private Result render(UUID userId, SourceType sourceType, UUID sourceId, String contentJson, String company,
-            RenderRequest request) {
-        JsonNode content = parse(contentJson);
-        ResumeModel model = ResumeModel.parse(content);
+    private Result render(UUID userId, SourceType sourceType, UUID sourceId, Printable model, String contentJson,
+            String company, RenderRequest request) {
         Variant variant = new Variant(userId, sourceType, sourceId, sha256(contentJson.getBytes(StandardCharsets.UTF_8)),
                 request.template(), request.format(), request.pageSize());
 
@@ -171,8 +182,8 @@ class RenderService {
         return respond(row, model, company, false);
     }
 
-    private Result respond(RenderedFileStore.Row row, ResumeModel model, String company, boolean cached) {
-        String filename = FileNames.of(model.name(), company, row.format().extension());
+    private Result respond(RenderedFileStore.Row row, Printable model, String company, boolean cached) {
+        String filename = FileNames.of(model.name(), model.fileKind(), company, row.format().extension());
         Duration ttl = properties.downloadUrlTtl();
         URI url = storage.presignDownload(row.storageKey(), filename, ttl);
         return new Result(new RenderedFileResponse(row.id(), row.template(), row.format(), row.pageSize(), filename,

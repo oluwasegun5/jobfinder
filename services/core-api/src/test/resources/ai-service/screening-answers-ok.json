@@ -1,0 +1,110 @@
+{
+  "prompt_version": "screening_answers/v1",
+  "model": "fake-strong",
+  "tone": "warm",
+  "length": "short",
+  "answers": [
+    {
+      "id": "WHY_COMPANY_ROLE",
+      "question": "Why do you want to work at this company and in this role?",
+      "answer": "The Backend Engineer role at Harbor Freight Tech builds on my work with Java, Spring Boot and Kafka at Northwind Systems.",
+      "status": "GENERATED",
+      "hint": null
+    },
+    {
+      "id": "STRENGTHS",
+      "question": "What are your key strengths?",
+      "answer": "My strengths are Java, Spring Boot and Kafka, applied as Senior Backend Engineer at Northwind Systems.",
+      "status": "GENERATED",
+      "hint": null
+    },
+    {
+      "id": "GROWTH_AREA",
+      "question": "What is an area you want to grow in?",
+      "answer": "I would like to grow in Kubernetes, which my CV does not show yet.",
+      "status": "GENERATED",
+      "hint": null
+    },
+    {
+      "id": "BIGGEST_ACHIEVEMENT",
+      "question": "What is your biggest professional achievement?",
+      "answer": "At Northwind Systems I led a team of 4 engineers delivering a billing platform in Java and Spring Boot.",
+      "status": "GENERATED",
+      "hint": null
+    },
+    {
+      "id": "NOTICE_PERIOD",
+      "question": "What is your notice period or earliest start date?",
+      "answer": "",
+      "status": "NEEDS_INPUT",
+      "hint": "Add your notice period or the earliest date you can start."
+    },
+    {
+      "id": "SALARY_EXPECTATION",
+      "question": "What are your salary expectations?",
+      "answer": "My salary expectation is at least NGN 6,500,000 per year.",
+      "status": "FROM_PROFILE",
+      "hint": null
+    },
+    {
+      "id": "WORK_AUTHORIZATION",
+      "question": "Are you authorized to work in this country, and do you need sponsorship?",
+      "answer": "",
+      "status": "NEEDS_INPUT",
+      "hint": "Say whether you are authorized to work in this role's country and whether you need sponsorship."
+    },
+    {
+      "id": "RELOCATION_REMOTE",
+      "question": "What are your location, relocation and remote-work preferences?",
+      "answer": "I am looking for remote roles, based in Lagos.",
+      "status": "FROM_PROFILE",
+      "hint": null
+    },
+    {
+      "id": "YEARS_KEY_SKILLS",
+      "question": "How many years of experience do you have with the key skills for this role?",
+      "answer": "I have about 8 years of professional experience overall, including work with Java, Kafka, Spring Boot and PostgreSQL.",
+      "status": "FROM_PROFILE",
+      "hint": null
+    },
+    {
+      "id": "HOW_HEARD",
+      "question": "How did you hear about this role?",
+      "answer": "I found this role on JobFinder.",
+      "status": "FROM_PROFILE",
+      "hint": null
+    }
+  ],
+  "fact_check": {
+    "passed": true,
+    "blocking": 0,
+    "warnings": 1,
+    "flags": [
+      {
+        "code": "NEW_SKILL",
+        "severity": "WARNING",
+        "path": "answers[GROWTH_AREA]",
+        "value": "Kubernetes",
+        "message": "This skill or technology is not in your resume."
+      }
+    ],
+    "checker_version": "fact_check/v1"
+  },
+  "job_text_redactions": 0,
+  "notes_redactions": 0,
+  "usage": [
+    {
+      "user_id": "00000000-0000-4000-8000-000000000001",
+      "feature": "screening_answers",
+      "provider": "fake",
+      "model": "fake-strong",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_usd": "0",
+      "latency_ms": 0,
+      "prompt_version": "screening_answers/v1",
+      "call_id": "00000000-0000-4000-8000-0000000000c1",
+      "pricing_version": "fake"
+    }
+  ]
+}

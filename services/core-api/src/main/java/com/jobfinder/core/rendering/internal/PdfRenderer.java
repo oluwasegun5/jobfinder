@@ -65,12 +65,22 @@ final class PdfRenderer {
     }
 
     byte[] render(ResumeModel model, RenderTemplate template, PageFormat page) {
+        return write(template, page, model.name(), "Resume", layout -> layout.build(model));
+    }
+
+    /** A cover letter: the same fonts, looks and pager, a letter's blocks in reading order. */
+    byte[] renderLetter(LetterModel model, RenderTemplate template, PageFormat page) {
+        return write(template, page, model.name(), "Cover letter", layout -> layout.letter(model));
+    }
+
+    private byte[] write(RenderTemplate template, PageFormat page, String name, String kind,
+            java.util.function.Function<Layout, List<Group>> build) {
         Look look = template == RenderTemplate.ATS ? ATS : STYLED;
         try (PDDocument document = new PDDocument()) {
             PdfFonts fonts = new PdfFonts(document);
-            List<Group> groups = new Layout(fonts, look, page).build(model);
+            List<Group> groups = build.apply(new Layout(fonts, look, page));
             new Pager(document, fonts, look, page).draw(groups);
-            metadata(document, model);
+            metadata(document, name, kind);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             document.save(out);
             return out.toByteArray();
@@ -79,14 +89,13 @@ final class PdfRenderer {
         }
     }
 
-    private static void metadata(PDDocument document, ResumeModel model) throws IOException {
+    private static void metadata(PDDocument document, String name, String kind) throws IOException {
         PDDocumentInformation info = document.getDocumentInformation();
-        String name = model.name();
-        info.setTitle(name.isEmpty() ? "Resume" : name + " - Resume");
+        info.setTitle(name.isEmpty() ? kind : name + " - " + kind);
         if (!name.isEmpty()) {
             info.setAuthor(name);
         }
-        info.setSubject("Resume");
+        info.setSubject(kind);
         info.setCreator("JobFinder");
         info.setProducer("JobFinder (Apache PDFBox)");
         document.getDocumentCatalog().setLanguage("en");
@@ -143,17 +152,55 @@ final class PdfRenderer {
             return groups;
         }
 
+        /** The letter: sender block, recipient, salutation, paragraphs, closing and signature, top to bottom. */
+        List<Group> letter(LetterModel m) {
+            List<Group> groups = new ArrayList<>();
+            groups.add(header(m.name(), "", m.contactLines()));
+            if (!m.recipientLines().isEmpty()) {
+                List<Ln> lines = new ArrayList<>();
+                for (String to : m.recipientLines()) {
+                    lines.addAll(paragraph(to, look.body(), to.startsWith("Re: ") ? Face.BOLD : Face.REGULAR,
+                            look.text(), 0f));
+                }
+                groups.add(new Group(look.sectionGap(), lines, lines.size(), null));
+            }
+            if (!m.salutation().isEmpty()) {
+                List<Ln> lines = paragraph(m.salutation(), look.body(), Face.REGULAR, look.text(), 0f);
+                groups.add(new Group(look.sectionGap(), lines, lines.size(), null));
+            }
+            for (String text : m.paragraphs()) {
+                List<Ln> lines = paragraph(text, look.body(), Face.REGULAR, look.text(), 0f);
+                groups.add(new Group(look.entryGap() + 4f, lines, Math.min(2, lines.size()), null));
+            }
+            List<Ln> close = new ArrayList<>();
+            if (!m.closing().isEmpty()) {
+                close.addAll(paragraph(m.closing(), look.body(), Face.REGULAR, look.text(), 0f));
+            }
+            if (!m.signature().isEmpty()) {
+                close.add(new Ln(look.body() * look.lead() * 1.6f, look.body(), List.of(), null));
+                close.addAll(paragraph(m.signature(), look.body(), Face.BOLD, look.text(), 0f));
+            }
+            if (!close.isEmpty()) {
+                groups.add(new Group(look.sectionGap(), close, close.size(), null));
+            }
+            return groups;
+        }
+
         private Group header(ResumeModel m) {
+            return header(m.name(), m.headline(), m.contactLines());
+        }
+
+        private Group header(String name, String headline, List<String> contactLines) {
             float[] main = look.band() ? WHITE : look.text();
             float[] soft = look.band() ? look.soft() : look.text();
             List<Ln> lines = new ArrayList<>();
-            if (!m.name().isEmpty()) {
-                lines.addAll(paragraph(m.name(), look.name(), Face.BOLD, main, 0f));
+            if (!name.isEmpty()) {
+                lines.addAll(paragraph(name, look.name(), Face.BOLD, main, 0f));
             }
-            if (!m.headline().isEmpty()) {
-                lines.addAll(paragraph(m.headline(), look.headline(), Face.REGULAR, soft, 0f));
+            if (!headline.isEmpty()) {
+                lines.addAll(paragraph(headline, look.headline(), Face.REGULAR, soft, 0f));
             }
-            for (String contact : m.contactLines()) {
+            for (String contact : contactLines) {
                 lines.addAll(paragraph(contact, look.contact(), Face.REGULAR, soft, 0f));
             }
             return new Group(0f, lines, lines.size(), look.band() && !lines.isEmpty() ? look.accent() : null);

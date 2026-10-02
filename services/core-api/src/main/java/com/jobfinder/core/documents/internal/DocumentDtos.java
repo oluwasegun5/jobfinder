@@ -25,7 +25,11 @@ final class DocumentDtos {
     }
 
     enum DocumentType {
-        TAILORED_RESUME
+        TAILORED_RESUME,
+        /** A cover letter for one job (docs/adr/0031-cover-letters-and-application-pack.md). */
+        COVER_LETTER,
+        /** Answers to the common screening questions for one job. */
+        SCREENING_ANSWERS
     }
 
     enum DocumentStatus {
@@ -35,10 +39,12 @@ final class DocumentDtos {
         /** A BLOCKING fact-check flag is present: reject or edit the offending change to continue. */
         FACT_CHECK_FAILED,
         /** Final and immutable. */
-        APPROVED;
+        APPROVED,
+        /** A draft replaced by a regeneration with other options: kept as history, read-only, never approvable. */
+        SUPERSEDED;
 
         boolean open() {
-            return this != APPROVED;
+            return this == GENERATING || this == DRAFT || this == FACT_CHECK_FAILED;
         }
     }
 
@@ -125,7 +131,8 @@ final class DocumentDtos {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     record DraftResponse(UUID id, DocumentType type, DocumentStatus status, JobRef job, UUID baseResumeVersionId,
             String promptVersion, String model, int version, Map<String, Object> content, List<ChangeView> changes,
-            FactCheckView factCheck, Instant createdAt, Instant updatedAt, Instant approvedAt) {
+            FactCheckView factCheck, Map<String, Object> options, Instant createdAt, Instant updatedAt,
+            Instant approvedAt) {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

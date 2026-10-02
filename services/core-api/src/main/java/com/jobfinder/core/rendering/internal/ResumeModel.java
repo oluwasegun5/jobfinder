@@ -17,7 +17,13 @@ import tools.jackson.databind.JsonNode;
  * content of an approved document came from a model and a person, and a missing field is simply not printed.
  */
 record ResumeModel(String name, String headline, List<String> contactLines, String summary, List<Entry> experience,
-        List<Entry> education, List<String> skills, List<Entry> projects, List<Entry> certifications) {
+        List<Entry> education, List<String> skills, List<Entry> projects, List<Entry> certifications)
+        implements Printable {
+
+    @Override
+    public String fileKind() {
+        return "Resume";
+    }
 
     /**
      * One experience, education, project or certification entry.
@@ -143,12 +149,12 @@ record ResumeModel(String name, String headline, List<String> contactLines, Stri
         return String.join("\n", lines);
     }
 
-    private static String text(JsonNode node, String field) {
+    static String text(JsonNode node, String field) {
         JsonNode value = node.path(field);
         return value.isString() ? clean(value.asString()) : "";
     }
 
-    private static Iterable<JsonNode> array(JsonNode node, String field) {
+    static Iterable<JsonNode> array(JsonNode node, String field) {
         JsonNode value = node.path(field);
         return value.isArray() ? value : List.of();
     }
