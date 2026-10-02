@@ -34,6 +34,11 @@ class AnthropicProvider:
                 api_key=settings.anthropic_api_key.get_secret_value(),
                 timeout=settings.llm_timeout_seconds,
                 max_retries=settings.llm_max_retries,
+                default_headers=(
+                    {"anthropic-workspace-id": settings.anthropic_workspace_id}
+                    if settings.anthropic_workspace_id
+                    else None
+                ),
             )
         else:
             # Service still starts (health, queues); LLM routes fail with a clear error.
