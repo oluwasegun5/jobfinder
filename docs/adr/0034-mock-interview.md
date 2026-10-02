@@ -141,3 +141,33 @@ two sessions and, without a prep, two billed first questions. Now there is at mo
   `credits_consumed`, which counts only the winner's own call. Closing this would need a reservation row before the model call;
   the window is the length of one model call and a double start inside it is not worth the extra state.
 - The web start screen reads the status: on 200 it shows "Resuming your session…" and opens that session.
+
+## Addendum: an overall deadline per request in ai-service
+Each call to a model has its own timeout and one retry, but a request makes up to two calls (the prep: questions, then brief) and
+each can be retried by the provider client, so one request could run far longer than core-api waits (150 s for a prep, 90 s for a
+mock turn or summary). When core-api's read times out first it never sees the error body, so the usage of calls that were already
+billed is lost from the ledger and from the session's `credits_consumed`.
+
+- ai-service puts an overall deadline on `POST /v1/interview-prep` (`INTERVIEW_PREP_DEADLINE_SECONDS`, default **120 s**) and on
+  `POST /v1/mock-interview/turn` and `/summary` (`MOCK_INTERVIEW_DEADLINE_SECONDS`, default **75 s**).
+  The mock default is lower than the prep one because core-api's mock read timeout is 90 s, not 150 s: a 120 s deadline there
+  could never fire before core-api gave up.
+- The deadline covers the whole request, retries included. It cancels the awaiting task, so a provider call in flight is
+  cancelled with it. Every call that completed through the provider is noted as it finishes (`RecordingProvider`), including the
+  usage a provider reports on an error such as a refusal, so the list survives the cancellation.
+- On timeout the response is **504**, `application/problem+json`, in the same shape as every other failure that carries usage:
+  `code: "llm_deadline_exceeded"`, `retryable: true`, `usage: [...]` with one record per call completed before the deadline.
+  core-api's existing handling applies unchanged: it records that usage in the ledger as FAILED calls (so it also reaches the
+  session's `credits_consumed`), and the user gets the usual 503 (`interview_prep_unavailable` / `mock_interview_unavailable`).
+  A call that was in flight when the deadline fired has no usage to report; if the provider billed it anyway, that cost is
+  unrecorded, as for any provider error without a usage block.
+- The relationship to core-api is enforced in code on both sides. ai-service refuses to start if a deadline is not at least 5 s
+  below its core-api read timeout (the settings `CORE_API_INTERVIEW_READ_TIMEOUT_SECONDS`, default 150, and
+  `CORE_API_MOCK_INTERVIEW_READ_TIMEOUT_SECONDS`, default 90, mirror core-api's `app.interview.read-timeout` and
+  `app.interview.mock.read-timeout`). core-api has the mirror property `app.interview.ai-deadline` /
+  `app.interview.mock.ai-deadline` (the same environment variables) and refuses to start if it is not at least 5 s below the
+  read timeout. The mirrors are configuration the two services must agree on; nothing reads the other service's value at runtime.
+- Tests: a provider that stalls (never answers) gives a 504 within the deadline with the usage of the completed calls and with the
+  stalled call cancelled, for the prep, the turn (including a stalled retry after invalid output) and the summary; core-api
+  records the usage from such a 504 and answers 503 for a prep, an answer, the first question and a summary; the configuration
+  checks above have tests in both services.

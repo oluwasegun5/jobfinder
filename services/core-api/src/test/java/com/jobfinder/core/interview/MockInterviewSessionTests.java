@@ -269,6 +269,85 @@ class MockInterviewSessionTests extends MockInterviewTestSupport {
         assertThat(turnRows(id)).isEqualTo(1);
     }
 
+    // --- ai-service ran out of its overall deadline ---
+
+    @Test
+    void aDeadlineErrorOnAnAnswerRecordsTheCallsBilledBeforeItInTheLedgerAndTheSessionAndIsThe503() throws Exception {
+        Session me = newSession();
+        UUID user = userIdOf(me);
+        stubTurn(user, opening(UUID.randomUUID(), "0.004"));
+        String id = idOf(start(me, prepJob()).andExpect(status().isCreated()));
+        UUID billed = UUID.randomUUID();
+        // The first attempt completed and was billed, the retry was cancelled at the deadline.
+        stubTurn(user, 504, deadlineProblem(billed, "0.003", "mock_interview"));
+
+        answer(me, id, GOOD_ANSWER, key()).andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.code").value("mock_interview_unavailable"));
+
+        assertThat(callStatus(billed)).isEqualTo("FAILED");
+        assertThat(creditsConsumed(id)).isEqualByComparingTo("7");
+        assertThat(ledgerCredits(user)).isEqualByComparingTo("7");
+        assertThat(turnRows(id)).isEqualTo(1);
+        assertThat(slotTaken(id)).isFalse();
+        assertThat(statusOf(id)).isEqualTo("ACTIVE");
+    }
+
+    @Test
+    void aDeadlineErrorWithNothingBilledChargesNothingAndLeavesTheSessionRetryable() throws Exception {
+        Session me = newSession();
+        UUID user = userIdOf(me);
+        stubTurn(user, opening(UUID.randomUUID(), "0.004"));
+        String id = idOf(start(me, prepJob()).andExpect(status().isCreated()));
+        stubTurn(user, 504, "{\"code\":\"llm_deadline_exceeded\",\"retryable\":true,\"usage\":[]}");
+        String key = key();
+
+        answer(me, id, GOOD_ANSWER, key).andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.code").value("mock_interview_unavailable"));
+
+        assertThat(ledgerCredits(user)).isEqualByComparingTo("4");
+        assertThat(creditsConsumed(id)).isEqualByComparingTo("4");
+        assertThat(slotTaken(id)).isFalse();
+        // The same key can be sent again once ai-service answers in time.
+        stubTurn(user, turn(UUID.randomUUID(), "0.003", "behavioral", "behavioral", NEXT_1));
+        answer(me, id, GOOD_ANSWER, key).andExpect(status().isOk());
+    }
+
+    @Test
+    void aDeadlineErrorOnTheFirstQuestionCreatesNoSessionButRecordsWhatWasBilled() throws Exception {
+        Session me = newSession();
+        UUID user = userIdOf(me);
+        UUID billed = UUID.randomUUID();
+        stubTurn(user, 504, deadlineProblem(billed, "0.003", "mock_interview"));
+
+        start(me, prepJob()).andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.code").value("mock_interview_unavailable"));
+
+        assertThat(sessionRows(user)).isZero();
+        assertThat(callStatus(billed)).isEqualTo("FAILED");
+        assertThat(ledgerCredits(user)).isEqualByComparingTo("3");
+    }
+
+    @Test
+    void aDeadlineErrorOnTheSummaryRecordsItsUsageAndLeavesTheSessionActive() throws Exception {
+        Session me = newSession();
+        UUID user = userIdOf(me);
+        stubTurn(user, opening(UUID.randomUUID(), "0.004"));
+        String id = idOf(startWith(me, prepJob(), Map.of("maxTurns", 3)).andExpect(status().isCreated()));
+        stubTurn(user, turn(UUID.randomUUID(), "0.003", "behavioral", "behavioral", NEXT_1));
+        answer(me, id, GOOD_ANSWER, key()).andExpect(status().isOk());
+        UUID billed = UUID.randomUUID();
+        stubSummary(user, 504, deadlineProblem(billed, "0.002", "mock_interview_summary"));
+
+        complete(me, id).andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.code").value("mock_interview_unavailable"));
+
+        assertThat(callStatus(billed)).isEqualTo("FAILED");
+        assertThat(creditsConsumed(id)).isEqualByComparingTo("9");
+        assertThat(ledgerCredits(user)).isEqualByComparingTo("9");
+        assertThat(statusOf(id)).isEqualTo("ACTIVE");
+        assertThat(slotTaken(id)).isFalse();
+    }
+
     // --- idempotency ---
 
     @Test
@@ -822,6 +901,12 @@ class MockInterviewSessionTests extends MockInterviewTestSupport {
     // --- helpers ---
 
     /** An ai-service problem document that lists one billed call, as an error body does. */
+    /** What ai-service answers (504) when its overall deadline ran out after a call had completed and been billed. */
+    private String deadlineProblem(UUID call, String costUsd, String feature) {
+        return problem(call, costUsd, feature).replace("\"code\":\"llm_output_invalid\",\"retryable\":false",
+                "\"code\":\"llm_deadline_exceeded\",\"retryable\":true");
+    }
+
     private String problem(UUID call, String costUsd) {
         return problem(call, costUsd, "mock_interview");
     }

@@ -308,6 +308,31 @@ class InterviewPrepTests extends InterviewTestSupport {
     }
 
     @Test
+    void aDeadlineErrorFromAiServiceRecordsTheCallsBilledBeforeItAndIsA503() throws Exception {
+        Session me = newSession();
+        Candidate candidate = seed(me);
+        UUID billed = UUID.randomUUID();
+        // ai-service ran out of its overall deadline during the brief call: 504 in its usual problem shape, carrying the
+        // usage of the questions call that had completed (docs/adr/0034-mock-interview.md, addendum).
+        stubPrep(candidate.userId(), 504, "{\"type\":\"about:blank\",\"title\":\"Request deadline exceeded\",\"status\":504,"
+                + "\"code\":\"llm_deadline_exceeded\",\"retryable\":true,\"usage\":[{\"user_id\":\""
+                + candidate.userId() + "\",\"feature\":\"interview_questions\",\"provider\":\"fake\","
+                + "\"model\":\"fake-strong\",\"input_tokens\":10,\"output_tokens\":10,\"cost_usd\":\"0.003\","
+                + "\"latency_ms\":1,\"prompt_version\":\"interview/v1\",\"call_id\":\"" + billed
+                + "\",\"pricing_version\":\"t\"}]}");
+
+        generate(me, prepJob()).andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.code").value("interview_prep_unavailable"));
+
+        assertThat(preps(candidate.userId())).isZero();
+        assertThat(callStatus(billed)).isEqualTo("FAILED");
+        assertThat(aiCalls(candidate.userId())).isEqualTo(1);
+        BigDecimal debited = jdbc.queryForObject("select coalesce(-sum(delta), 0) from credit_ledger where user_id = ?",
+                BigDecimal.class, candidate.userId());
+        assertThat(debited).isEqualByComparingTo("3");
+    }
+
+    @Test
     void aPrepMadeWithAnotherPromptThanAskedForIsRefusedAndItsCostRecordedAsFailed() throws Exception {
         Session me = newSession();
         Candidate candidate = seed(me);

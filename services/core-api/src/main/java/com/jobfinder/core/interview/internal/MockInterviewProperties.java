@@ -16,6 +16,9 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * @param inFlightTimeout a request that took the session's single in-flight slot and never gave it back (a crash) is
  *                        replaced after this; it must be longer than a turn call plus a summary call
  * @param readTimeout     one ai-service call
+ * @param aiDeadline      the overall deadline ai-service puts on one turn or summary request (its
+ *                        MOCK_INTERVIEW_DEADLINE_SECONDS, mirrored here): it must be at least 5s below {@code readTimeout},
+ *                        or core-api gives up before ai-service reports the usage of a request that ran out of time
  */
 @ConfigurationProperties("app.interview.mock")
 record MockInterviewProperties(
@@ -25,7 +28,8 @@ record MockInterviewProperties(
         @DefaultValue("24h") Duration abandonAfter,
         @DefaultValue("4m") Duration inFlightTimeout,
         @DefaultValue("2s") Duration connectTimeout,
-        @DefaultValue("90s") Duration readTimeout) {
+        @DefaultValue("90s") Duration readTimeout,
+        @DefaultValue("75s") Duration aiDeadline) {
 
     MockInterviewProperties {
         if (promptVersion == null || !promptVersion.matches("mock_interview/v[1-9][0-9]{0,2}")) {
@@ -40,6 +44,11 @@ record MockInterviewProperties(
         }
         if (abandonAfter == null || abandonAfter.compareTo(Duration.ofMinutes(1)) < 0) {
             throw new IllegalArgumentException("app.interview.mock.abandon-after must be at least 1m");
+        }
+        if (aiDeadline == null || aiDeadline.plus(InterviewProperties.AI_DEADLINE_MARGIN).compareTo(readTimeout) > 0) {
+            throw new IllegalArgumentException("app.interview.mock.ai-deadline (" + aiDeadline + ") must be at least "
+                    + InterviewProperties.AI_DEADLINE_MARGIN + " below app.interview.mock.read-timeout (" + readTimeout
+                    + "), or core-api gives up before ai-service reports the usage of a request that ran out of time");
         }
         if (inFlightTimeout == null || inFlightTimeout.compareTo(readTimeout.multipliedBy(2)) < 0) {
             throw new IllegalArgumentException(
