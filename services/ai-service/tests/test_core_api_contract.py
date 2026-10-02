@@ -234,3 +234,45 @@ def test_fact_check_text_response_matches_the_contract_core_api_stubs(client: Te
 
     assert response.status_code == 200
     _pin("fact-check-text-failed.json", response.json())
+
+
+def test_follow_up_email_response_matches_the_contract_core_api_stubs(
+    client: TestClient, fake_provider: FakeProvider
+) -> None:
+    """A faithful follow-up whose job text had one injected sentence redacted.
+
+    If this fails, the response shape of POST /v1/follow-up-email changed. Update core-api's
+    AiFollowUpClient if needed, then regenerate with UPDATE_CONTRACTS=1.
+    """
+    from tests.fixtures import tailoring as fx
+    from tests.fixtures import writing as wx
+
+    fake_provider.queue(wx.follow_up_reply())
+
+    response = client.post(
+        "/v1/follow-up-email",
+        json=wx.follow_up_request(
+            job_description=fx.JOB_WITH_INJECTION["description"], tone="formal", length="standard"
+        ),
+    )
+
+    assert response.status_code == 200
+    _pin("follow-up-email-ok.json", _without_volatile(response.json()))
+
+
+def test_follow_up_email_with_an_invented_employer_matches_the_blocking_contract(
+    client: TestClient, fake_provider: FakeProvider
+) -> None:
+    from tests.fixtures import tailoring as fx
+    from tests.fixtures import writing as wx
+
+    fake_provider.queue(
+        wx.follow_up_reply(
+            wx.follow_up_with_paragraph(f"I worked at {fx.FAKE_EMPLOYER} before this role.")
+        )
+    )
+
+    response = client.post("/v1/follow-up-email", json=wx.follow_up_request())
+
+    assert response.status_code == 200
+    _pin("follow-up-email-blocked.json", _without_volatile(response.json()))

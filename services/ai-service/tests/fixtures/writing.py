@@ -99,3 +99,41 @@ def with_answer(answer_id: str, text: str) -> dict[str, Any]:
         if a["id"] == answer_id:
             a["answer"] = text
     return data
+
+
+def follow_up_request(**extra: Any) -> dict[str, Any]:
+    return {
+        "user_id": fx.USER_ID,
+        "resume": fx.SOURCE,
+        "application": {
+            "title": "Backend Engineer",
+            "company": "Harbor Freight Tech",
+            "status": "APPLIED",
+            "applied_on": "2026-09-24",
+        },
+        "job_description": fx.JOB["description"],
+        "as_of": AS_OF,
+        **extra,
+    }
+
+
+def faithful_follow_up() -> dict[str, Any]:
+    return {
+        "subject": "Following up on my application: Backend Engineer",
+        "paragraphs": [
+            "I applied for the Backend Engineer role at Harbor Freight Tech 7 days ago and wanted "
+            "to ask how the review of my application is going.",
+            "My work as Senior Backend Engineer at Northwind Systems with Java and Kafka is why "
+            "I remain very interested. Thank you for your time.",
+        ],
+    }
+
+
+def follow_up_reply(body: dict[str, Any] | None = None) -> str:
+    return json.dumps(body or faithful_follow_up())
+
+
+def follow_up_with_paragraph(text: str, index: int = 1) -> dict[str, Any]:
+    body = faithful_follow_up()
+    body["paragraphs"][index] = text
+    return body

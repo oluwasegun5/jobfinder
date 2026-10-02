@@ -1,11 +1,11 @@
 """A keyless stand-in for the model, for local runs and evals (`LLM_PROVIDER=fake`).
 
-It answers the match-scoring, tailor-resume, cover-letter and screening-answers prompts (the
-last two in `heuristic_writing`, templates over the resume's own facts), with deterministic
-heuristics over the same
-data blocks a real model would read. Tailoring (docs/adr/0029-resume-tailoring.md) only reorders:
-skills and each role's bullets are sorted by their word overlap with the job, and no text is
-reworded, so its output is always faithful to the source and never invents anything.
+It answers the match-scoring, tailor-resume, cover-letter, screening-answers and follow-up-email
+prompts (the last three in `heuristic_writing`, templates over the resume's own facts), with
+deterministic heuristics over the same data blocks a real model would read. Tailoring
+(docs/adr/0029-resume-tailoring.md) only reorders: skills and each role's bullets are sorted by
+their word overlap with the job, and no text is reworded, so its output is always faithful to the
+source and never invents anything.
 
 Match scoring is the share of the job's listed skills the candidate names, and how much of
 the job title's wording appears in the candidate's titles. It carries no
@@ -19,7 +19,7 @@ import re
 from decimal import Decimal
 
 from app.llm.base import LLMConfigurationError, LLMRequest, LLMResponse, LLMUsage
-from app.llm.heuristic_writing import cover_letter, screening
+from app.llm.heuristic_writing import cover_letter, follow_up, screening
 from app.matching.message import parse_message
 from app.matching.schema import Candidate, JobPosting
 from app.tailoring.message import parse_message as parse_tailor_message
@@ -29,6 +29,7 @@ _FEATURE = "match_scoring"
 _TAILOR_FEATURE = "tailor_resume"
 _COVER_LETTER_FEATURE = "cover_letter"
 _SCREENING_FEATURE = "screening_answers"
+_FOLLOW_UP_FEATURE = "follow_up_email"
 _WORD = re.compile(r"[a-z0-9+#.]+")
 _STOP = frozenset(
     {"and", "the", "for", "with", "of", "to", "in", "at", "a", "an", "or", "sr", "jr"}
@@ -121,6 +122,8 @@ class HeuristicProvider:
             text = json.dumps(cover_letter(request.user_message))
         elif request.feature == _SCREENING_FEATURE:
             text = json.dumps(screening(request.user_message))
+        elif request.feature == _FOLLOW_UP_FEATURE:
+            text = json.dumps(follow_up(request.user_message))
         elif request.feature == _FEATURE:
             candidate, jobs = parse_message(request.user_message)
             results = []
@@ -133,7 +136,7 @@ class HeuristicProvider:
         else:
             raise LLMConfigurationError(
                 f"LLM_PROVIDER=fake only supports {_FEATURE}, {_TAILOR_FEATURE}, "
-                f"{_COVER_LETTER_FEATURE} and {_SCREENING_FEATURE}; set "
+                f"{_COVER_LETTER_FEATURE}, {_SCREENING_FEATURE} and {_FOLLOW_UP_FEATURE}; set "
                 f"LLM_PROVIDER=anthropic for {request.feature}"
             )
         return LLMResponse(

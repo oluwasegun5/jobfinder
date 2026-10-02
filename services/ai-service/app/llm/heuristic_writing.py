@@ -129,6 +129,94 @@ def cover_letter(user_message: str) -> dict[str, Any]:
     }
 
 
+def follow_up(user_message: str) -> dict[str, Any]:
+    from app.writing.follow_up import parse_message as parse_follow_up_message
+
+    resume, application, job, _notes, tone, length = parse_follow_up_message(user_message)
+    title = _ref(str(application.get("title") or "")) or "open"
+    company = _ref(str(application["company"])) if application.get("company") else None
+    status = str(application.get("status", "APPLIED"))
+    days = application.get("days_since_applied")
+    at_company = f" at {company}" if company else ""
+    role = resume.experience[0] if resume.experience else None
+    skills = _ranked_skills(resume, job or {"title": title}, 3)
+    when = (
+        "today"
+        if days == 0
+        else f"{days} day{'' if days == 1 else 's'} ago"
+        if isinstance(days, int)
+        else "recently"
+    )
+    background = (
+        f"my work as {role.title} at {role.company}"
+        if role
+        else (f"my experience with {_join(skills)}" if skills else "my background")
+    )
+
+    if status in ("APPLIED", "SCREENING"):
+        subject = f"Following up on my application: {title[:80]}"
+        first = {
+            Tone.FORMAL: f"I applied for the {title} position{at_company} {when} and am writing "
+            "to ask about the status of my application.",
+            Tone.WARM: f"I applied for the {title} role{at_company} {when} and wanted to check "
+            "in on how things are going.",
+            Tone.CONCISE: f"I applied for the {title} role{at_company} {when}. Could you share "
+            "the status of my application?",
+        }[tone]
+    elif status == "INTERVIEW":
+        subject = f"Thank you and next steps: {title[:80]}"
+        first = {
+            Tone.FORMAL: f"Thank you for the interview process so far for the {title} position"
+            f"{at_company}. I remain very interested and would like to ask about next steps.",
+            Tone.WARM: f"Thank you for the interview process so far for the {title} role"
+            f"{at_company}. I am still very excited about it and would love to hear about next "
+            "steps.",
+            Tone.CONCISE: f"Thank you for the interview process for the {title} role{at_company}."
+            " What are the next steps?",
+        }[tone]
+    elif status == "OFFER":
+        subject = f"Next steps for the {title[:80]} role"
+        first = {
+            Tone.FORMAL: f"I am glad to be considered for the {title} position{at_company} and "
+            "would like to ask about next steps.",
+            Tone.WARM: f"I am thrilled to be considered for the {title} role{at_company} and "
+            "would love to hear about next steps.",
+            Tone.CONCISE: f"I am glad to be considered for the {title} role{at_company}. What "
+            "are the next steps?",
+        }[tone]
+    else:
+        subject = f"Checking in on the {title[:80]} role"
+        first = {
+            Tone.FORMAL: f"I am writing to ask whether the {title} position{at_company} is "
+            "still open.",
+            Tone.WARM: f"I wanted to check whether the {title} role{at_company} is still open.",
+            Tone.CONCISE: f"Is the {title} role{at_company} still open?",
+        }[tone]
+    fit = {
+        Tone.FORMAL: f"I believe {background} remains a strong fit for this role.",
+        Tone.WARM: f"I still feel that {background} is a great fit for this role.",
+        Tone.CONCISE: f"{background[:1].upper()}{background[1:]} fits this role.",
+    }[tone]
+    skills_line = (
+        f"I would be glad to bring my skills in {_join(skills)} to the team."
+        if skills
+        else "I would be glad to contribute to the team."
+    )
+    close = {
+        Tone.FORMAL: "Thank you for your time and consideration.",
+        Tone.WARM: "Thank you so much for your time.",
+        Tone.CONCISE: "Thank you for your time.",
+    }[tone]
+    paragraphs: list[str]
+    if length is Length.SHORT:
+        paragraphs = [f"{first} {close}"]
+    elif length is Length.STANDARD:
+        paragraphs = [first, f"{fit} {close}"]
+    else:
+        paragraphs = [first, fit, skills_line, close]
+    return {"subject": subject, "paragraphs": paragraphs}
+
+
 def screening(user_message: str) -> dict[str, Any]:
     from app.writing.screening import parse_message as parse_screening_message
 

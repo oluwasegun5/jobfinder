@@ -281,6 +281,30 @@ app:
       stale-after: 30m
       log-retention: 180d
 
+  applications:
+    # The application tracker (docs/adr/0032-application-tracker.md): applications, their status history, reminders and the
+    # AI follow-up email draft.
+    max-per-user: 2000
+    reminders:
+      # Off with APPLICATION_REMINDERS_ENABLED=false. Every poll-interval it sends the reminders that are due (at most
+      # batch-size at a time), under a ShedLock lock; exactly-once is the claim in the reminders table, not the lock.
+      enabled: ${APPLICATION_REMINDERS_ENABLED:true}
+      poll-interval: 5m
+      initial-delay: 1m
+      batch-size: 100
+      # A failed send is tried again after retry-after, up to max-attempts in all, then the reminder is cancelled.
+      max-attempts: 3
+      retry-after: 15m
+      lock-at-most-for: 10m
+      max-pending-per-application: 20
+      max-horizon: 366d
+    follow-up:
+      # Sent to ai-service with every request and recorded with every metered call; changing it means a new prompt file there.
+      prompt-version: ${FOLLOW_UP_PROMPT_VERSION:follow_up_email/v1}
+      connect-timeout: 2s
+      read-timeout: 60s
+      description-chars: 20000
+
 springdoc:
   # The service-to-service endpoints (service token, not user tokens) are not part of the public API.
   paths-to-exclude: /internal/**

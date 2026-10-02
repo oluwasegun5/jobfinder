@@ -81,6 +81,9 @@ class Settings(BaseSettings):
     cover_letter_max_tokens: int = Field(default=3000, gt=0)
     screening_answers_max_tokens: int = Field(default=3500, gt=0)
 
+    # Follow-up emails (docs/adr/0032-application-tracker.md): a subject and up to four paragraphs.
+    follow_up_email_max_tokens: int = Field(default=1500, gt=0)
+
     rabbitmq_enabled: bool = True
     rabbitmq_host: str = "localhost"
     rabbitmq_port: int = Field(default=5672, gt=0)

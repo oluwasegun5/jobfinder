@@ -1,7 +1,7 @@
-"""POST /v1/cover-letter, /v1/screening-answers and /v1/fact-check-text
-(docs/adr/0031-cover-letters-and-application-pack.md).
+"""POST /v1/cover-letter, /v1/screening-answers, /v1/follow-up-email and /v1/fact-check-text
+(docs/adr/0031-cover-letters-and-application-pack.md, docs/adr/0032-application-tracker.md).
 
-The first two make one strong-model call each and return prose with the fact check of that prose.
+The first three make one strong-model call each and return prose with the fact check of that prose.
 `/fact-check-text` is the fact check alone, for prose only: deterministic, no model, no usage;
 core-api calls it again after the user edits a letter or an answer and before it approves one.
 """
@@ -17,6 +17,7 @@ from app.api.schemas import UsageRecord
 from app.factcheck import FactCheckResult, check_texts
 from app.parsing.schema import Contact, ParsedResume
 from app.writing.common import Length, Tone
+from app.writing.follow_up import FollowUpRequest, write_follow_up
 from app.writing.letter import CoverLetterRequest, Letter, write_cover_letter
 from app.writing.screening import Answer, ScreeningRequest, answer_screening
 
@@ -82,6 +83,39 @@ async def screening_answers_route(
         tone=outcome.tone,
         length=outcome.length,
         answers=outcome.answers,
+        fact_check=outcome.fact_check,
+        job_text_redactions=outcome.job_text_redactions,
+        notes_redactions=outcome.notes_redactions,
+        usage=[UsageRecord.from_usage(u) for u in outcome.usage],
+    )
+
+
+class FollowUpResponse(BaseModel):
+    prompt_version: str
+    model: str
+    tone: Tone
+    length: Length
+    subject: str
+    # Salutation, paragraphs, closing and the candidate's name from the resume, as plain text.
+    body: str
+    fact_check: FactCheckResult
+    job_text_redactions: int
+    notes_redactions: int
+    usage: list[UsageRecord]
+
+
+@router.post("/follow-up-email", response_model=FollowUpResponse)
+async def follow_up_email_route(
+    body: FollowUpRequest, provider: LLMProviderDep, settings: SettingsDep
+) -> FollowUpResponse:
+    outcome = await write_follow_up(provider, settings, body)
+    return FollowUpResponse(
+        prompt_version=outcome.prompt_version,
+        model=outcome.model,
+        tone=outcome.tone,
+        length=outcome.length,
+        subject=outcome.subject,
+        body=outcome.body,
         fact_check=outcome.fact_check,
         job_text_redactions=outcome.job_text_redactions,
         notes_redactions=outcome.notes_redactions,
