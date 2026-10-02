@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "contact": {
+    "full_name": "Chi Àyọdélé",
+    "email": null,
+    "phone": null,
+    "location": "Abuja, Nigeria",
+    "links": []
+  },
+  "headline": null,
+  "summary": null,
+  "experience": [],
+  "education": [
+    {
+      "institution": "Federal Polytechnic Example",
+      "degree": null,
+      "field_of_study": null,
+      "start_date": null,
+      "end_date": null
+    }
+  ],
+  "skills": [
+    "Python",
+    "SQL"
+  ],
+  "projects": [],
+  "certifications": []
+}

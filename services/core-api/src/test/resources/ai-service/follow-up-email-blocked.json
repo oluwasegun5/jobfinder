@@ -1,0 +1,54 @@
+{
+  "prompt_version": "follow_up_email/v1",
+  "model": "fake-strong",
+  "tone": "formal",
+  "length": "short",
+  "subject": "Following up on my application: Backend Engineer",
+  "body": "Dear Hiring Manager,\n\nI applied for the Backend Engineer role at Harbor Freight Tech 7 days ago and wanted to ask how the review of my application is going.\n\nI worked at Zentrix Dynamics before this role.\n\nYours sincerely,\nJordan Ikeji",
+  "fact_check": {
+    "passed": false,
+    "blocking": 1,
+    "warnings": 2,
+    "flags": [
+      {
+        "code": "NEW_EMPLOYER",
+        "severity": "BLOCKING",
+        "path": "paragraphs[1]",
+        "value": "Zentrix Dynamics",
+        "message": "This employer is not in your resume."
+      },
+      {
+        "code": "NEW_TERM",
+        "severity": "WARNING",
+        "path": "paragraphs[1]",
+        "value": "Zentrix",
+        "message": "This name does not appear in your resume."
+      },
+      {
+        "code": "NEW_TERM",
+        "severity": "WARNING",
+        "path": "paragraphs[1]",
+        "value": "Dynamics",
+        "message": "This name does not appear in your resume."
+      }
+    ],
+    "checker_version": "fact_check/v1"
+  },
+  "job_text_redactions": 0,
+  "notes_redactions": 0,
+  "usage": [
+    {
+      "user_id": "00000000-0000-4000-8000-000000000001",
+      "feature": "follow_up_email",
+      "provider": "fake",
+      "model": "fake-strong",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_usd": "0",
+      "latency_ms": 0,
+      "prompt_version": "follow_up_email/v1",
+      "call_id": "00000000-0000-4000-8000-0000000000c1",
+      "pricing_version": "fake"
+    }
+  ]
+}

@@ -11,4 +11,7 @@ public interface ApprovedDocuments {
 
     /** The approved document with this id, if it exists and belongs to {@code userId}. */
     Optional<ApprovedDocument> approved(UUID userId, UUID documentId);
+
+    /** Whether the user owns a document with this id in any state (a draft included); never true for someone else's. */
+    boolean exists(UUID userId, UUID documentId);
 }

@@ -12,7 +12,8 @@ class ProviderName(StrEnum):
     ANTHROPIC = "anthropic"
     # Deterministic, keyless stand-in for local runs and evals: it answers match_scoring from the
     # overlap between the candidate and the job (docs/adr/0026-matching-engine.md) and tailor_resume
-    # by reordering only (docs/adr/0029-resume-tailoring.md). Never the default. It has no switch
+    # by reordering only (docs/adr/0029-resume-tailoring.md); cover_letter and screening_answers
+    # come from templates over the resume's own facts (docs/adr/0031). Never the default. No switch
     # that makes it misbehave: tests script bad model output with the in-memory FakeProvider.
     FAKE = "fake"
 
@@ -74,6 +75,16 @@ class Settings(BaseSettings):
     # output holds a whole resume plus notes, so it gets its own token budget.
     tailor_description_chars: int = Field(default=8000, ge=500)
     tailor_resume_max_tokens: int = Field(default=8000, gt=0)
+
+    # Cover letters and screening answers (docs/adr/0031-cover-letters-and-application-pack.md). The
+    # user's notes are cut to this many characters (after instruction-like sentences are removed);
+    # each call has its own output token budget. The job text uses `tailor_description_chars`.
+    writing_notes_chars: int = Field(default=1000, ge=100)
+    cover_letter_max_tokens: int = Field(default=3000, gt=0)
+    screening_answers_max_tokens: int = Field(default=3500, gt=0)
+
+    # Follow-up emails (docs/adr/0032-application-tracker.md): a subject and up to four paragraphs.
+    follow_up_email_max_tokens: int = Field(default=1500, gt=0)
 
     rabbitmq_enabled: bool = True
     rabbitmq_host: str = "localhost"

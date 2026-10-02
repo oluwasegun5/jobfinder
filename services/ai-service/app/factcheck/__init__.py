@@ -2,20 +2,26 @@
 
 from app.factcheck.checker import (
     CHECKER_VERSION,
+    PLACEHOLDER_RE,
     SEVERITY,
     FactCheckResult,
     FactFlag,
     FlagCode,
     Severity,
     check_resume,
+    check_texts,
+    total_experience_months,
 )
 
 __all__ = [
     "CHECKER_VERSION",
+    "PLACEHOLDER_RE",
     "SEVERITY",
     "FactCheckResult",
     "FactFlag",
     "FlagCode",
     "Severity",
     "check_resume",
+    "check_texts",
+    "total_experience_months",
 ]

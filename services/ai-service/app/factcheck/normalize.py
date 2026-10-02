@@ -64,6 +64,8 @@ _NUMBER_WORDS = {
     "hundred": "100",
 }
 
+NUMBER_WORDS = _NUMBER_WORDS
+
 
 def fold(text: str) -> str:
     """Case- and accent-folded text."""

@@ -1,4 +1,4 @@
-package com.jobfinder.core.profile.internal;
+package com.jobfinder.core.storage.internal;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;

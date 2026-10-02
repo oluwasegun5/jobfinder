@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
 import com.jobfinder.core.identity.UserDeletionRequested;
+import com.jobfinder.core.storage.ObjectStorage;
 
 /**
  * Profile's share of an account deletion: rows first (resume versions go with their resume),

@@ -212,6 +212,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/resumes/{id}/render": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["renderResume"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/notifications/unsubscribe/{token}": {
         parameters: {
             query?: never;
@@ -238,6 +254,70 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["tailor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs/{id}/screening-answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["screeningAnswers"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs/{id}/cover-letter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["coverLetter"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs/{id}/application-pack": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["createPack"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/{id}/render": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["renderDocument"];
         delete?: never;
         options?: never;
         head?: never;
@@ -404,6 +484,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_1"];
+        put?: never;
+        post: operations["create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["changeStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/reminders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listReminders"];
+        put?: never;
+        post: operations["addReminder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/follow-up-draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["followUpDraft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/application-packs/{id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["retryPack"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/ingestion/targets": {
         parameters: {
             query?: never;
@@ -450,6 +610,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["patch"];
+        trace?: never;
+    };
+    "/applications/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_1"];
+        put?: never;
+        post?: never;
+        delete: operations["delete"];
+        options?: never;
+        head?: never;
+        patch: operations["update"];
         trace?: never;
     };
     "/saved-jobs": {
@@ -571,7 +747,39 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_1"];
+        get: operations["list_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/{id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listFiles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/{id}/files/{fileId}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["download"];
         put?: never;
         post?: never;
         delete?: never;
@@ -604,6 +812,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["me"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/application-packs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listPacks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/application-packs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getPack"];
         put?: never;
         post?: never;
         delete?: never;
@@ -721,7 +961,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["delete"];
+        delete: operations["delete_1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -738,6 +978,22 @@ export interface paths {
         put?: never;
         post?: never;
         delete: operations["deleteMe"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/reminders/{reminderId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["cancelReminder"];
         options?: never;
         head?: never;
         patch?: never;
@@ -996,6 +1252,34 @@ export interface components {
             occurrences?: number;
             detail?: string;
         };
+        RenderRequest: {
+            /** @enum {string} */
+            template?: "ATS" | "STYLED";
+            /** @enum {string} */
+            format?: "PDF" | "DOCX";
+            /** @enum {string} */
+            pageSize?: "A4" | "LETTER";
+        };
+        RenderedFileResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            template?: "ATS" | "STYLED";
+            /** @enum {string} */
+            format?: "PDF" | "DOCX";
+            /** @enum {string} */
+            pageSize?: "A4" | "LETTER";
+            filename?: string;
+            contentType?: string;
+            /** Format: int64 */
+            sizeBytes?: number;
+            /** @description Hex SHA-256 of the file, to verify a download */
+            sha256?: string;
+            downloadUrl?: string;
+            /** Format: date-time */
+            expiresAt?: string;
+            cached?: boolean;
+        };
         UnsubscribeInfo: {
             /** @enum {string} */
             scope?: "SAVED_SEARCH" | "DIGESTS" | "INSTANT_ALERTS" | "MARKETING";
@@ -1025,9 +1309,9 @@ export interface components {
             /** Format: uuid */
             id?: string;
             /** @enum {string} */
-            type?: "TAILORED_RESUME";
+            type?: "TAILORED_RESUME" | "COVER_LETTER" | "SCREENING_ANSWERS";
             /** @enum {string} */
-            status?: "GENERATING" | "DRAFT" | "FACT_CHECK_FAILED" | "APPROVED";
+            status?: "GENERATING" | "DRAFT" | "FACT_CHECK_FAILED" | "APPROVED" | "SUPERSEDED";
             job?: components["schemas"]["JobRef"];
             /** Format: uuid */
             baseResumeVersionId?: string;
@@ -1040,6 +1324,9 @@ export interface components {
             };
             changes?: components["schemas"]["ChangeView"][];
             factCheck?: components["schemas"]["FactCheckView"];
+            options?: {
+                [key: string]: unknown;
+            };
             /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
@@ -1070,6 +1357,61 @@ export interface components {
             title?: string;
             company?: string;
         };
+        WritingRequest: {
+            /** @enum {string} */
+            tone?: "FORMAL" | "WARM" | "CONCISE";
+            /** @enum {string} */
+            length?: "SHORT" | "STANDARD" | "LONG";
+            notes?: string;
+        };
+        PackRequest: {
+            /** @enum {string} */
+            tone?: "FORMAL" | "WARM" | "CONCISE";
+            /** @enum {string} */
+            length?: "SHORT" | "STANDARD" | "LONG";
+            notes?: string;
+            include?: ("TAILORED_RESUME" | "COVER_LETTER" | "SCREENING_ANSWERS")[];
+        };
+        PackOptions: {
+            /** @enum {string} */
+            tone?: "FORMAL" | "WARM" | "CONCISE";
+            /** @enum {string} */
+            length?: "SHORT" | "STANDARD" | "LONG";
+            notes?: string;
+            include?: ("TAILORED_RESUME" | "COVER_LETTER" | "SCREENING_ANSWERS")[];
+        };
+        PackResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            status?: "GENERATING" | "COMPLETE" | "PARTIAL" | "FAILED";
+            job?: components["schemas"]["JobRef"];
+            /** Format: uuid */
+            baseResumeVersionId?: string;
+            options?: components["schemas"]["PackOptions"];
+            parts?: components["schemas"]["PartView"][];
+            /** Format: int32 */
+            version?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        PartError: {
+            code?: string;
+            message?: string;
+            retryable?: boolean;
+            /** Format: date-time */
+            resetsAt?: string;
+        };
+        PartView: {
+            /** @enum {string} */
+            type?: "TAILORED_RESUME" | "COVER_LETTER" | "SCREENING_ANSWERS";
+            /** @enum {string} */
+            state?: "PENDING" | "READY" | "FAILED" | "BLOCKED_BY_CAP" | "MISSING";
+            document?: components["schemas"]["DraftResponse"];
+            error?: components["schemas"]["PartError"];
+        };
         TokenRequest: {
             token: string;
         };
@@ -1099,6 +1441,120 @@ export interface components {
         };
         GoogleLoginRequest: {
             idToken: string;
+        };
+        CreateRequest: {
+            /** Format: uuid */
+            jobId?: string;
+            title?: string;
+            company?: string;
+            url?: string;
+            /** @enum {string} */
+            status?: "SAVED" | "APPLIED" | "SCREENING" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN";
+            /** Format: date-time */
+            appliedAt?: string;
+            notes?: string;
+            /** Format: uuid */
+            packId?: string;
+            /** Format: uuid */
+            resumeDocumentId?: string;
+            /** Format: uuid */
+            coverLetterDocumentId?: string;
+            /** Format: uuid */
+            screeningAnswersDocumentId?: string;
+        };
+        ApplicationDetail: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            jobId?: string;
+            title?: string;
+            company?: string;
+            url?: string;
+            /** @enum {string} */
+            status?: "SAVED" | "APPLIED" | "SCREENING" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN";
+            notes?: string;
+            /** Format: date-time */
+            appliedAt?: string;
+            /** Format: uuid */
+            packId?: string;
+            /** Format: uuid */
+            resumeDocumentId?: string;
+            /** Format: uuid */
+            coverLetterDocumentId?: string;
+            /** Format: uuid */
+            screeningAnswersDocumentId?: string;
+            /** Format: date-time */
+            statusChangedAt?: string;
+            /** Format: date-time */
+            nextReminderAt?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            events?: components["schemas"]["EventView"][];
+            reminders?: components["schemas"]["ReminderView"][];
+        };
+        EventView: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            from?: "SAVED" | "APPLIED" | "SCREENING" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN";
+            /** @enum {string} */
+            to?: "SAVED" | "APPLIED" | "SCREENING" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN";
+            note?: string;
+            /** Format: date-time */
+            at?: string;
+        };
+        ReminderView: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            applicationId?: string;
+            /** @enum {string} */
+            kind?: "FOLLOW_UP" | "INTERVIEW" | "CUSTOM";
+            note?: string;
+            /** Format: date-time */
+            dueAt?: string;
+            /** @enum {string} */
+            state?: "PENDING" | "SENT" | "CANCELLED";
+            /** Format: date-time */
+            sentAt?: string;
+            /** @enum {string} */
+            cancelReason?: "USER" | "APPLICATION_CLOSED" | "EMAIL_DISABLED" | "NO_RECIPIENT" | "SEND_FAILED";
+            /** Format: date-time */
+            createdAt?: string;
+        };
+        StatusRequest: {
+            /** @enum {string} */
+            status: "SAVED" | "APPLIED" | "SCREENING" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN";
+            note?: string;
+        };
+        ReminderRequest: {
+            /** Format: date-time */
+            dueAt: string;
+            /** @enum {string} */
+            kind?: "FOLLOW_UP" | "INTERVIEW" | "CUSTOM";
+            note?: string;
+        };
+        FollowUpRequest: {
+            /** @enum {string} */
+            tone?: "FORMAL" | "WARM" | "CONCISE";
+            /** @enum {string} */
+            length?: "SHORT" | "STANDARD" | "LONG";
+            notes?: string;
+        };
+        FollowUpDraft: {
+            subject?: string;
+            body?: string;
+            /** @enum {string} */
+            tone?: "FORMAL" | "WARM" | "CONCISE";
+            /** @enum {string} */
+            length?: "SHORT" | "STANDARD" | "LONG";
+            model?: string;
+            promptVersion?: string;
+        };
+        RetryRequest: {
+            parts?: ("TAILORED_RESUME" | "COVER_LETTER" | "SCREENING_ANSWERS")[];
         };
         AddTargetRequest: {
             source: string;
@@ -1132,6 +1588,14 @@ export interface components {
             /** Format: int32 */
             version?: number;
             operations: components["schemas"]["Operation"][];
+        };
+        UpdateRequest: {
+            title?: string;
+            company?: string;
+            url?: string;
+            notes?: string;
+            /** Format: date-time */
+            appliedAt?: string;
         };
         SavedSearchList: {
             items?: components["schemas"]["SavedSearchView"][];
@@ -1308,9 +1772,9 @@ export interface components {
             /** Format: uuid */
             id?: string;
             /** @enum {string} */
-            type?: "TAILORED_RESUME";
+            type?: "TAILORED_RESUME" | "COVER_LETTER" | "SCREENING_ANSWERS";
             /** @enum {string} */
-            status?: "GENERATING" | "DRAFT" | "FACT_CHECK_FAILED" | "APPROVED";
+            status?: "GENERATING" | "DRAFT" | "FACT_CHECK_FAILED" | "APPROVED" | "SUPERSEDED";
             job?: components["schemas"]["JobRef"];
             /** Format: int32 */
             version?: number;
@@ -1324,6 +1788,23 @@ export interface components {
             updatedAt?: string;
             /** Format: date-time */
             approvedAt?: string;
+        };
+        RenderedFileSummary: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            template?: "ATS" | "STYLED";
+            /** @enum {string} */
+            format?: "PDF" | "DOCX";
+            /** @enum {string} */
+            pageSize?: "A4" | "LETTER";
+            filename?: string;
+            contentType?: string;
+            /** Format: int64 */
+            sizeBytes?: number;
+            sha256?: string;
+            /** Format: date-time */
+            createdAt?: string;
         };
         AllowanceResponse: {
             dailyCap?: number;
@@ -1339,6 +1820,65 @@ export interface components {
             email?: string;
             role?: string;
             emailVerified?: boolean;
+        };
+        ApplicationListResponse: {
+            items?: components["schemas"]["ApplicationView"][];
+            board?: {
+                [key: string]: components["schemas"]["ApplicationView"][];
+            };
+            counts?: {
+                [key: string]: number;
+            };
+            truncated?: boolean;
+        };
+        ApplicationView: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            jobId?: string;
+            title?: string;
+            company?: string;
+            url?: string;
+            /** @enum {string} */
+            status?: "SAVED" | "APPLIED" | "SCREENING" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN";
+            notes?: string;
+            /** Format: date-time */
+            appliedAt?: string;
+            /** Format: uuid */
+            packId?: string;
+            /** Format: uuid */
+            resumeDocumentId?: string;
+            /** Format: uuid */
+            coverLetterDocumentId?: string;
+            /** Format: uuid */
+            screeningAnswersDocumentId?: string;
+            /** Format: date-time */
+            statusChangedAt?: string;
+            /** Format: date-time */
+            nextReminderAt?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        ReminderList: {
+            items?: components["schemas"]["ReminderView"][];
+        };
+        PackList: {
+            items?: components["schemas"]["PackSummary"][];
+        };
+        PackSummary: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            status?: "GENERATING" | "COMPLETE" | "PARTIAL" | "FAILED";
+            job?: components["schemas"]["JobRef"];
+            /** Format: int32 */
+            version?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
         };
         IngestionSourceListResponse: {
             items?: components["schemas"]["IngestionSourceResponse"][];
@@ -1920,6 +2460,32 @@ export interface operations {
             };
         };
     };
+    renderResume: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RenderRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RenderedFileResponse"];
+                };
+            };
+        };
+    };
     describeUnsubscribe: {
         parameters: {
             query?: never;
@@ -1986,6 +2552,110 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["DraftResponse"];
+                };
+            };
+        };
+    };
+    screeningAnswers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["WritingRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DraftResponse"];
+                };
+            };
+        };
+    };
+    coverLetter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["WritingRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DraftResponse"];
+                };
+            };
+        };
+    };
+    createPack: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PackRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PackResponse"];
+                };
+            };
+        };
+    };
+    renderDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RenderRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RenderedFileResponse"];
                 };
             };
         };
@@ -2208,6 +2878,180 @@ export interface operations {
             };
         };
     };
+    list_1: {
+        parameters: {
+            query?: {
+                status?: ("SAVED" | "APPLIED" | "SCREENING" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN")[];
+                grouped?: boolean;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApplicationListResponse"];
+                };
+            };
+        };
+    };
+    create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApplicationDetail"];
+                };
+            };
+        };
+    };
+    changeStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApplicationDetail"];
+                };
+            };
+        };
+    };
+    listReminders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReminderList"];
+                };
+            };
+        };
+    };
+    addReminder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReminderRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReminderView"];
+                };
+            };
+        };
+    };
+    followUpDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["FollowUpRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FollowUpDraft"];
+                };
+            };
+        };
+    };
+    retryPack: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RetryRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PackResponse"];
+                };
+            };
+        };
+    };
     addTarget: {
         parameters: {
             query?: never;
@@ -2336,6 +3180,74 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["DraftResponse"];
+                };
+            };
+        };
+    };
+    get_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApplicationDetail"];
+                };
+            };
+        };
+    };
+    delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApplicationDetail"];
                 };
             };
         };
@@ -2520,11 +3432,12 @@ export interface operations {
             };
         };
     };
-    list_1: {
+    list_2: {
         parameters: {
             query?: {
                 jobId?: string;
-                status?: "GENERATING" | "DRAFT" | "FACT_CHECK_FAILED" | "APPROVED";
+                type?: "TAILORED_RESUME" | "COVER_LETTER" | "SCREENING_ANSWERS";
+                status?: "GENERATING" | "DRAFT" | "FACT_CHECK_FAILED" | "APPROVED" | "SUPERSEDED";
                 limit?: number;
             };
             header?: never;
@@ -2540,6 +3453,51 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ListResponse"];
+                };
+            };
+        };
+    };
+    listFiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RenderedFileSummary"][];
+                };
+            };
+        };
+    };
+    download: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                fileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RenderedFileResponse"];
                 };
             };
         };
@@ -2580,6 +3538,51 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MeResponse"];
+                };
+            };
+        };
+    };
+    listPacks: {
+        parameters: {
+            query?: {
+                jobId?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PackList"];
+                };
+            };
+        };
+    };
+    getPack: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PackResponse"];
                 };
             };
         };
@@ -2729,7 +3732,7 @@ export interface operations {
             };
         };
     };
-    delete: {
+    delete_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2760,6 +3763,27 @@ export interface operations {
         responses: {
             /** @description OK */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    cancelReminder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                reminderId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };

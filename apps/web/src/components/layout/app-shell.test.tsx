@@ -14,14 +14,15 @@ vi.mock("@/features/auth/user-menu", () => ({ UserMenu: () => null }));
 vi.mock("@/features/health/api-status", () => ({ ApiStatus: () => null }));
 
 describe("AppShell", () => {
-  it("marks the current page and renders later-phase items as disabled", () => {
+  it("marks the current page and links every item, the application board included", () => {
     renderWithQueryClient(<AppShell>content</AppShell>);
 
     expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "For you" })).toHaveAttribute("href", "/feed");
     expect(screen.getByRole("link", { name: "Jobs" })).toHaveAttribute("href", "/jobs");
     expect(screen.getByRole("link", { name: "Saved jobs" })).toHaveAttribute("href", "/saved-jobs");
-    expect(screen.queryByRole("link", { name: /Applications/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Applications" })).toHaveAttribute("href", "/applications");
+    expect(screen.queryByText("Soon")).not.toBeInTheDocument();
     expect(screen.getByText("content")).toBeInTheDocument();
   });
 

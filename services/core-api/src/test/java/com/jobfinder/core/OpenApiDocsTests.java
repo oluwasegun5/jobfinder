@@ -95,4 +95,58 @@ class OpenApiDocsTests {
 				"\"/documents/{id}/approve\"", "DraftResponse", "PatchRequest", "FactCheckView", "FlagView");
 	}
 
+	@Test
+	void apiDocsDescribeTheRenderEndpoints() throws Exception {
+		String body = mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(status().isOk())
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+
+		assertThat(body).contains("\"/documents/{id}/render\"", "\"/resumes/{id}/render\"", "RenderRequest",
+				"RenderedFileResponse", "RenderedFileSummary", "\"/documents/{id}/files\"",
+				"\"/documents/{id}/files/{fileId}/download\"", "\"downloadUrl\"", "\"STYLED\"", "\"LETTER\"", "\"DOCX\"");
+	}
+
+	@Test
+	void apiDocsDescribeCoverLettersAnswersAndPacks() throws Exception {
+		String body = mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(status().isOk())
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+
+		assertThat(body).contains("\"/jobs/{id}/cover-letter\"", "\"/jobs/{id}/screening-answers\"",
+				"\"/jobs/{id}/application-pack\"", "\"/application-packs\"", "\"/application-packs/{id}\"",
+				"\"/application-packs/{id}/retry\"", "PackResponse", "PartView", "PartError", "\"COVER_LETTER\"",
+				"\"SCREENING_ANSWERS\"", "\"BLOCKED_BY_CAP\"", "\"SUPERSEDED\"");
+	}
+
+	@Test
+	void apiDocsDescribeTheApplicationTracker() throws Exception {
+		String body = mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(status().isOk())
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+
+		assertThat(body).contains("\"/applications\"", "\"/applications/{id}\"", "\"/applications/{id}/status\"",
+				"\"/applications/{id}/reminders\"", "\"/applications/{id}/reminders/{reminderId}\"",
+				"\"/applications/{id}/follow-up-draft\"", "ApplicationDetail", "EventView", "ReminderView",
+				"FollowUpDraft", "\"WITHDRAWN\"", "\"SCREENING\"", "\"INTERVIEW\"");
+	}
+
+	@Test
+	void theApplicationListHasItsOwnSchemaName() throws Exception {
+		String body = mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(status().isOk())
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+
+		// Two records named ListResponse would share one schema and the generated client would type one route with the
+		// other's body.
+		assertThat(body).contains("\"ApplicationListResponse\"").contains("\"ListResponse\"");
+	}
+
 }

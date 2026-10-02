@@ -24,6 +24,7 @@ import com.jobfinder.core.documents.internal.DocumentDtos.Change;
 import com.jobfinder.core.documents.internal.DocumentDtos.ChangeState;
 import com.jobfinder.core.documents.internal.DocumentDtos.ChangeView;
 import com.jobfinder.core.documents.internal.DocumentDtos.DocumentStatus;
+import com.jobfinder.core.documents.internal.DocumentDtos.DocumentType;
 import com.jobfinder.core.documents.internal.DocumentDtos.DraftResponse;
 import com.jobfinder.core.documents.internal.DocumentDtos.FactCheck;
 import com.jobfinder.core.documents.internal.DocumentDtos.FactCheckView;
@@ -80,9 +81,12 @@ class DocumentService {
     private final TransactionTemplate tx;
     private final JsonMapper json;
     private final Clock clock;
+    private final WritingService writing;
 
     DocumentService(DocumentStore store, AiTailoringClient ai, CandidateProfiles candidates, JobMatchSource jobs,
-            AiUsageGate gate, DocumentsProperties properties, TransactionTemplate tx, JsonMapper json, Clock clock) {
+            AiUsageGate gate, DocumentsProperties properties, TransactionTemplate tx, JsonMapper json, Clock clock,
+            WritingService writing) {
+        this.writing = writing;
         this.store = store;
         this.ai = ai;
         this.candidates = candidates;
@@ -102,7 +106,8 @@ class DocumentService {
         JobForMatching job = jobs.jobs(List.of(jobId)).stream().findFirst()
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "job_not_found", "Job not found."));
 
-        Optional<Row> existing = store.findOpen(userId, jobId, candidate.resumeVersionId(), false);
+        Optional<Row> existing = store.findOpen(userId, jobId, candidate.resumeVersionId(), DocumentType.TAILORED_RESUME,
+                false);
         if (existing.isPresent()) {
             Row row = existing.get();
             if (!abandoned(row)) {
@@ -116,11 +121,11 @@ class DocumentService {
         JsonNode source = readTree(candidate.structuredJson());
         UUID id = UUID.randomUUID();
         try {
-            store.insertPlaceholder(id, userId, jobId, clip(job.title(), 400), clip(job.company(), 400),
-                    candidate.resumeVersionId(), properties.promptVersion(), source);
+            store.insertPlaceholder(id, userId, DocumentType.TAILORED_RESUME, jobId, clip(job.title(), 400),
+                    clip(job.company(), 400), candidate.resumeVersionId(), properties.promptVersion(), source, null);
         } catch (DuplicateKeyException e) {
             // Another request got there first: hand back its draft.
-            Row row = store.findOpen(userId, jobId, candidate.resumeVersionId(), false)
+            Row row = store.findOpen(userId, jobId, candidate.resumeVersionId(), DocumentType.TAILORED_RESUME, false)
                     .orElseThrow(() -> new ApiException(HttpStatus.CONFLICT, "tailoring_in_progress",
                             "A draft for this job is being made. Try again in a moment."));
             return new Outcome(row, false);
@@ -161,13 +166,16 @@ class DocumentService {
         return store.find(userId, id, false).orElseThrow(DocumentService::notFound);
     }
 
-    List<Row> list(UUID userId, UUID jobId, DocumentStatus status, Integer limit) {
-        return store.list(userId, jobId, status, limit == null ? 20 : limit);
+    List<Row> list(UUID userId, UUID jobId, DocumentType type, DocumentStatus status, Integer limit) {
+        return store.list(userId, jobId, type, status, limit == null ? 20 : limit);
     }
 
     // --- review ---
 
     Row patch(UUID userId, UUID id, PatchRequest request) {
+        if (get(userId, id).type() != DocumentType.TAILORED_RESUME) {
+            return writing.patch(userId, id, request);
+        }
         tx.executeWithoutResult(status -> {
             Row row = store.find(userId, id, true).orElseThrow(DocumentService::notFound);
             requireOpen(row);
@@ -186,6 +194,9 @@ class DocumentService {
     }
 
     Row approve(UUID userId, UUID id) {
+        if (get(userId, id).type() != DocumentType.TAILORED_RESUME) {
+            return writing.approve(userId, id);
+        }
         Integer blocked = tx.execute(status -> {
             Row row = store.find(userId, id, true).orElseThrow(DocumentService::notFound);
             if (row.status() == DocumentStatus.APPROVED) {
@@ -226,6 +237,10 @@ class DocumentService {
     private static void requireOpen(Row row) {
         if (row.status() == DocumentStatus.APPROVED) {
             throw approvedError();
+        }
+        if (row.status() == DocumentStatus.SUPERSEDED) {
+            throw new ApiException(HttpStatus.CONFLICT, "document_superseded",
+                    "This draft was replaced by a newer one and is kept as history only.");
         }
         if (row.status() == DocumentStatus.GENERATING) {
             throw new ApiException(HttpStatus.CONFLICT, "document_generating",
@@ -346,7 +361,8 @@ class DocumentService {
 
     DraftResponse toResponse(Row row) {
         Map<String, Object> content = row.content() == null ? null : json.convertValue(row.content(), MAP);
-        Result result = row.content() == null ? null : ChangeMaterializer.materialize(row.source(), row.changes());
+        Result result = row.content() == null || row.type() != DocumentType.TAILORED_RESUME ? null
+                : ChangeMaterializer.materialize(row.source(), row.changes());
         List<ChangeView> changes = row.changes().stream()
                 .map(c -> new ChangeView(c.id(), c.section(), c.op(), c.path(), plain(c.before()), plain(c.after()),
                         c.rationale(), c.state(), c.edited()))
@@ -358,8 +374,9 @@ class DocumentService {
                 row.factCheck().checkerVersion());
         return new DraftResponse(row.id(), row.type(), row.status(),
                 new JobRef(row.jobId(), row.jobTitle(), row.jobCompany()), row.baseResumeVersionId(),
-                row.promptVersion(), row.model(), row.version(), content, changes, factCheck, row.createdAt(),
-                row.updatedAt(), row.approvedAt());
+                row.promptVersion(), row.model(), row.version(), content, changes, factCheck,
+                row.options() == null ? null : json.convertValue(row.options(), MAP), row.createdAt(), row.updatedAt(),
+                row.approvedAt());
     }
 
     ListResponse toList(List<Row> rows) {

@@ -10,12 +10,24 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 record DocumentsProperties(
         /** The tailoring prompt, sent to ai-service with every request and stored with every draft. */
         @DefaultValue("tailor_resume/v1") String promptVersion,
+        /** The cover letter prompt (docs/adr/0031-cover-letters-and-application-pack.md). */
+        @DefaultValue("cover_letter/v1") String letterPromptVersion,
+        /** The screening answers prompt. */
+        @DefaultValue("screening_answers/v1") String answersPromptVersion,
         @DefaultValue Tailoring tailoring,
         @DefaultValue FactCheckCall factCheck) {
 
     DocumentsProperties {
         if (promptVersion == null || !promptVersion.matches("tailor_resume/v[1-9][0-9]{0,2}")) {
             throw new IllegalArgumentException("app.documents.prompt-version must look like tailor_resume/v1");
+        }
+        if (letterPromptVersion == null || !letterPromptVersion.matches("cover_letter/v[1-9][0-9]{0,2}")) {
+            throw new IllegalArgumentException(
+                    "app.documents.letter-prompt-version must look like cover_letter/v1");
+        }
+        if (answersPromptVersion == null || !answersPromptVersion.matches("screening_answers/v[1-9][0-9]{0,2}")) {
+            throw new IllegalArgumentException(
+                    "app.documents.answers-prompt-version must look like screening_answers/v1");
         }
     }
 

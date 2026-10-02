@@ -678,6 +678,46 @@
         }
       }
     },
+    "/resumes/{id}/render": {
+      "post": {
+        "tags": [
+          "render-controller"
+        ],
+        "operationId": "renderResume",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderedFileResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/notifications/unsubscribe/{token}": {
       "get": {
         "tags": [
@@ -769,6 +809,166 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/DraftResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{id}/screening-answers": {
+      "post": {
+        "tags": [
+          "writing-controller"
+        ],
+        "operationId": "screeningAnswers",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WritingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{id}/cover-letter": {
+      "post": {
+        "tags": [
+          "writing-controller"
+        ],
+        "operationId": "coverLetter",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WritingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{id}/application-pack": {
+      "post": {
+        "tags": [
+          "writing-controller"
+        ],
+        "operationId": "createPack",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/{id}/render": {
+      "post": {
+        "tags": [
+          "render-controller"
+        ],
+        "operationId": "renderDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderedFileResponse"
                 }
               }
             }
@@ -1015,6 +1215,287 @@
         }
       }
     },
+    "/applications": {
+      "get": {
+        "tags": [
+          "application-controller"
+        ],
+        "operationId": "list_1",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "SAVED",
+                  "APPLIED",
+                  "SCREENING",
+                  "INTERVIEW",
+                  "OFFER",
+                  "REJECTED",
+                  "WITHDRAWN"
+                ]
+              }
+            }
+          },
+          {
+            "name": "grouped",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 500,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "application-controller"
+        ],
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/{id}/status": {
+      "post": {
+        "tags": [
+          "application-controller"
+        ],
+        "operationId": "changeStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/{id}/reminders": {
+      "get": {
+        "tags": [
+          "application-controller"
+        ],
+        "operationId": "listReminders",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderList"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "application-controller"
+        ],
+        "operationId": "addReminder",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReminderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/{id}/follow-up-draft": {
+      "post": {
+        "tags": [
+          "application-controller"
+        ],
+        "operationId": "followUpDraft",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FollowUpRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowUpDraft"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/application-packs/{id}/retry": {
+      "post": {
+        "tags": [
+          "writing-controller"
+        ],
+        "operationId": "retryPack",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/ingestion/targets": {
       "post": {
         "tags": [
@@ -1180,6 +1661,98 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/DraftResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/{id}": {
+      "get": {
+        "tags": [
+          "application-controller"
+        ],
+        "operationId": "get_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationDetail"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "application-controller"
+        ],
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "application-controller"
+        ],
+        "operationId": "update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationDetail"
                 }
               }
             }
@@ -1728,7 +2301,7 @@
         "tags": [
           "document-controller"
         ],
-        "operationId": "list_1",
+        "operationId": "list_2",
         "parameters": [
           {
             "name": "jobId",
@@ -1737,6 +2310,19 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "TAILORED_RESUME",
+                "COVER_LETTER",
+                "SCREENING_ANSWERS"
+              ]
             }
           },
           {
@@ -1749,7 +2335,8 @@
                 "GENERATING",
                 "DRAFT",
                 "FACT_CHECK_FAILED",
-                "APPROVED"
+                "APPROVED",
+                "SUPERSEDED"
               ]
             }
           },
@@ -1772,6 +2359,80 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/ListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/{id}/files": {
+      "get": {
+        "tags": [
+          "render-controller"
+        ],
+        "operationId": "listFiles",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RenderedFileSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/{id}/files/{fileId}/download": {
+      "get": {
+        "tags": [
+          "render-controller"
+        ],
+        "operationId": "download",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "fileId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderedFileResponse"
                 }
               }
             }
@@ -1812,6 +2473,79 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/application-packs": {
+      "get": {
+        "tags": [
+          "writing-controller"
+        ],
+        "operationId": "listPacks",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 100,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/application-packs/{id}": {
+      "get": {
+        "tags": [
+          "writing-controller"
+        ],
+        "operationId": "getPack",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackResponse"
                 }
               }
             }
@@ -2045,7 +2779,7 @@
         "tags": [
           "resume-controller"
         ],
-        "operationId": "delete",
+        "operationId": "delete_1",
         "parameters": [
           {
             "name": "id",
@@ -2073,6 +2807,39 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/applications/{id}/reminders/{reminderId}": {
+      "delete": {
+        "tags": [
+          "application-controller"
+        ],
+        "operationId": "cancelReminder",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reminderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
           }
         }
       }
@@ -3031,6 +3798,86 @@
           }
         }
       },
+      "RenderRequest": {
+        "type": "object",
+        "properties": {
+          "template": {
+            "type": "string",
+            "enum": [
+              "ATS",
+              "STYLED"
+            ]
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "PDF",
+              "DOCX"
+            ]
+          },
+          "pageSize": {
+            "type": "string",
+            "enum": [
+              "A4",
+              "LETTER"
+            ]
+          }
+        }
+      },
+      "RenderedFileResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "template": {
+            "type": "string",
+            "enum": [
+              "ATS",
+              "STYLED"
+            ]
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "PDF",
+              "DOCX"
+            ]
+          },
+          "pageSize": {
+            "type": "string",
+            "enum": [
+              "A4",
+              "LETTER"
+            ]
+          },
+          "filename": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sha256": {
+            "type": "string",
+            "description": "Hex SHA-256 of the file, to verify a download"
+          },
+          "downloadUrl": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cached": {
+            "type": "boolean"
+          }
+        }
+      },
       "UnsubscribeInfo": {
         "type": "object",
         "properties": {
@@ -3112,7 +3959,9 @@
           "type": {
             "type": "string",
             "enum": [
-              "TAILORED_RESUME"
+              "TAILORED_RESUME",
+              "COVER_LETTER",
+              "SCREENING_ANSWERS"
             ]
           },
           "status": {
@@ -3121,7 +3970,8 @@
               "GENERATING",
               "DRAFT",
               "FACT_CHECK_FAILED",
-              "APPROVED"
+              "APPROVED",
+              "SUPERSEDED"
             ]
           },
           "job": {
@@ -3153,6 +4003,10 @@
           },
           "factCheck": {
             "$ref": "#/components/schemas/FactCheckView"
+          },
+          "options": {
+            "type": "object",
+            "additionalProperties": {}
           },
           "createdAt": {
             "type": "string",
@@ -3228,6 +4082,199 @@
           },
           "company": {
             "type": "string"
+          }
+        }
+      },
+      "WritingRequest": {
+        "type": "object",
+        "properties": {
+          "tone": {
+            "type": "string",
+            "enum": [
+              "FORMAL",
+              "WARM",
+              "CONCISE"
+            ]
+          },
+          "length": {
+            "type": "string",
+            "enum": [
+              "SHORT",
+              "STANDARD",
+              "LONG"
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 0
+          }
+        }
+      },
+      "PackRequest": {
+        "type": "object",
+        "properties": {
+          "tone": {
+            "type": "string",
+            "enum": [
+              "FORMAL",
+              "WARM",
+              "CONCISE"
+            ]
+          },
+          "length": {
+            "type": "string",
+            "enum": [
+              "SHORT",
+              "STANDARD",
+              "LONG"
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 0
+          },
+          "include": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "TAILORED_RESUME",
+                "COVER_LETTER",
+                "SCREENING_ANSWERS"
+              ]
+            },
+            "maxItems": 3,
+            "minItems": 0
+          }
+        }
+      },
+      "PackOptions": {
+        "type": "object",
+        "properties": {
+          "tone": {
+            "type": "string",
+            "enum": [
+              "FORMAL",
+              "WARM",
+              "CONCISE"
+            ]
+          },
+          "length": {
+            "type": "string",
+            "enum": [
+              "SHORT",
+              "STANDARD",
+              "LONG"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          },
+          "include": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "TAILORED_RESUME",
+                "COVER_LETTER",
+                "SCREENING_ANSWERS"
+              ]
+            }
+          }
+        }
+      },
+      "PackResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "GENERATING",
+              "COMPLETE",
+              "PARTIAL",
+              "FAILED"
+            ]
+          },
+          "job": {
+            "$ref": "#/components/schemas/JobRef"
+          },
+          "baseResumeVersionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "options": {
+            "$ref": "#/components/schemas/PackOptions"
+          },
+          "parts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartView"
+            }
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PartError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "resetsAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PartView": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "TAILORED_RESUME",
+              "COVER_LETTER",
+              "SCREENING_ANSWERS"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "READY",
+              "FAILED",
+              "BLOCKED_BY_CAP",
+              "MISSING"
+            ]
+          },
+          "document": {
+            "$ref": "#/components/schemas/DraftResponse"
+          },
+          "error": {
+            "$ref": "#/components/schemas/PartError"
           }
         }
       },
@@ -3345,6 +4392,373 @@
           "idToken"
         ]
       },
+      "CreateRequest": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 400,
+            "minLength": 0
+          },
+          "company": {
+            "type": "string",
+            "maxLength": 400,
+            "minLength": 0
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 0
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SAVED",
+              "APPLIED",
+              "SCREENING",
+              "INTERVIEW",
+              "OFFER",
+              "REJECTED",
+              "WITHDRAWN"
+            ]
+          },
+          "appliedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 10000,
+            "minLength": 0
+          },
+          "packId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resumeDocumentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "coverLetterDocumentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "screeningAnswersDocumentId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ApplicationDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SAVED",
+              "APPLIED",
+              "SCREENING",
+              "INTERVIEW",
+              "OFFER",
+              "REJECTED",
+              "WITHDRAWN"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          },
+          "appliedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resumeDocumentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "coverLetterDocumentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "screeningAnswersDocumentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "statusChangedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nextReminderAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventView"
+            }
+          },
+          "reminders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReminderView"
+            }
+          }
+        }
+      },
+      "EventView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "from": {
+            "type": "string",
+            "enum": [
+              "SAVED",
+              "APPLIED",
+              "SCREENING",
+              "INTERVIEW",
+              "OFFER",
+              "REJECTED",
+              "WITHDRAWN"
+            ]
+          },
+          "to": {
+            "type": "string",
+            "enum": [
+              "SAVED",
+              "APPLIED",
+              "SCREENING",
+              "INTERVIEW",
+              "OFFER",
+              "REJECTED",
+              "WITHDRAWN"
+            ]
+          },
+          "note": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ReminderView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "applicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "FOLLOW_UP",
+              "INTERVIEW",
+              "CUSTOM"
+            ]
+          },
+          "note": {
+            "type": "string"
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "SENT",
+              "CANCELLED"
+            ]
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cancelReason": {
+            "type": "string",
+            "enum": [
+              "USER",
+              "APPLICATION_CLOSED",
+              "EMAIL_DISABLED",
+              "NO_RECIPIENT",
+              "SEND_FAILED"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "StatusRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "SAVED",
+              "APPLIED",
+              "SCREENING",
+              "INTERVIEW",
+              "OFFER",
+              "REJECTED",
+              "WITHDRAWN"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "ReminderRequest": {
+        "type": "object",
+        "properties": {
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "FOLLOW_UP",
+              "INTERVIEW",
+              "CUSTOM"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "dueAt"
+        ]
+      },
+      "FollowUpRequest": {
+        "type": "object",
+        "properties": {
+          "tone": {
+            "type": "string",
+            "enum": [
+              "FORMAL",
+              "WARM",
+              "CONCISE"
+            ]
+          },
+          "length": {
+            "type": "string",
+            "enum": [
+              "SHORT",
+              "STANDARD",
+              "LONG"
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 0
+          }
+        }
+      },
+      "FollowUpDraft": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "tone": {
+            "type": "string",
+            "enum": [
+              "FORMAL",
+              "WARM",
+              "CONCISE"
+            ]
+          },
+          "length": {
+            "type": "string",
+            "enum": [
+              "SHORT",
+              "STANDARD",
+              "LONG"
+            ]
+          },
+          "model": {
+            "type": "string"
+          },
+          "promptVersion": {
+            "type": "string"
+          }
+        }
+      },
+      "RetryRequest": {
+        "type": "object",
+        "properties": {
+          "parts": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "TAILORED_RESUME",
+                "COVER_LETTER",
+                "SCREENING_ANSWERS"
+              ]
+            },
+            "maxItems": 3,
+            "minItems": 0
+          }
+        }
+      },
       "AddTargetRequest": {
         "type": "object",
         "properties": {
@@ -3459,6 +4873,35 @@
         "required": [
           "operations"
         ]
+      },
+      "UpdateRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 400,
+            "minLength": 0
+          },
+          "company": {
+            "type": "string",
+            "maxLength": 400,
+            "minLength": 0
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 0
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 10000,
+            "minLength": 0
+          },
+          "appliedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       },
       "SavedSearchList": {
         "type": "object",
@@ -3972,7 +5415,9 @@
           "type": {
             "type": "string",
             "enum": [
-              "TAILORED_RESUME"
+              "TAILORED_RESUME",
+              "COVER_LETTER",
+              "SCREENING_ANSWERS"
             ]
           },
           "status": {
@@ -3981,7 +5426,8 @@
               "GENERATING",
               "DRAFT",
               "FACT_CHECK_FAILED",
-              "APPROVED"
+              "APPROVED",
+              "SUPERSEDED"
             ]
           },
           "job": {
@@ -4008,6 +5454,53 @@
             "format": "date-time"
           },
           "approvedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RenderedFileSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "template": {
+            "type": "string",
+            "enum": [
+              "ATS",
+              "STYLED"
+            ]
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "PDF",
+              "DOCX"
+            ]
+          },
+          "pageSize": {
+            "type": "string",
+            "enum": [
+              "A4",
+              "LETTER"
+            ]
+          },
+          "filename": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "createdAt": {
             "type": "string",
             "format": "date-time"
           }
@@ -4049,6 +5542,164 @@
           },
           "emailVerified": {
             "type": "boolean"
+          }
+        }
+      },
+      "ApplicationListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationView"
+            }
+          },
+          "board": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ApplicationView"
+              }
+            }
+          },
+          "counts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApplicationView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SAVED",
+              "APPLIED",
+              "SCREENING",
+              "INTERVIEW",
+              "OFFER",
+              "REJECTED",
+              "WITHDRAWN"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          },
+          "appliedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resumeDocumentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "coverLetterDocumentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "screeningAnswersDocumentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "statusChangedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nextReminderAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ReminderList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReminderView"
+            }
+          }
+        }
+      },
+      "PackList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackSummary"
+            }
+          }
+        }
+      },
+      "PackSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "GENERATING",
+              "COMPLETE",
+              "PARTIAL",
+              "FAILED"
+            ]
+          },
+          "job": {
+            "$ref": "#/components/schemas/JobRef"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },

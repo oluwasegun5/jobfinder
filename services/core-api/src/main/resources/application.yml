@@ -199,6 +199,9 @@ app:
     # Resume tailoring (docs/adr/0029-resume-tailoring.md). The prompt version is sent to ai-service with every request and
     # stored with every draft; changing it means a new prompt file in ai-service.
     prompt-version: ${TAILORING_PROMPT_VERSION:tailor_resume/v1}
+    # Cover letters and screening answers (docs/adr/0031-cover-letters-and-application-pack.md), same rules.
+    letter-prompt-version: ${COVER_LETTER_PROMPT_VERSION:cover_letter/v1}
+    answers-prompt-version: ${SCREENING_ANSWERS_PROMPT_VERSION:screening_answers/v1}
     tailoring:
       connect-timeout: 2s
       # One strong-model call that writes a whole resume.
@@ -209,6 +212,11 @@ app:
     fact-check:
       connect-timeout: 2s
       read-timeout: 15s
+
+  rendering:
+    # Resume export to PDF and DOCX (docs/adr/0030-document-rendering.md). How long the pre-signed download link of a
+    # rendered file works; the files themselves live in the app.storage bucket under renders/<user id>/.
+    download-url-ttl: 5m
 
   feed:
     # The "For you" feed (docs/adr/0027-feed-and-feedback.md): ranks and pages through the user's best pool-size matches.
@@ -272,6 +280,30 @@ app:
       initial-backoff: 15m
       stale-after: 30m
       log-retention: 180d
+
+  applications:
+    # The application tracker (docs/adr/0032-application-tracker.md): applications, their status history, reminders and the
+    # AI follow-up email draft.
+    max-per-user: 2000
+    reminders:
+      # Off with APPLICATION_REMINDERS_ENABLED=false. Every poll-interval it sends the reminders that are due (at most
+      # batch-size at a time), under a ShedLock lock; exactly-once is the claim in the reminders table, not the lock.
+      enabled: ${APPLICATION_REMINDERS_ENABLED:true}
+      poll-interval: 5m
+      initial-delay: 1m
+      batch-size: 100
+      # A failed send is tried again after retry-after, up to max-attempts in all, then the reminder is cancelled.
+      max-attempts: 3
+      retry-after: 15m
+      lock-at-most-for: 10m
+      max-pending-per-application: 20
+      max-horizon: 366d
+    follow-up:
+      # Sent to ai-service with every request and recorded with every metered call; changing it means a new prompt file there.
+      prompt-version: ${FOLLOW_UP_PROMPT_VERSION:follow_up_email/v1}
+      connect-timeout: 2s
+      read-timeout: 60s
+      description-chars: 20000
 
 springdoc:
   # The service-to-service endpoints (service token, not user tokens) are not part of the public API.
