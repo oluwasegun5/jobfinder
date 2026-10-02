@@ -24,7 +24,7 @@ const navItems: NavItem[] = [
   { label: "Jobs", icon: Briefcase, href: "/jobs" },
   { label: "Saved jobs", icon: Bookmark, href: "/saved-jobs" },
   { label: "Saved searches", icon: BookmarkCheck, href: "/saved-searches" },
-  { label: "Applications", icon: KanbanSquare },
+  { label: "Applications", icon: KanbanSquare, href: "/applications" },
   { label: "Profile", icon: UserRound, href: "/profile" },
   { label: "Notifications", icon: Bell, href: "/settings/notifications" },
 ];
