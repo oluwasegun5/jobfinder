@@ -13,7 +13,7 @@ import { FailureNotice } from "@/features/tailoring/shared";
 
 import { interviewFailure } from "./errors";
 import { DEFAULT_TURNS, TURN_CHOICES } from "./model";
-import { usePrep, useStartSession } from "./queries";
+import { usePrep, useStartSession, type StartOutcome } from "./queries";
 
 const selectClass =
   "h-9 w-full max-w-48 rounded-lg border border-input bg-background px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
@@ -33,13 +33,18 @@ export function StartInterview({ jobId, prepId }: { jobId: string; prepId?: stri
   const usePrepQuestions = Boolean(prepId) && prep.isSuccess && prepMatches === true;
   const failure = start.error ? interviewFailure(start.error) : undefined;
 
+  const input = { jobId, maxTurns: turns, ...(usePrepQuestions ? { prepId } : {}) };
+  const open = ({ session }: StartOutcome) => {
+    if (session.id) router.push(`/interviews/${session.id}`);
+  };
+  const send = () => start.mutate(input, { onSuccess: open });
+  // An interview for this job is already open: the same session comes back, at the question it was on.
+  const resuming = start.data?.resumed === true;
+
   function submit(event: FormEvent) {
     event.preventDefault();
     if (start.isPending) return;
-    start.mutate(
-      { jobId, maxTurns: turns, ...(usePrepQuestions ? { prepId } : {}) },
-      { onSuccess: (session) => session.id && router.push(`/interviews/${session.id}`) },
-    );
+    send();
   }
 
   if (job.isPending) return <p role="status">Loading the job…</p>;
@@ -112,8 +117,9 @@ export function StartInterview({ jobId, prepId }: { jobId: string; prepId?: stri
 
             <div role="status" aria-live="polite" className="min-h-5 text-sm text-muted-foreground">
               {start.isPending && "Getting your first question…"}
+              {resuming && "Resuming your session…"}
             </div>
-            <FailureNotice failure={failure} onRetry={() => start.mutate({ jobId, maxTurns: turns, ...(usePrepQuestions ? { prepId } : {}) }, { onSuccess: (s) => s.id && router.push(`/interviews/${s.id}`) })} retrying={start.isPending} />
+            <FailureNotice failure={failure} onRetry={send} retrying={start.isPending} />
 
             <div className="flex flex-wrap gap-2">
               <Button type="submit" disabled={start.isPending}>

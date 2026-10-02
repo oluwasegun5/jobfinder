@@ -43,12 +43,21 @@ export function usePrep(id: string | undefined) {
 
 export type StartInput = { jobId: string; prepId?: string; maxTurns?: number };
 
-/** Starts a session. One call may include a model call for the first question, so it can take a few seconds. */
+export type StartOutcome = { session: Session; resumed: boolean };
+
+/**
+ * Starts a session, or resumes the open one for the job: core-api answers 201 for a new session and 200 for one that
+ * was already open (no new question, no charge). One call may include a model call for the first question, so it can
+ * take a few seconds.
+ */
 export function useStartSession() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: StartInput) => unwrap(await api.POST("/interview-sessions", { body: input })),
-    onSuccess: (session: Session) => {
+    mutationFn: async (input: StartInput): Promise<StartOutcome> => {
+      const result = await api.POST("/interview-sessions", { body: input });
+      return { session: unwrap(result), resumed: result.response.status === 200 };
+    },
+    onSuccess: ({ session }: StartOutcome) => {
       if (session.id) queryClient.setQueryData(interviewKeys.session(session.id), session);
       void queryClient.invalidateQueries({ queryKey: interviewKeys.all });
     },

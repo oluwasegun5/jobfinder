@@ -126,6 +126,27 @@ describe("StartInterview", () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith(`/interviews/${SESSION}`));
   });
 
+  it("resumes the interview already open for the job when core-api answers 200", async () => {
+    const user = userEvent.setup();
+    const api = setup({ [`POST /interview-sessions`]: () => json(session(), 200) });
+
+    await user.click(await screen.findByRole("button", { name: "Start interview" }));
+
+    expect(await screen.findByText("Resuming your session…")).toBeInTheDocument();
+    await waitFor(() => expect(push).toHaveBeenCalledWith(`/interviews/${SESSION}`));
+    expect(api.callsTo("POST", "/interview-sessions")).toHaveLength(1);
+  });
+
+  it("does not say it is resuming when a new session was made", async () => {
+    const user = userEvent.setup();
+    setup();
+
+    await user.click(await screen.findByRole("button", { name: "Start interview" }));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith(`/interviews/${SESSION}`));
+    expect(screen.queryByText("Resuming your session…")).not.toBeInTheDocument();
+  });
+
   it("says the job is gone when it cannot be found", async () => {
     setup({ [`GET /jobs/${JOB}`]: () => json({ status: 404, code: "job_not_found" }, 404) });
 
