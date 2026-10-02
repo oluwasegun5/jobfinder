@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Bookmark, BookmarkCheck, Briefcase, Coins, DatabaseZap, KanbanSquare, LayoutDashboard, Menu, Sparkles, UserRound, X } from "lucide-react";
+import { Bell, Bookmark, BookmarkCheck, Briefcase, Coins, DatabaseZap, KanbanSquare, LayoutDashboard, Menu, MessagesSquare, Sparkles, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ComponentType, type ReactNode } from "react";
@@ -25,6 +25,7 @@ const navItems: NavItem[] = [
   { label: "Saved jobs", icon: Bookmark, href: "/saved-jobs" },
   { label: "Saved searches", icon: BookmarkCheck, href: "/saved-searches" },
   { label: "Applications", icon: KanbanSquare, href: "/applications" },
+  { label: "Interviews", icon: MessagesSquare, href: "/interviews" },
   { label: "Profile", icon: UserRound, href: "/profile" },
   { label: "Notifications", icon: Bell, href: "/settings/notifications" },
 ];
