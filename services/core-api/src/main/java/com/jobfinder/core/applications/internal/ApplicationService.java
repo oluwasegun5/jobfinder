@@ -23,7 +23,7 @@ import com.jobfinder.core.applications.internal.ApplicationDtos.ApplicationView;
 import com.jobfinder.core.applications.internal.ApplicationDtos.CancelReason;
 import com.jobfinder.core.applications.internal.ApplicationDtos.CreateRequest;
 import com.jobfinder.core.applications.internal.ApplicationDtos.EventView;
-import com.jobfinder.core.applications.internal.ApplicationDtos.ListResponse;
+import com.jobfinder.core.applications.internal.ApplicationDtos.ApplicationListResponse;
 import com.jobfinder.core.applications.internal.ApplicationDtos.StatusRequest;
 import com.jobfinder.core.applications.internal.ApplicationDtos.UpdateRequest;
 import com.jobfinder.core.applications.internal.ApplicationStore.Row;
@@ -191,7 +191,7 @@ class ApplicationService {
                 .map(ReminderService::view).toList());
     }
 
-    ListResponse list(UUID userId, List<ApplicationStatus> statuses, boolean grouped, Integer limit) {
+    ApplicationListResponse list(UUID userId, List<ApplicationStatus> statuses, boolean grouped, Integer limit) {
         int max = limit == null ? DEFAULT_LIMIT : Math.min(Math.max(limit, 1), MAX_LIMIT);
         List<ApplicationStatus> filter = statuses == null ? List.of() : statuses.stream().distinct().toList();
         List<Row> rows = store.list(userId, filter, max + 1);
@@ -199,7 +199,7 @@ class ApplicationService {
         List<ApplicationView> views = rows.stream().limit(max).map(ApplicationService::view).toList();
         Map<ApplicationStatus, Integer> counts = store.counts(userId);
         if (!grouped) {
-            return new ListResponse(views, null, counts, truncated);
+            return new ApplicationListResponse(views, null, counts, truncated);
         }
         Map<ApplicationStatus, List<ApplicationView>> board = new EnumMap<>(ApplicationStatus.class);
         for (ApplicationStatus s : ApplicationStatus.values()) {
@@ -209,7 +209,7 @@ class ApplicationService {
         }
         board.putAll(views.stream().collect(Collectors.groupingBy(ApplicationView::status,
                 () -> new EnumMap<>(ApplicationStatus.class), Collectors.toList())));
-        return new ListResponse(null, board, counts, truncated);
+        return new ApplicationListResponse(null, board, counts, truncated);
     }
 
     // --- change ---

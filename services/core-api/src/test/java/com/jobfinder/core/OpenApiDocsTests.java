@@ -135,4 +135,18 @@ class OpenApiDocsTests {
 				"\"/applications/{id}/follow-up-draft\"", "ApplicationDetail", "EventView", "ReminderView",
 				"FollowUpDraft", "\"WITHDRAWN\"", "\"SCREENING\"", "\"INTERVIEW\"");
 	}
+
+	@Test
+	void theApplicationListHasItsOwnSchemaName() throws Exception {
+		String body = mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(status().isOk())
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+
+		// Two records named ListResponse would share one schema and the generated client would type one route with the
+		// other's body.
+		assertThat(body).contains("\"ApplicationListResponse\"").contains("\"ListResponse\"");
+	}
+
 }

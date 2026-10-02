@@ -20,7 +20,7 @@ import com.jobfinder.core.applications.internal.ApplicationDtos.ApplicationStatu
 import com.jobfinder.core.applications.internal.ApplicationDtos.CreateRequest;
 import com.jobfinder.core.applications.internal.ApplicationDtos.FollowUpDraft;
 import com.jobfinder.core.applications.internal.ApplicationDtos.FollowUpRequest;
-import com.jobfinder.core.applications.internal.ApplicationDtos.ListResponse;
+import com.jobfinder.core.applications.internal.ApplicationDtos.ApplicationListResponse;
 import com.jobfinder.core.applications.internal.ApplicationDtos.ReminderList;
 import com.jobfinder.core.applications.internal.ApplicationDtos.ReminderRequest;
 import com.jobfinder.core.applications.internal.ApplicationDtos.ReminderView;
@@ -71,7 +71,7 @@ class ApplicationController {
      * bounds the answer; {@code counts} always covers every status.
      */
     @GetMapping("/applications")
-    ListResponse list(@RequestParam(required = false) List<ApplicationStatus> status,
+    ApplicationListResponse list(@RequestParam(required = false) List<ApplicationStatus> status,
             @RequestParam(defaultValue = "false") boolean grouped,
             @RequestParam(required = false) @Min(1) @Max(ApplicationService.MAX_LIMIT) Integer limit) {
         return applications.list(CurrentUser.require().id(), status, grouped, limit);

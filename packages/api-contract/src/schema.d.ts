@@ -1821,6 +1821,46 @@ export interface components {
             role?: string;
             emailVerified?: boolean;
         };
+        ApplicationListResponse: {
+            items?: components["schemas"]["ApplicationView"][];
+            board?: {
+                [key: string]: components["schemas"]["ApplicationView"][];
+            };
+            counts?: {
+                [key: string]: number;
+            };
+            truncated?: boolean;
+        };
+        ApplicationView: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            jobId?: string;
+            title?: string;
+            company?: string;
+            url?: string;
+            /** @enum {string} */
+            status?: "SAVED" | "APPLIED" | "SCREENING" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN";
+            notes?: string;
+            /** Format: date-time */
+            appliedAt?: string;
+            /** Format: uuid */
+            packId?: string;
+            /** Format: uuid */
+            resumeDocumentId?: string;
+            /** Format: uuid */
+            coverLetterDocumentId?: string;
+            /** Format: uuid */
+            screeningAnswersDocumentId?: string;
+            /** Format: date-time */
+            statusChangedAt?: string;
+            /** Format: date-time */
+            nextReminderAt?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
         ReminderList: {
             items?: components["schemas"]["ReminderView"][];
         };
@@ -2857,7 +2897,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ListResponse"];
+                    "*/*": components["schemas"]["ApplicationListResponse"];
                 };
             };
         };

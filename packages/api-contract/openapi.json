@@ -1269,7 +1269,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListResponse"
+                  "$ref": "#/components/schemas/ApplicationListResponse"
                 }
               }
             }
@@ -5542,6 +5542,109 @@
           },
           "emailVerified": {
             "type": "boolean"
+          }
+        }
+      },
+      "ApplicationListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationView"
+            }
+          },
+          "board": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ApplicationView"
+              }
+            }
+          },
+          "counts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApplicationView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SAVED",
+              "APPLIED",
+              "SCREENING",
+              "INTERVIEW",
+              "OFFER",
+              "REJECTED",
+              "WITHDRAWN"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          },
+          "appliedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resumeDocumentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "coverLetterDocumentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "screeningAnswersDocumentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "statusChangedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nextReminderAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },

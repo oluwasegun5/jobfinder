@@ -171,7 +171,7 @@ final class ApplicationDtos {
      * its applications, and no {@code items}. {@code truncated} says more than {@code limit} matched.
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    record ListResponse(List<ApplicationView> items, Map<ApplicationStatus, List<ApplicationView>> board,
+    record ApplicationListResponse(List<ApplicationView> items, Map<ApplicationStatus, List<ApplicationView>> board,
             Map<ApplicationStatus, Integer> counts, boolean truncated) {
     }
 
