@@ -170,10 +170,10 @@ async def test_a_refusal_still_reports_the_billed_call() -> None:
     assert usage.input_tokens > 0 or usage.output_tokens >= 0
 
 
-def _sent_headers(**overrides: Any) -> httpx2.Headers:
+def _sent_headers(**overrides: Any) -> dict[str, Any]:
     provider = AnthropicProvider(_settings(**overrides))
     assert provider._client is not None
-    return provider._client.default_headers
+    return dict(provider._client.default_headers)
 
 
 def test_workspace_id_is_sent_as_header_when_configured() -> None:
