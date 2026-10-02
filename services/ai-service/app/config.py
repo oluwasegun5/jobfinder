@@ -86,6 +86,12 @@ class Settings(BaseSettings):
     # Follow-up emails (docs/adr/0032-application-tracker.md): a subject and up to four paragraphs.
     follow_up_email_max_tokens: int = Field(default=1500, gt=0)
 
+    # Interview prep (docs/adr/0033-interview-prep.md): the questions call (strong model) and the
+    # company brief call (fast model) have their own output budgets. The posting uses
+    # `tailor_description_chars`.
+    interview_questions_max_tokens: int = Field(default=3500, gt=0)
+    interview_brief_max_tokens: int = Field(default=2500, gt=0)
+
     rabbitmq_enabled: bool = True
     rabbitmq_host: str = "localhost"
     rabbitmq_port: int = Field(default=5672, gt=0)

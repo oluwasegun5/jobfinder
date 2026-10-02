@@ -1,0 +1,151 @@
+{
+  "prompt_version": "interview/v1",
+  "questions_model": "fake-strong",
+  "brief_model": "fake-fast",
+  "questions": [
+    {
+      "category": "behavioral",
+      "question": "Tell me about a time you led a team through a hard deadline.",
+      "rationale": "The posting and the resume both point at this.",
+      "difficulty": "medium"
+    },
+    {
+      "category": "technical",
+      "question": "How have you used Kafka to move batch work to consumers?",
+      "rationale": "The posting and the resume both point at this.",
+      "difficulty": "medium"
+    },
+    {
+      "category": "role_specific",
+      "question": "What would your first 90 days as backend engineer be?",
+      "rationale": "The posting and the resume both point at this.",
+      "difficulty": "medium"
+    },
+    {
+      "category": "behavioral",
+      "question": "Describe a disagreement about design and how it ended.",
+      "rationale": "The posting and the resume both point at this.",
+      "difficulty": "hard"
+    },
+    {
+      "category": "technical",
+      "question": "How do you keep a Spring Boot service observable?",
+      "rationale": "The posting and the resume both point at this.",
+      "difficulty": "easy"
+    },
+    {
+      "category": "role_specific",
+      "question": "How would you share on-call with a small team?",
+      "rationale": "The posting and the resume both point at this.",
+      "difficulty": "medium"
+    },
+    {
+      "category": "technical",
+      "question": "When would you choose PostgreSQL over a document store?",
+      "rationale": "The posting and the resume both point at this.",
+      "difficulty": "medium"
+    },
+    {
+      "category": "behavioral",
+      "question": "Tell me about a mistake you owned in production.",
+      "rationale": "The posting and the resume both point at this.",
+      "difficulty": "easy"
+    },
+    {
+      "category": "role_specific",
+      "question": "What does a reliable API mean to you?",
+      "rationale": "The posting and the resume both point at this.",
+      "difficulty": "hard"
+    }
+  ],
+  "brief": {
+    "sections": [
+      {
+        "id": "ROLE_OVERVIEW",
+        "title": "The role",
+        "claims": [
+          {
+            "statement": "The role builds backend services in Java and Spring Boot.",
+            "source": "job.description",
+            "evidence": "build Java and Spring Boot services on Kafka"
+          }
+        ]
+      },
+      {
+        "id": "COMPANY_FACTS",
+        "title": "The company",
+        "claims": [
+          {
+            "statement": "The company works in logistics software.",
+            "source": "company.industry",
+            "evidence": "Logistics software"
+          },
+          {
+            "statement": "The company has 201-500 people.",
+            "source": "company.size",
+            "evidence": "201-500"
+          }
+        ]
+      },
+      {
+        "id": "SKILLS_AND_TOOLS",
+        "title": "Skills and tools",
+        "claims": [
+          {
+            "statement": "The posting lists Java, Kafka and Kubernetes.",
+            "source": "job.skills",
+            "evidence": "Java, Kafka, Kubernetes"
+          }
+        ]
+      },
+      {
+        "id": "LOGISTICS_AND_PAY",
+        "title": "Location, terms and pay",
+        "claims": [
+          {
+            "statement": "The role is based in Lagos, Nigeria.",
+            "source": "job.location",
+            "evidence": "Lagos, Nigeria"
+          }
+        ]
+      }
+    ],
+    "unknowns": [
+      "The posting does not state the salary.",
+      "The company's culture, funding, leadership and recent news are not held by JobFinder, so this brief makes no statement about them.",
+      "The size of the engineering team is not stated."
+    ],
+    "dropped": []
+  },
+  "job_text_redactions": 0,
+  "company_redactions": 0,
+  "questions_dropped": 0,
+  "usage": [
+    {
+      "user_id": "00000000-0000-4000-8000-000000000001",
+      "feature": "interview_questions",
+      "provider": "fake",
+      "model": "fake-strong",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_usd": "0",
+      "latency_ms": 0,
+      "prompt_version": "interview/v1",
+      "call_id": "00000000-0000-4000-8000-0000000000c1",
+      "pricing_version": "fake"
+    },
+    {
+      "user_id": "00000000-0000-4000-8000-000000000001",
+      "feature": "interview_brief",
+      "provider": "fake",
+      "model": "fake-fast",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_usd": "0",
+      "latency_ms": 0,
+      "prompt_version": "interview/v1",
+      "call_id": "00000000-0000-4000-8000-0000000000c1",
+      "pricing_version": "fake"
+    }
+  ]
+}

@@ -276,3 +276,37 @@ def test_follow_up_email_with_an_invented_employer_matches_the_blocking_contract
 
     assert response.status_code == 200
     _pin("follow-up-email-blocked.json", _without_volatile(response.json()))
+
+
+def test_interview_prep_response_matches_the_contract_core_api_stubs(
+    client: TestClient, fake_provider: FakeProvider
+) -> None:
+    """A faithful prep: nine categorised questions and a brief whose claims all cite a field.
+
+    If this fails, the response shape of POST /v1/interview-prep changed. Update core-api's
+    AiInterviewClient if needed, then regenerate with UPDATE_CONTRACTS=1.
+    """
+    from tests.fixtures import interview as ix
+
+    fake_provider.queue(ix.questions_reply(), ix.brief_reply())
+
+    response = client.post("/v1/interview-prep", json=ix.request_body())
+
+    assert response.status_code == 200
+    _pin("interview-prep-ok.json", _without_volatile(response.json()))
+
+
+def test_interview_prep_with_an_injected_posting_matches_the_dropped_claims_contract(
+    client: TestClient, fake_provider: FakeProvider
+) -> None:
+    """A model that obeyed an injected instruction: the claims and question that were dropped."""
+    from tests.fixtures import interview as ix
+
+    fake_provider.queue(
+        ix.questions_reply(ix.obedient_questions()), ix.brief_reply(ix.obedient_brief())
+    )
+
+    response = client.post("/v1/interview-prep", json=ix.injected_request())
+
+    assert response.status_code == 200
+    _pin("interview-prep-injected.json", _without_volatile(response.json()))

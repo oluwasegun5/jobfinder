@@ -27,3 +27,14 @@ def load_prompt(feature: str, version: int) -> Prompt:
         raise ValueError(f"Invalid prompt reference {feature!r} v{version}")
     path = _PROMPTS_DIR / feature / f"v{version}.md"
     return Prompt(feature=feature, version=version, text=path.read_text(encoding="utf-8").strip())
+
+
+@lru_cache
+def load_named_prompt(feature: str, name: str, version: int) -> Prompt:
+    """A feature with several prompts (interview prep: questions and brief) keeps one file each,
+    `app/prompts/<feature>/<name>_v<n>.md`; they share the feature's version number, so
+    `interview/v1` means `questions_v1.md` and `brief_v1.md` together."""
+    if not _NAME.match(feature) or not _NAME.match(name) or version < 1:
+        raise ValueError(f"Invalid prompt reference {feature!r} {name!r} v{version}")
+    path = _PROMPTS_DIR / feature / f"{name}_v{version}.md"
+    return Prompt(feature=feature, version=version, text=path.read_text(encoding="utf-8").strip())
