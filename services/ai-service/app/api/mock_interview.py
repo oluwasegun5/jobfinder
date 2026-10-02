@@ -16,6 +16,7 @@ from app.interview.mock_schema import (
     MockTurnResponse,
 )
 from app.interview.mock_service import generate_summary, generate_turn
+from app.llm.deadline import run_with_deadline
 
 router = APIRouter(prefix="/v1/mock-interview", tags=["interview"])
 
@@ -24,7 +25,11 @@ router = APIRouter(prefix="/v1/mock-interview", tags=["interview"])
 async def mock_turn_route(
     body: MockTurnRequest, provider: LLMProviderDep, settings: SettingsDep
 ) -> MockTurnResponse:
-    outcome = await generate_turn(provider, settings, body)
+    outcome = await run_with_deadline(
+        provider,
+        settings.mock_interview_deadline_seconds,
+        lambda recording: generate_turn(recording, settings, body),
+    )
     return MockTurnResponse(
         prompt_version=outcome.prompt_version,
         model=outcome.model,
@@ -41,7 +46,11 @@ async def mock_turn_route(
 async def mock_summary_route(
     body: MockSummaryRequest, provider: LLMProviderDep, settings: SettingsDep
 ) -> MockSummaryResponse:
-    outcome = await generate_summary(provider, settings, body)
+    outcome = await run_with_deadline(
+        provider,
+        settings.mock_interview_deadline_seconds,
+        lambda recording: generate_summary(recording, settings, body),
+    )
     return MockSummaryResponse(
         prompt_version=outcome.prompt_version,
         model=outcome.model,

@@ -74,6 +74,11 @@ class LLMProviderError(LLMError):
         self.retryable = retryable
 
 
+class LLMDeadlineError(LLMError):
+    """The overall deadline of a request ran out. In-flight provider calls were cancelled; `usage`
+    lists the calls that had completed (and were billed) before that."""
+
+
 class LLMRefusalError(LLMError):
     """The model declined the request."""
 

@@ -4,6 +4,7 @@ from app.config import ProviderName, Settings
 from app.llm.anthropic_provider import AnthropicProvider
 from app.llm.base import (
     LLMConfigurationError,
+    LLMDeadlineError,
     LLMError,
     LLMOutputValidationError,
     LLMProvider,
@@ -40,6 +41,7 @@ __all__ = [
     "FakeProvider",
     "HeuristicProvider",
     "LLMConfigurationError",
+    "LLMDeadlineError",
     "LLMError",
     "LLMOutputValidationError",
     "LLMProvider",

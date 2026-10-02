@@ -40,6 +40,10 @@ def _default_pricing() -> dict[str, ModelPricing]:
     }
 
 
+# How far below core-api's read timeout a request deadline must stay (so the error arrives).
+DEADLINE_MARGIN_SECONDS = 5.0
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=None, extra="ignore", frozen=True)
 
@@ -128,7 +132,42 @@ class Settings(BaseSettings):
     core_api_base_url: str = "http://localhost:8080"
     core_api_timeout_seconds: float = Field(default=30.0, gt=0)
 
+    # Overall deadline per request, retries included, for /v1/interview-prep and for the mock
+    # interview turn and summary routes (docs/adr/0034-mock-interview.md, addendum). When it runs
+    # out, the model calls still running are cancelled and the request fails with 504
+    # `llm_deadline_exceeded` carrying the usage of the calls that had completed, so core-api can
+    # record them. Each deadline must stay below the read timeout core-api waits for that route,
+    # or core-api gives up first and never sees the usage: the two `core_api_*_read_timeout_seconds`
+    # settings mirror core-api's `app.interview.read-timeout` (150s) and
+    # `app.interview.mock.read-timeout` (90s), and the settings fail to load if a deadline is not
+    # at least DEADLINE_MARGIN_SECONDS below its read timeout.
+    interview_prep_deadline_seconds: float = Field(default=120.0, gt=0)
+    mock_interview_deadline_seconds: float = Field(default=75.0, gt=0)
+    core_api_interview_read_timeout_seconds: float = Field(default=150.0, gt=0)
+    core_api_mock_interview_read_timeout_seconds: float = Field(default=90.0, gt=0)
+
     log_level: str = "INFO"
+
+    @model_validator(mode="after")
+    def _deadlines_are_below_core_apis_read_timeouts(self) -> "Settings":
+        for name, deadline, read_timeout in (
+            (
+                "INTERVIEW_PREP_DEADLINE_SECONDS",
+                self.interview_prep_deadline_seconds,
+                self.core_api_interview_read_timeout_seconds,
+            ),
+            (
+                "MOCK_INTERVIEW_DEADLINE_SECONDS",
+                self.mock_interview_deadline_seconds,
+                self.core_api_mock_interview_read_timeout_seconds,
+            ),
+        ):
+            if deadline > read_timeout - DEADLINE_MARGIN_SECONDS:
+                raise ValueError(
+                    f"{name} ({deadline}s) must be at least {DEADLINE_MARGIN_SECONDS}s below "
+                    f"core-api's read timeout for that route ({read_timeout}s)"
+                )
+        return self
 
     @model_validator(mode="after")
     def _fake_embeddings_are_labelled(self) -> "Settings":

@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from app.api.schemas import UsageRecord
 from app.llm import (
     LLMConfigurationError,
+    LLMDeadlineError,
     LLMError,
     LLMOutputValidationError,
     LLMProviderError,
@@ -58,6 +59,17 @@ async def _handle_llm_error(request: Request, exc: Exception) -> JSONResponse:
         case LLMConfigurationError():
             return _problem(
                 503, "LLM provider not configured", str(exc), code="llm_not_configured", usage=usage
+            )
+        case LLMDeadlineError():
+            # Same problem shape as every other failure that carries usage: core-api records the
+            # usage and answers 503.
+            return _problem(
+                504,
+                "Request deadline exceeded",
+                "The request ran past its deadline; model calls still running were cancelled",
+                code="llm_deadline_exceeded",
+                retryable=True,
+                usage=usage,
             )
         case LLMProviderError():
             return _problem(

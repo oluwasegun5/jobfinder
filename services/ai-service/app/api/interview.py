@@ -8,6 +8,7 @@ from app.api.deps import LLMProviderDep, SettingsDep
 from app.api.schemas import UsageRecord
 from app.interview.schema import InterviewPrepRequest, InterviewPrepResponse
 from app.interview.service import generate_prep
+from app.llm.deadline import run_with_deadline
 
 router = APIRouter(prefix="/v1", tags=["interview"])
 
@@ -16,7 +17,11 @@ router = APIRouter(prefix="/v1", tags=["interview"])
 async def interview_prep_route(
     body: InterviewPrepRequest, provider: LLMProviderDep, settings: SettingsDep
 ) -> InterviewPrepResponse:
-    outcome = await generate_prep(provider, settings, body)
+    outcome = await run_with_deadline(
+        provider,
+        settings.interview_prep_deadline_seconds,
+        lambda recording: generate_prep(recording, settings, body),
+    )
     return InterviewPrepResponse(
         prompt_version=outcome.prompt_version,
         questions_model=outcome.questions_model,
