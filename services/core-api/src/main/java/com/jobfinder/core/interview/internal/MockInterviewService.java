@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -89,7 +90,7 @@ class MockInterviewService implements MockInterviews {
     // --- start ---
 
     @Override
-    public SessionView start(UUID userId, StartCommand command) {
+    public StartResult start(UUID userId, StartCommand command) {
         JobForBrief job = jobs.job(command.jobId()).orElseThrow(
                 () -> new ApiException(HttpStatus.NOT_FOUND, "job_not_found", "Job not found."));
         if (command.applicationId() != null) {
@@ -118,6 +119,14 @@ class MockInterviewService implements MockInterviews {
         }
         PersonaView persona = PersonaPicker.pick(job.title(), job.seniority());
 
+        // Idempotent per job: the abandon sweep first (a session that has gone stale is over and must not be resumed),
+        // then the open session if there is one. Before the allowance check and the model call, so a repeat is free.
+        sweep(userId);
+        Optional<SessionRow> open = store.findActiveForJob(userId, job.id());
+        if (open.isPresent()) {
+            return new StartResult(view(open.get(), store.turns(open.get().id())), false);
+        }
+
         NextQuestion opening;
         BigDecimal credits = BigDecimal.ZERO;
         if (!prepQuestions.isEmpty()) {
@@ -138,13 +147,20 @@ class MockInterviewService implements MockInterviews {
         Instant now = Instant.now(clock);
         BigDecimal spent = credits;
         NextQuestion first = opening;
-        tx.executeWithoutResult(status -> {
-            store.insertSession(id, userId, job.id(), clip(job.title(), 400), clip(job.company(), 400),
-                    command.applicationId(), command.prepId(), persona, maxTurns, properties.promptVersion(), spent,
-                    now);
-            store.insertInterviewerTurn(id, 0, first.question(), first.category(), first.source(), now);
-        });
-        return view(find(userId, id), store.turns(id));
+        try {
+            tx.executeWithoutResult(status -> {
+                store.insertSession(id, userId, job.id(), clip(job.title(), 400), clip(job.company(), 400),
+                        command.applicationId(), command.prepId(), persona, maxTurns, properties.promptVersion(),
+                        spent, now);
+                store.insertInterviewerTurn(id, 0, first.question(), first.category(), first.source(), now);
+            });
+        } catch (DuplicateKeyException e) {
+            // A concurrent start for the same job won the unique index (V31): hand back its session. This request's
+            // own model call, if it made one, is already in the ledger; it is not attributed to the winner.
+            SessionRow winner = store.findActiveForJob(userId, job.id()).orElseThrow(() -> e);
+            return new StartResult(view(winner, store.turns(winner.id())), false);
+        }
+        return new StartResult(view(find(userId, id), store.turns(id)), true);
     }
 
     // --- read ---

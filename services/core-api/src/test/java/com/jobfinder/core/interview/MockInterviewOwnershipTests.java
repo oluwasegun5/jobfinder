@@ -90,7 +90,8 @@ class MockInterviewOwnershipTests extends MockInterviewTestSupport {
         stubTurn(userIdOf(b), opening(UUID.randomUUID(), "0.004"));
         UUID job = prepJob();
         String first = idOf(start(a, job).andExpect(status().isCreated()));
-        String second = idOf(start(a, job).andExpect(status().isCreated()));
+        // A second interview for the same job would resume the first (one open session per job), so use another job.
+        String second = idOf(start(a, prepJob()).andExpect(status().isCreated()));
         String theirs = idOf(start(b, job).andExpect(status().isCreated()));
 
         String mine = body(listSessions(a, "").andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(2))

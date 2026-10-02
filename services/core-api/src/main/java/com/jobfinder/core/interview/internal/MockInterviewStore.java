@@ -81,6 +81,13 @@ class MockInterviewStore {
                 .param("id", id).param("userId", userId).query(this::session).optional();
     }
 
+    /** The user's ACTIVE session for the job, if any (at most one: see V31). */
+    Optional<SessionRow> findActiveForJob(UUID userId, UUID jobId) {
+        return jdbc.sql("select " + SESSION_COLUMNS
+                + " from interview_sessions where user_id = :userId and job_id = :jobId and status = 'ACTIVE'")
+                .param("userId", userId).param("jobId", jobId).query(this::session).optional();
+    }
+
     List<SessionRow> page(UUID userId, int limit, long offset) {
         return jdbc.sql("select " + SESSION_COLUMNS + """
                  from interview_sessions where user_id = :userId

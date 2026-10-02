@@ -120,3 +120,24 @@ over the behavioural answers only.
 - Lazy abandonment means an idle session shows as `ACTIVE` in the database until it is next touched; every read goes through
   the check, so no client sees the stale state.
 - Voice mode (P5.3) is not part of this decision.
+
+## Addendum: starting a session is idempotent per job (migration V31)
+Starting an interview twice for the same job (a double click, a reload, two tabs, a retry after a lost response) used to make
+two sessions and, without a prep, two billed first questions. Now there is at most one ACTIVE session per user and job:
+
+- A partial unique index, `uq_interview_sessions_active_job ON interview_sessions (user_id, job_id) WHERE status = 'ACTIVE'`
+  (V31). COMPLETED and ABANDONED sessions are outside it, so a finished or idle interview never stops a new one. V31 first marks
+  the older of any two ACTIVE rows for one user and job as ABANDONED, so the index can be built on a database that already
+  holds duplicates; nothing is deleted.
+- `POST /interview-sessions` runs the abandon sweep, then looks for the user's ACTIVE session for the job. If there is one it
+  is returned with **200** (a new session is still 201), with no model call and no charge, even when the daily cap is reached.
+  The application, prep and `maxTurns` of the repeated request are ignored: they belong to the session that exists, which keeps
+  its own limit and its progress. The request is still validated first (unknown job, application of another user, a prep for
+  another job), so the same bad input gets the same error either way. The sweep runs before the lookup, so a session that has
+  gone stale is abandoned and does not block the new start.
+- Concurrent starts race on the index. Both may pass the lookup; one insert wins, the other gets the duplicate-key error,
+  rolls back, and returns the winner's session (200). Known residual: when no prep is used, the loser has already made its own
+  first-question model call. That call is recorded in the ledger (it was billed) but is not attributed to the winner's
+  `credits_consumed`, which counts only the winner's own call. Closing this would need a reservation row before the model call;
+  the window is the length of one model call and a double start inside it is not worth the extra state.
+- The web start screen reads the status: on 200 it shows "Resuming your session…" and opens that session.

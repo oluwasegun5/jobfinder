@@ -18,15 +18,20 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public interface MockInterviews {
 
     /**
-     * Starts a session for the job. The first question comes from the stored prep when {@code prepId} is given (no
-     * model call), else from a model.
+     * Starts a session for the job, or resumes the one already open. The first question comes from the stored prep when
+     * {@code prepId} is given (no model call), else from a model.
+     *
+     * <p><b>Idempotent per job.</b> When the user already has an ACTIVE (and not abandoned) session for the job, that
+     * session is returned with {@code created == false}: no model call, nothing charged, and the application, prep and
+     * question count of the request are ignored (they belong to the session that exists). A COMPLETED or ABANDONED
+     * session never blocks a new start. Two concurrent starts end with one session; the loser gets the winner's.
      *
      * @throws com.jobfinder.core.shared.ApiException {@code job_not_found}, {@code application_not_found},
      *         {@code application_job_mismatch}, {@code interview_prep_not_found}, {@code prep_job_mismatch},
      *         {@code mock_interview_unavailable} (503); the daily cap ({@code ai_daily_cap_reached}, 429) is raised by
      *         the billing module
      */
-    SessionView start(UUID userId, StartCommand command);
+    StartResult start(UUID userId, StartCommand command);
 
     /** @throws com.jobfinder.core.shared.ApiException {@code interview_session_not_found} (404) if it is not the user's */
     SessionView get(UUID userId, UUID sessionId);
@@ -56,6 +61,10 @@ public interface MockInterviews {
 
     /** The user's sessions, newest first, without transcripts. */
     SessionPage list(UUID userId, int page, int size);
+
+    /** A started session, or the already open one ({@code created == false}). */
+    record StartResult(SessionView session, boolean created) {
+    }
 
     /** What the user asks for when starting a session. {@code maxTurns} is optional and never above the configured limit. */
     record StartCommand(UUID jobId, UUID applicationId, UUID prepId, Integer maxTurns) {
