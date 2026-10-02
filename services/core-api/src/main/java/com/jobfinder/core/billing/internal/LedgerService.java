@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.jobfinder.core.billing.AiCredits;
 import com.jobfinder.core.billing.AiUsage;
 import com.jobfinder.core.billing.AiUsageLedger;
 import com.jobfinder.core.billing.RecordOutcome;
@@ -24,7 +25,7 @@ import com.jobfinder.core.billing.internal.AiCallStore.Inserted;
  * without its debit.
  */
 @Service
-class LedgerService implements AiUsageLedger {
+class LedgerService implements AiUsageLedger, AiCredits {
 
     private static final Logger log = LoggerFactory.getLogger(LedgerService.class);
     private static final BigDecimal MICRO = BigDecimal.valueOf(1_000_000);
@@ -63,6 +64,11 @@ class LedgerService implements AiUsageLedger {
             store.debit(owner, id, credits, at);
         }
         return RecordOutcome.RECORDED;
+    }
+
+    @Override
+    public BigDecimal creditsFor(BigDecimal costUsd) {
+        return credits(toMicroUsd(costUsd));
     }
 
     /** The price of a call in credits: its cost over what one credit stands for, to six decimals. */
