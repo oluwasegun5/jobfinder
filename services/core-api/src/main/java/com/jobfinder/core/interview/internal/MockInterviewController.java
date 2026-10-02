@@ -18,6 +18,7 @@ import com.jobfinder.core.interview.MockInterviews.SessionPage;
 import com.jobfinder.core.interview.MockInterviews.SessionView;
 import com.jobfinder.core.interview.MockInterviews.StartCommand;
 
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -62,6 +63,7 @@ class MockInterviewController {
      * {@code ai_daily_cap_reached} (only when no prep is given: the first question then costs a model call), 503
      * {@code mock_interview_unavailable}.
      */
+    @Operation(operationId = "startInterviewSession")
     @PostMapping("/interview-sessions")
     ResponseEntity<SessionView> start(@RequestBody @Valid StartSessionRequest body) {
         SessionView view = sessions.start(CurrentUser.require().id(),
@@ -70,12 +72,14 @@ class MockInterviewController {
     }
 
     /** One of the caller's sessions with its transcript. 404 {@code interview_session_not_found}. */
+    @Operation(operationId = "getInterviewSession")
     @GetMapping("/interview-sessions/{id}")
     SessionView get(@PathVariable UUID id) {
         return sessions.get(CurrentUser.require().id(), id);
     }
 
     /** The caller's sessions, newest first, without transcripts. */
+    @Operation(operationId = "listInterviewSessions")
     @GetMapping("/interview-sessions")
     SessionPage list(@RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
@@ -91,6 +95,7 @@ class MockInterviewController {
      * {@code turn_limit_reached} / {@code idempotency_key_reused}, 429 {@code ai_daily_cap_reached}, 503
      * {@code mock_interview_unavailable}.
      */
+    @Operation(operationId = "answerInterviewSession")
     @PostMapping("/interview-sessions/{id}/answers")
     AnswerResult answer(@PathVariable UUID id, @RequestBody @Valid AnswerRequest body) {
         return sessions.answer(CurrentUser.require().id(), id, body.answer(), body.idempotencyKey());
@@ -101,6 +106,7 @@ class MockInterviewController {
      * steps, and the credits it consumed). Safe to repeat: a completed session is returned as it is. 404, 409
      * {@code interview_session_abandoned} / {@code nothing_to_summarise} / {@code answer_in_flight}, 429, 503.
      */
+    @Operation(operationId = "completeInterviewSession")
     @PostMapping("/interview-sessions/{id}/complete")
     SessionView complete(@PathVariable UUID id) {
         return sessions.complete(CurrentUser.require().id(), id);
