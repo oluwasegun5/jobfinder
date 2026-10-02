@@ -260,6 +260,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/jobs/{id}/screening-answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["screeningAnswers"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs/{id}/cover-letter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["coverLetter"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs/{id}/application-pack": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["createPack"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/documents/{id}/render": {
         parameters: {
             query?: never;
@@ -430,6 +478,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["forgotPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/application-packs/{id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["retryPack"];
         delete?: never;
         options?: never;
         head?: never;
@@ -668,6 +732,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["me"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/application-packs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listPacks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/application-packs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getPack"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1117,9 +1213,9 @@ export interface components {
             /** Format: uuid */
             id?: string;
             /** @enum {string} */
-            type?: "TAILORED_RESUME";
+            type?: "TAILORED_RESUME" | "COVER_LETTER" | "SCREENING_ANSWERS";
             /** @enum {string} */
-            status?: "GENERATING" | "DRAFT" | "FACT_CHECK_FAILED" | "APPROVED";
+            status?: "GENERATING" | "DRAFT" | "FACT_CHECK_FAILED" | "APPROVED" | "SUPERSEDED";
             job?: components["schemas"]["JobRef"];
             /** Format: uuid */
             baseResumeVersionId?: string;
@@ -1132,6 +1228,9 @@ export interface components {
             };
             changes?: components["schemas"]["ChangeView"][];
             factCheck?: components["schemas"]["FactCheckView"];
+            options?: {
+                [key: string]: unknown;
+            };
             /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
@@ -1162,6 +1261,61 @@ export interface components {
             title?: string;
             company?: string;
         };
+        WritingRequest: {
+            /** @enum {string} */
+            tone?: "FORMAL" | "WARM" | "CONCISE";
+            /** @enum {string} */
+            length?: "SHORT" | "STANDARD" | "LONG";
+            notes?: string;
+        };
+        PackRequest: {
+            /** @enum {string} */
+            tone?: "FORMAL" | "WARM" | "CONCISE";
+            /** @enum {string} */
+            length?: "SHORT" | "STANDARD" | "LONG";
+            notes?: string;
+            include?: ("TAILORED_RESUME" | "COVER_LETTER" | "SCREENING_ANSWERS")[];
+        };
+        PackOptions: {
+            /** @enum {string} */
+            tone?: "FORMAL" | "WARM" | "CONCISE";
+            /** @enum {string} */
+            length?: "SHORT" | "STANDARD" | "LONG";
+            notes?: string;
+            include?: ("TAILORED_RESUME" | "COVER_LETTER" | "SCREENING_ANSWERS")[];
+        };
+        PackResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            status?: "GENERATING" | "COMPLETE" | "PARTIAL" | "FAILED";
+            job?: components["schemas"]["JobRef"];
+            /** Format: uuid */
+            baseResumeVersionId?: string;
+            options?: components["schemas"]["PackOptions"];
+            parts?: components["schemas"]["PartView"][];
+            /** Format: int32 */
+            version?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        PartError: {
+            code?: string;
+            message?: string;
+            retryable?: boolean;
+            /** Format: date-time */
+            resetsAt?: string;
+        };
+        PartView: {
+            /** @enum {string} */
+            type?: "TAILORED_RESUME" | "COVER_LETTER" | "SCREENING_ANSWERS";
+            /** @enum {string} */
+            state?: "PENDING" | "READY" | "FAILED" | "BLOCKED_BY_CAP" | "MISSING";
+            document?: components["schemas"]["DraftResponse"];
+            error?: components["schemas"]["PartError"];
+        };
         TokenRequest: {
             token: string;
         };
@@ -1191,6 +1345,9 @@ export interface components {
         };
         GoogleLoginRequest: {
             idToken: string;
+        };
+        RetryRequest: {
+            parts?: ("TAILORED_RESUME" | "COVER_LETTER" | "SCREENING_ANSWERS")[];
         };
         AddTargetRequest: {
             source: string;
@@ -1400,9 +1557,9 @@ export interface components {
             /** Format: uuid */
             id?: string;
             /** @enum {string} */
-            type?: "TAILORED_RESUME";
+            type?: "TAILORED_RESUME" | "COVER_LETTER" | "SCREENING_ANSWERS";
             /** @enum {string} */
-            status?: "GENERATING" | "DRAFT" | "FACT_CHECK_FAILED" | "APPROVED";
+            status?: "GENERATING" | "DRAFT" | "FACT_CHECK_FAILED" | "APPROVED" | "SUPERSEDED";
             job?: components["schemas"]["JobRef"];
             /** Format: int32 */
             version?: number;
@@ -1448,6 +1605,22 @@ export interface components {
             email?: string;
             role?: string;
             emailVerified?: boolean;
+        };
+        PackList: {
+            items?: components["schemas"]["PackSummary"][];
+        };
+        PackSummary: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            status?: "GENERATING" | "COMPLETE" | "PARTIAL" | "FAILED";
+            job?: components["schemas"]["JobRef"];
+            /** Format: int32 */
+            version?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
         };
         IngestionSourceListResponse: {
             items?: components["schemas"]["IngestionSourceResponse"][];
@@ -2125,6 +2298,84 @@ export interface operations {
             };
         };
     };
+    screeningAnswers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["WritingRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DraftResponse"];
+                };
+            };
+        };
+    };
+    coverLetter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["WritingRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DraftResponse"];
+                };
+            };
+        };
+    };
+    createPack: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PackRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PackResponse"];
+                };
+            };
+        };
+    };
     renderDocument: {
         parameters: {
             query?: never;
@@ -2366,6 +2617,32 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    retryPack: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RetryRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PackResponse"];
+                };
             };
         };
     };
@@ -2685,7 +2962,8 @@ export interface operations {
         parameters: {
             query?: {
                 jobId?: string;
-                status?: "GENERATING" | "DRAFT" | "FACT_CHECK_FAILED" | "APPROVED";
+                type?: "TAILORED_RESUME" | "COVER_LETTER" | "SCREENING_ANSWERS";
+                status?: "GENERATING" | "DRAFT" | "FACT_CHECK_FAILED" | "APPROVED" | "SUPERSEDED";
                 limit?: number;
             };
             header?: never;
@@ -2786,6 +3064,51 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MeResponse"];
+                };
+            };
+        };
+    };
+    listPacks: {
+        parameters: {
+            query?: {
+                jobId?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PackList"];
+                };
+            };
+        };
+    };
+    getPack: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PackResponse"];
                 };
             };
         };

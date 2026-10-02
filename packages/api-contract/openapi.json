@@ -816,6 +816,126 @@
         }
       }
     },
+    "/jobs/{id}/screening-answers": {
+      "post": {
+        "tags": [
+          "writing-controller"
+        ],
+        "operationId": "screeningAnswers",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WritingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{id}/cover-letter": {
+      "post": {
+        "tags": [
+          "writing-controller"
+        ],
+        "operationId": "coverLetter",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WritingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{id}/application-pack": {
+      "post": {
+        "tags": [
+          "writing-controller"
+        ],
+        "operationId": "createPack",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/documents/{id}/render": {
       "post": {
         "tags": [
@@ -1095,6 +1215,46 @@
         }
       }
     },
+    "/application-packs/{id}/retry": {
+      "post": {
+        "tags": [
+          "writing-controller"
+        ],
+        "operationId": "retryPack",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/ingestion/targets": {
       "post": {
         "tags": [
@@ -1112,8 +1272,8 @@
           "required": true
         },
         "responses": {
-          "201": {
-            "description": "The target was created",
+          "200": {
+            "description": "The target already existed and was left as it was",
             "content": {
               "*/*": {
                 "schema": {
@@ -1122,8 +1282,8 @@
               }
             }
           },
-          "200": {
-            "description": "The target already existed and was left as it was",
+          "201": {
+            "description": "The target was created",
             "content": {
               "*/*": {
                 "schema": {
@@ -1820,6 +1980,19 @@
             }
           },
           {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "TAILORED_RESUME",
+                "COVER_LETTER",
+                "SCREENING_ANSWERS"
+              ]
+            }
+          },
+          {
             "name": "status",
             "in": "query",
             "required": false,
@@ -1829,7 +2002,8 @@
                 "GENERATING",
                 "DRAFT",
                 "FACT_CHECK_FAILED",
-                "APPROVED"
+                "APPROVED",
+                "SUPERSEDED"
               ]
             }
           },
@@ -1966,6 +2140,79 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/application-packs": {
+      "get": {
+        "tags": [
+          "writing-controller"
+        ],
+        "operationId": "listPacks",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 100,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/application-packs/{id}": {
+      "get": {
+        "tags": [
+          "writing-controller"
+        ],
+        "operationId": "getPack",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackResponse"
                 }
               }
             }
@@ -3346,7 +3593,9 @@
           "type": {
             "type": "string",
             "enum": [
-              "TAILORED_RESUME"
+              "TAILORED_RESUME",
+              "COVER_LETTER",
+              "SCREENING_ANSWERS"
             ]
           },
           "status": {
@@ -3355,7 +3604,8 @@
               "GENERATING",
               "DRAFT",
               "FACT_CHECK_FAILED",
-              "APPROVED"
+              "APPROVED",
+              "SUPERSEDED"
             ]
           },
           "job": {
@@ -3387,6 +3637,10 @@
           },
           "factCheck": {
             "$ref": "#/components/schemas/FactCheckView"
+          },
+          "options": {
+            "type": "object",
+            "additionalProperties": {}
           },
           "createdAt": {
             "type": "string",
@@ -3462,6 +3716,199 @@
           },
           "company": {
             "type": "string"
+          }
+        }
+      },
+      "WritingRequest": {
+        "type": "object",
+        "properties": {
+          "tone": {
+            "type": "string",
+            "enum": [
+              "FORMAL",
+              "WARM",
+              "CONCISE"
+            ]
+          },
+          "length": {
+            "type": "string",
+            "enum": [
+              "SHORT",
+              "STANDARD",
+              "LONG"
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 0
+          }
+        }
+      },
+      "PackRequest": {
+        "type": "object",
+        "properties": {
+          "tone": {
+            "type": "string",
+            "enum": [
+              "FORMAL",
+              "WARM",
+              "CONCISE"
+            ]
+          },
+          "length": {
+            "type": "string",
+            "enum": [
+              "SHORT",
+              "STANDARD",
+              "LONG"
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 0
+          },
+          "include": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "TAILORED_RESUME",
+                "COVER_LETTER",
+                "SCREENING_ANSWERS"
+              ]
+            },
+            "maxItems": 3,
+            "minItems": 0
+          }
+        }
+      },
+      "PackOptions": {
+        "type": "object",
+        "properties": {
+          "tone": {
+            "type": "string",
+            "enum": [
+              "FORMAL",
+              "WARM",
+              "CONCISE"
+            ]
+          },
+          "length": {
+            "type": "string",
+            "enum": [
+              "SHORT",
+              "STANDARD",
+              "LONG"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          },
+          "include": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "TAILORED_RESUME",
+                "COVER_LETTER",
+                "SCREENING_ANSWERS"
+              ]
+            }
+          }
+        }
+      },
+      "PackResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "GENERATING",
+              "COMPLETE",
+              "PARTIAL",
+              "FAILED"
+            ]
+          },
+          "job": {
+            "$ref": "#/components/schemas/JobRef"
+          },
+          "baseResumeVersionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "options": {
+            "$ref": "#/components/schemas/PackOptions"
+          },
+          "parts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartView"
+            }
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PartError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "resetsAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PartView": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "TAILORED_RESUME",
+              "COVER_LETTER",
+              "SCREENING_ANSWERS"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "READY",
+              "FAILED",
+              "BLOCKED_BY_CAP",
+              "MISSING"
+            ]
+          },
+          "document": {
+            "$ref": "#/components/schemas/DraftResponse"
+          },
+          "error": {
+            "$ref": "#/components/schemas/PartError"
           }
         }
       },
@@ -3578,6 +4025,24 @@
         "required": [
           "idToken"
         ]
+      },
+      "RetryRequest": {
+        "type": "object",
+        "properties": {
+          "parts": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "TAILORED_RESUME",
+                "COVER_LETTER",
+                "SCREENING_ANSWERS"
+              ]
+            },
+            "maxItems": 3,
+            "minItems": 0
+          }
+        }
       },
       "AddTargetRequest": {
         "type": "object",
@@ -4206,7 +4671,9 @@
           "type": {
             "type": "string",
             "enum": [
-              "TAILORED_RESUME"
+              "TAILORED_RESUME",
+              "COVER_LETTER",
+              "SCREENING_ANSWERS"
             ]
           },
           "status": {
@@ -4215,7 +4682,8 @@
               "GENERATING",
               "DRAFT",
               "FACT_CHECK_FAILED",
-              "APPROVED"
+              "APPROVED",
+              "SUPERSEDED"
             ]
           },
           "job": {
@@ -4330,6 +4798,50 @@
           },
           "emailVerified": {
             "type": "boolean"
+          }
+        }
+      },
+      "PackList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackSummary"
+            }
+          }
+        }
+      },
+      "PackSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "GENERATING",
+              "COMPLETE",
+              "PARTIAL",
+              "FAILED"
+            ]
+          },
+          "job": {
+            "$ref": "#/components/schemas/JobRef"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
