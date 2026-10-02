@@ -308,6 +308,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/interview-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listInterviewSessions"];
+        put?: never;
+        post: operations["startInterviewSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/interview-sessions/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["completeInterviewSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/interview-sessions/{id}/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["answerInterviewSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/interview-prep": {
         parameters: {
             query?: never;
@@ -732,6 +780,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["match"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/interview-sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getInterviewSession"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1444,6 +1508,121 @@ export interface components {
             document?: components["schemas"]["DraftResponse"];
             error?: components["schemas"]["PartError"];
         };
+        StartSessionRequest: {
+            /** Format: uuid */
+            jobId: string;
+            /** Format: uuid */
+            applicationId?: string;
+            /** Format: uuid */
+            prepId?: string;
+            /** Format: int32 */
+            maxTurns?: number;
+        };
+        AveragesView: {
+            /** Format: double */
+            structure?: number;
+            /** Format: double */
+            relevance?: number;
+            /** Format: double */
+            specificity?: number;
+            /** Format: double */
+            starCompleteness?: number;
+            /** Format: double */
+            overall?: number;
+        };
+        FeedbackView: {
+            /** Format: int32 */
+            structure?: number;
+            /** Format: int32 */
+            relevance?: number;
+            /** Format: int32 */
+            specificity?: number;
+            star?: components["schemas"]["StarView"];
+            /** Format: int32 */
+            overall?: number;
+            strengths?: components["schemas"]["PointView"][];
+            improvements?: components["schemas"]["PointView"][];
+            evidence?: string[];
+        };
+        PersonaView: {
+            interviewer?: string;
+            function?: string;
+            seniority?: string;
+            tone?: string;
+            questionStyle?: string;
+        };
+        PointView: {
+            text?: string;
+            quote?: string;
+        };
+        SessionView: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            jobId?: string;
+            jobTitle?: string;
+            jobCompany?: string;
+            /** Format: uuid */
+            applicationId?: string;
+            /** Format: uuid */
+            prepId?: string;
+            mode?: string;
+            persona?: components["schemas"]["PersonaView"];
+            status?: string;
+            /** Format: int32 */
+            maxTurns?: number;
+            /** Format: int32 */
+            turnsAnswered?: number;
+            creditsConsumed?: number;
+            promptVersion?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            completedAt?: string;
+            openQuestion?: components["schemas"]["TurnView"];
+            turns?: components["schemas"]["TurnView"][];
+            summary?: components["schemas"]["SummaryView"];
+        };
+        StarView: {
+            /** Format: int32 */
+            score?: number;
+            situation?: boolean;
+            task?: boolean;
+            action?: boolean;
+            result?: boolean;
+        };
+        SummaryView: {
+            /** Format: int32 */
+            turnsAnswered?: number;
+            averages?: components["schemas"]["AveragesView"];
+            topStrengths?: string[];
+            topImprovements?: string[];
+            narrative?: string;
+            nextSteps?: string[];
+            model?: string;
+            creditsConsumed?: number;
+        };
+        TurnView: {
+            /** Format: int32 */
+            position?: number;
+            role?: string;
+            content?: string;
+            category?: string;
+            source?: string;
+            feedback?: components["schemas"]["FeedbackView"];
+            /** Format: date-time */
+            createdAt?: string;
+        };
+        AnswerRequest: {
+            answer: string;
+            idempotencyKey: string;
+        };
+        AnswerResult: {
+            turn?: components["schemas"]["TurnView"];
+            nextQuestion?: components["schemas"]["TurnView"];
+            summary?: components["schemas"]["SummaryView"];
+            session?: components["schemas"]["SessionView"];
+        };
         GeneratePrepRequest: {
             /** Format: uuid */
             jobId: string;
@@ -1774,6 +1953,41 @@ export interface components {
             promptVersion?: string;
             /** Format: date-time */
             scoredAt?: string;
+        };
+        SessionPage: {
+            items?: components["schemas"]["SessionSummary"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+        };
+        SessionSummary: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            jobId?: string;
+            jobTitle?: string;
+            jobCompany?: string;
+            /** Format: uuid */
+            applicationId?: string;
+            /** Format: uuid */
+            prepId?: string;
+            status?: string;
+            /** Format: int32 */
+            maxTurns?: number;
+            /** Format: int32 */
+            turnsAnswered?: number;
+            creditsConsumed?: number;
+            /** Format: double */
+            overall?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            completedAt?: string;
         };
         AdjustmentReason: {
             /** @enum {string} */
@@ -2708,6 +2922,101 @@ export interface operations {
             };
         };
     };
+    listInterviewSessions: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SessionPage"];
+                };
+            };
+        };
+    };
+    startInterviewSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SessionView"];
+                };
+            };
+        };
+    };
+    completeInterviewSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SessionView"];
+                };
+            };
+        };
+    };
+    answerInterviewSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AnswerResult"];
+                };
+            };
+        };
+    };
     generate: {
         parameters: {
             query?: never;
@@ -3503,6 +3812,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MatchResponse"];
+                };
+            };
+        };
+    };
+    getInterviewSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SessionView"];
                 };
             };
         };
