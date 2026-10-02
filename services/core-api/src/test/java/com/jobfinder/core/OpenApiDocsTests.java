@@ -122,4 +122,17 @@ class OpenApiDocsTests {
 				"\"SCREENING_ANSWERS\"", "\"BLOCKED_BY_CAP\"", "\"SUPERSEDED\"");
 	}
 
+	@Test
+	void apiDocsDescribeTheApplicationTracker() throws Exception {
+		String body = mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(status().isOk())
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+
+		assertThat(body).contains("\"/applications\"", "\"/applications/{id}\"", "\"/applications/{id}/status\"",
+				"\"/applications/{id}/reminders\"", "\"/applications/{id}/reminders/{reminderId}\"",
+				"\"/applications/{id}/follow-up-draft\"", "ApplicationDetail", "EventView", "ReminderView",
+				"FollowUpDraft", "\"WITHDRAWN\"", "\"SCREENING\"", "\"INTERVIEW\"");
+	}
 }
