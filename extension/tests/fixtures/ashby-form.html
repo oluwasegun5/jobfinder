@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Backend Engineer @ Example Corp</title>
+  <!-- Synthetic fixture shaped like an Ashby application form. No real company or person. -->
+</head>
+<body>
+<div id="root">
+  <form class="ashby-application-form" novalidate>
+    <div class="_fieldEntry"><label class="_label" for="_systemfield_name">Name</label>
+      <input id="_systemfield_name" name="_systemfield_name" type="text" required></div>
+    <div class="_fieldEntry"><label class="_label" for="_systemfield_email">Email</label>
+      <input id="_systemfield_email" name="_systemfield_email" type="email" required></div>
+    <div class="_fieldEntry"><label class="_label" for="f-phone">Phone number</label>
+      <input id="f-phone" name="f-phone" type="tel"></div>
+    <div class="_fieldEntry"><label class="_label" for="f-location">Where are you currently located?</label>
+      <input id="f-location" name="f-location" type="text"></div>
+    <div class="_fieldEntry"><label class="_label" for="_systemfield_resume">Resume</label>
+      <input id="_systemfield_resume" name="_systemfield_resume" type="file" style="display:none"></div>
+    <div class="_fieldEntry"><label class="_label" for="f-linkedin">LinkedIn Profile</label>
+      <input id="f-linkedin" name="f-linkedin" type="text"></div>
+    <div class="_fieldEntry"><label class="_label" for="f-why">Why do you want to work at Example Corp?</label>
+      <textarea id="f-why" name="f-why"></textarea></div>
+    <fieldset class="_fieldEntry">
+      <legend>Are you legally authorized to work in the United States?</legend>
+      <label><input type="radio" name="f-auth" value="yes"> Yes</label>
+      <label><input type="radio" name="f-auth" value="no"> No</label>
+    </fieldset>
+    <fieldset class="_fieldEntry">
+      <legend>Gender</legend>
+      <label><input type="radio" name="f-gender" value="f"> Female</label>
+      <label><input type="radio" name="f-gender" value="m"> Male</label>
+      <label><input type="radio" name="f-gender" value="x"> Decline to self-identify</label>
+    </fieldset>
+    <button type="submit" id="submit-btn">Submit Application</button>
+  </form>
+</div>
+</body>
+</html>

@@ -308,6 +308,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/interview-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listInterviewSessions"];
+        put?: never;
+        post: operations["startInterviewSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/interview-sessions/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["completeInterviewSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/interview-sessions/{id}/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["answerInterviewSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/interview-prep": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["generate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/documents/{id}/render": {
         parameters: {
             query?: never;
@@ -724,6 +788,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/interview-sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getInterviewSession"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/interview-prep/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/feed": {
         parameters: {
             query?: never;
@@ -732,6 +828,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["feed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/extension/apply-context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["applyContext"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1412,6 +1524,163 @@ export interface components {
             document?: components["schemas"]["DraftResponse"];
             error?: components["schemas"]["PartError"];
         };
+        AveragesView: {
+            /** Format: double */
+            structure?: number;
+            /** Format: double */
+            relevance?: number;
+            /** Format: double */
+            specificity?: number;
+            /** Format: double */
+            starCompleteness?: number;
+            /** Format: double */
+            overall?: number;
+        };
+        FeedbackView: {
+            /** Format: int32 */
+            structure?: number;
+            /** Format: int32 */
+            relevance?: number;
+            /** Format: int32 */
+            specificity?: number;
+            star?: components["schemas"]["StarView"];
+            /** Format: int32 */
+            overall?: number;
+            strengths?: components["schemas"]["PointView"][];
+            improvements?: components["schemas"]["PointView"][];
+            evidence?: string[];
+        };
+        PersonaView: {
+            interviewer?: string;
+            function?: string;
+            seniority?: string;
+            tone?: string;
+            questionStyle?: string;
+        };
+        PointView: {
+            text?: string;
+            quote?: string;
+        };
+        SessionView: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            jobId?: string;
+            jobTitle?: string;
+            jobCompany?: string;
+            /** Format: uuid */
+            applicationId?: string;
+            /** Format: uuid */
+            prepId?: string;
+            mode?: string;
+            persona?: components["schemas"]["PersonaView"];
+            status?: string;
+            /** Format: int32 */
+            maxTurns?: number;
+            /** Format: int32 */
+            turnsAnswered?: number;
+            creditsConsumed?: number;
+            promptVersion?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            completedAt?: string;
+            openQuestion?: components["schemas"]["TurnView"];
+            turns?: components["schemas"]["TurnView"][];
+            summary?: components["schemas"]["SummaryView"];
+        };
+        StarView: {
+            /** Format: int32 */
+            score?: number;
+            situation?: boolean;
+            task?: boolean;
+            action?: boolean;
+            result?: boolean;
+        };
+        SummaryView: {
+            /** Format: int32 */
+            turnsAnswered?: number;
+            averages?: components["schemas"]["AveragesView"];
+            topStrengths?: string[];
+            topImprovements?: string[];
+            narrative?: string;
+            nextSteps?: string[];
+            model?: string;
+            creditsConsumed?: number;
+        };
+        TurnView: {
+            /** Format: int32 */
+            position?: number;
+            role?: string;
+            content?: string;
+            category?: string;
+            source?: string;
+            feedback?: components["schemas"]["FeedbackView"];
+            /** Format: date-time */
+            createdAt?: string;
+        };
+        StartSessionRequest: {
+            /** Format: uuid */
+            jobId: string;
+            /** Format: uuid */
+            applicationId?: string;
+            /** Format: uuid */
+            prepId?: string;
+            /** Format: int32 */
+            maxTurns?: number;
+        };
+        AnswerRequest: {
+            answer: string;
+            idempotencyKey: string;
+        };
+        AnswerResult: {
+            turn?: components["schemas"]["TurnView"];
+            nextQuestion?: components["schemas"]["TurnView"];
+            summary?: components["schemas"]["SummaryView"];
+            session?: components["schemas"]["SessionView"];
+        };
+        GeneratePrepRequest: {
+            /** Format: uuid */
+            jobId: string;
+        };
+        BriefClaimView: {
+            statement?: string;
+            source?: string;
+            evidence?: string;
+        };
+        BriefSectionView: {
+            id?: string;
+            title?: string;
+            claims?: components["schemas"]["BriefClaimView"][];
+        };
+        CompanyBriefView: {
+            model?: string;
+            sections?: components["schemas"]["BriefSectionView"][];
+            unknowns?: string[];
+            /** Format: int32 */
+            droppedClaims?: number;
+        };
+        InterviewPrepView: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            jobId?: string;
+            jobTitle?: string;
+            jobCompany?: string;
+            status?: string;
+            promptVersion?: string;
+            model?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            questions?: components["schemas"]["InterviewQuestionView"][];
+            companyBrief?: components["schemas"]["CompanyBriefView"];
+        };
+        InterviewQuestionView: {
+            category?: string;
+            question?: string;
+            rationale?: string;
+            difficulty?: string;
+        };
         TokenRequest: {
             token: string;
         };
@@ -1701,6 +1970,41 @@ export interface components {
             /** Format: date-time */
             scoredAt?: string;
         };
+        SessionPage: {
+            items?: components["schemas"]["SessionSummary"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+        };
+        SessionSummary: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            jobId?: string;
+            jobTitle?: string;
+            jobCompany?: string;
+            /** Format: uuid */
+            applicationId?: string;
+            /** Format: uuid */
+            prepId?: string;
+            status?: string;
+            /** Format: int32 */
+            maxTurns?: number;
+            /** Format: int32 */
+            turnsAnswered?: number;
+            creditsConsumed?: number;
+            /** Format: double */
+            overall?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            completedAt?: string;
+        };
         AdjustmentReason: {
             /** @enum {string} */
             code?: "HIDDEN_SAME_COMPANY" | "HIDDEN_SIMILAR_TITLE" | "SAVED_SAME_COMPANY" | "SAVED_SIMILAR_TITLE" | "APPLIED_SAME_COMPANY" | "APPLIED_SIMILAR_TITLE" | "PENALTY_CAPPED" | "BOOST_CAPPED";
@@ -1764,6 +2068,27 @@ export interface components {
             max?: number;
             currency?: string;
             period?: string;
+        };
+        ApplyContext: {
+            job?: components["schemas"]["ApplyContextJob"];
+            /** Format: uuid */
+            applicationId?: string;
+            /** @enum {string} */
+            applicationStatus?: "SAVED" | "APPLIED" | "SCREENING" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN";
+            packSummary?: components["schemas"]["ApplyContextPack"];
+        };
+        ApplyContextJob: {
+            /** Format: uuid */
+            id?: string;
+            title?: string;
+            company?: string;
+        };
+        ApplyContextPack: {
+            /** Format: uuid */
+            id?: string;
+            status?: string;
+            /** Format: int32 */
+            version?: number;
         };
         ListResponse: {
             items?: components["schemas"]["SummaryResponse"][];
@@ -2634,6 +2959,134 @@ export interface operations {
             };
         };
     };
+    listInterviewSessions: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SessionPage"];
+                };
+            };
+        };
+    };
+    startInterviewSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description The caller already had an open session for the job: it is returned as it is, with no model call and no charge */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SessionView"];
+                };
+            };
+            /** @description A new session was started */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SessionView"];
+                };
+            };
+        };
+    };
+    completeInterviewSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SessionView"];
+                };
+            };
+        };
+    };
+    answerInterviewSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AnswerResult"];
+                };
+            };
+        };
+    };
+    generate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeneratePrepRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InterviewPrepView"];
+                };
+            };
+        };
+    };
     renderDocument: {
         parameters: {
             query?: never;
@@ -3409,6 +3862,50 @@ export interface operations {
             };
         };
     };
+    getInterviewSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SessionView"];
+                };
+            };
+        };
+    };
+    get_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InterviewPrepView"];
+                };
+            };
+        };
+    };
     feed: {
         parameters: {
             query?: {
@@ -3428,6 +3925,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["FeedPage"];
+                };
+            };
+        };
+    };
+    applyContext: {
+        parameters: {
+            query: {
+                url: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApplyContext"];
                 };
             };
         };

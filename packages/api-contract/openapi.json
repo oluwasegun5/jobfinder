@@ -936,6 +936,191 @@
         }
       }
     },
+    "/interview-sessions": {
+      "get": {
+        "tags": [
+          "mock-interview-controller"
+        ],
+        "operationId": "listInterviewSessions",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionPage"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "mock-interview-controller"
+        ],
+        "operationId": "startInterviewSession",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartSessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The caller already had an open session for the job: it is returned as it is, with no model call and no charge",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionView"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "A new session was started",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/interview-sessions/{id}/complete": {
+      "post": {
+        "tags": [
+          "mock-interview-controller"
+        ],
+        "operationId": "completeInterviewSession",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/interview-sessions/{id}/answers": {
+      "post": {
+        "tags": [
+          "mock-interview-controller"
+        ],
+        "operationId": "answerInterviewSession",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnswerResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/interview-prep": {
+      "post": {
+        "tags": [
+          "interview-controller"
+        ],
+        "operationId": "generate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratePrepRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterviewPrepView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/documents/{id}/render": {
       "post": {
         "tags": [
@@ -2253,6 +2438,68 @@
         }
       }
     },
+    "/interview-sessions/{id}": {
+      "get": {
+        "tags": [
+          "mock-interview-controller"
+        ],
+        "operationId": "getInterviewSession",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/interview-prep/{id}": {
+      "get": {
+        "tags": [
+          "interview-controller"
+        ],
+        "operationId": "get_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterviewPrepView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/feed": {
       "get": {
         "tags": [
@@ -2289,6 +2536,38 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/FeedPage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/extension/apply-context": {
+      "get": {
+        "tags": [
+          "extension-controller"
+        ],
+        "operationId": "applyContext",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 2000,
+              "minLength": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplyContext"
                 }
               }
             }
@@ -4278,6 +4557,450 @@
           }
         }
       },
+      "AveragesView": {
+        "type": "object",
+        "properties": {
+          "structure": {
+            "type": "number",
+            "format": "double"
+          },
+          "relevance": {
+            "type": "number",
+            "format": "double"
+          },
+          "specificity": {
+            "type": "number",
+            "format": "double"
+          },
+          "starCompleteness": {
+            "type": "number",
+            "format": "double"
+          },
+          "overall": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "FeedbackView": {
+        "type": "object",
+        "properties": {
+          "structure": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "relevance": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "specificity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "star": {
+            "$ref": "#/components/schemas/StarView"
+          },
+          "overall": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "strengths": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PointView"
+            }
+          },
+          "improvements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PointView"
+            }
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PersonaView": {
+        "type": "object",
+        "properties": {
+          "interviewer": {
+            "type": "string"
+          },
+          "function": {
+            "type": "string"
+          },
+          "seniority": {
+            "type": "string"
+          },
+          "tone": {
+            "type": "string"
+          },
+          "questionStyle": {
+            "type": "string"
+          }
+        }
+      },
+      "PointView": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "quote": {
+            "type": "string"
+          }
+        }
+      },
+      "SessionView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jobTitle": {
+            "type": "string"
+          },
+          "jobCompany": {
+            "type": "string"
+          },
+          "applicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "prepId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "persona": {
+            "$ref": "#/components/schemas/PersonaView"
+          },
+          "status": {
+            "type": "string"
+          },
+          "maxTurns": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "turnsAnswered": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "creditsConsumed": {
+            "type": "number"
+          },
+          "promptVersion": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "openQuestion": {
+            "$ref": "#/components/schemas/TurnView"
+          },
+          "turns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TurnView"
+            }
+          },
+          "summary": {
+            "$ref": "#/components/schemas/SummaryView"
+          }
+        }
+      },
+      "StarView": {
+        "type": "object",
+        "properties": {
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "situation": {
+            "type": "boolean"
+          },
+          "task": {
+            "type": "boolean"
+          },
+          "action": {
+            "type": "boolean"
+          },
+          "result": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SummaryView": {
+        "type": "object",
+        "properties": {
+          "turnsAnswered": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "averages": {
+            "$ref": "#/components/schemas/AveragesView"
+          },
+          "topStrengths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "topImprovements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "narrative": {
+            "type": "string"
+          },
+          "nextSteps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "model": {
+            "type": "string"
+          },
+          "creditsConsumed": {
+            "type": "number"
+          }
+        }
+      },
+      "TurnView": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "role": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "feedback": {
+            "$ref": "#/components/schemas/FeedbackView"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "StartSessionRequest": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "applicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "prepId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "maxTurns": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 20,
+            "minimum": 1
+          }
+        },
+        "required": [
+          "jobId"
+        ]
+      },
+      "AnswerRequest": {
+        "type": "object",
+        "properties": {
+          "answer": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 0
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 8,
+            "pattern": "[A-Za-z0-9_-]+"
+          }
+        },
+        "required": [
+          "answer",
+          "idempotencyKey"
+        ]
+      },
+      "AnswerResult": {
+        "type": "object",
+        "properties": {
+          "turn": {
+            "$ref": "#/components/schemas/TurnView"
+          },
+          "nextQuestion": {
+            "$ref": "#/components/schemas/TurnView"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/SummaryView"
+          },
+          "session": {
+            "$ref": "#/components/schemas/SessionView"
+          }
+        }
+      },
+      "GeneratePrepRequest": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "jobId"
+        ]
+      },
+      "BriefClaimView": {
+        "type": "object",
+        "properties": {
+          "statement": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "string"
+          }
+        }
+      },
+      "BriefSectionView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "claims": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BriefClaimView"
+            }
+          }
+        }
+      },
+      "CompanyBriefView": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BriefSectionView"
+            }
+          },
+          "unknowns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "droppedClaims": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "InterviewPrepView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jobTitle": {
+            "type": "string"
+          },
+          "jobCompany": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "promptVersion": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InterviewQuestionView"
+            }
+          },
+          "companyBrief": {
+            "$ref": "#/components/schemas/CompanyBriefView"
+          }
+        }
+      },
+      "InterviewQuestionView": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "difficulty": {
+            "type": "string"
+          }
+        }
+      },
       "TokenRequest": {
         "type": "object",
         "properties": {
@@ -5200,6 +5923,86 @@
           }
         }
       },
+      "SessionPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionSummary"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "SessionSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jobTitle": {
+            "type": "string"
+          },
+          "jobCompany": {
+            "type": "string"
+          },
+          "applicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "prepId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "maxTurns": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "turnsAnswered": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "creditsConsumed": {
+            "type": "number"
+          },
+          "overall": {
+            "type": "number",
+            "format": "double"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "AdjustmentReason": {
         "type": "object",
         "properties": {
@@ -5391,6 +6194,64 @@
           },
           "period": {
             "type": "string"
+          }
+        }
+      },
+      "ApplyContext": {
+        "type": "object",
+        "properties": {
+          "job": {
+            "$ref": "#/components/schemas/ApplyContextJob"
+          },
+          "applicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "applicationStatus": {
+            "type": "string",
+            "enum": [
+              "SAVED",
+              "APPLIED",
+              "SCREENING",
+              "INTERVIEW",
+              "OFFER",
+              "REJECTED",
+              "WITHDRAWN"
+            ]
+          },
+          "packSummary": {
+            "$ref": "#/components/schemas/ApplyContextPack"
+          }
+        }
+      },
+      "ApplyContextJob": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          }
+        }
+      },
+      "ApplyContextPack": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

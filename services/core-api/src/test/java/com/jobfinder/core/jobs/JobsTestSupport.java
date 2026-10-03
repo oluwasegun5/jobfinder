@@ -69,6 +69,7 @@ public abstract class JobsTestSupport extends AuthTestSupport {
         /** Posted this long ago, and first seen then. */
         public JobSpec postedAt(Instant v) { postedAt = v; createdAt = v; return this; }
         public JobSpec status(String v) { status = v; return this; }
+        public JobSpec applyUrl(String v) { applyUrl = v; return this; }
         public JobSpec skills(String... v) { skills = v; return this; }
         public JobSpec embedding(double[] v) { embedding = v; return this; }
     }

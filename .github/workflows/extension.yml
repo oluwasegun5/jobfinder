@@ -1,0 +1,59 @@
+name: extension
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "extension/**"
+      - "packages/api-contract/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/extension.yml"
+  pull_request:
+    paths:
+      - "extension/**"
+      - "packages/api-contract/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/extension.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint -w @jobfinder/extension
+
+      - name: Typecheck
+        run: npm run typecheck -w @jobfinder/extension
+
+      - name: Unit tests
+        run: npm run test -w @jobfinder/extension
+
+      - name: Build
+        run: npm run build -w @jobfinder/extension
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # Loads the built extension in a real Chromium against a local stub core-api (headless, no display needed).
+      - name: End-to-end tests
+        run: npm run test:e2e -w @jobfinder/extension

@@ -1,0 +1,16 @@
+:root { color-scheme: light dark; }
+body { margin: 0; width: 320px; font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { padding: 14px; }
+h1 { font-size: 16px; margin: 0 0 8px; }
+form, section { display: grid; gap: 10px; }
+label { display: grid; gap: 4px; }
+input { font: inherit; padding: 8px; border-radius: 6px; border: 1px solid #9ca3af; }
+button { font: inherit; padding: 8px 12px; border-radius: 8px; border: 1px solid #9ca3af; cursor: pointer; background: transparent; color: inherit; }
+button.primary { background: #166534; border-color: #166534; color: #fff; }
+button:focus-visible, input:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+button[disabled] { opacity: .6; cursor: default; }
+#status:empty { display: none; }
+#status { padding: 8px 10px; border-radius: 8px; background: #f3f4f6; color: #111827; }
+#status.error { background: #fee2e2; color: #7f1d1d; }
+.note { font-size: 12px; opacity: .8; }
+[hidden] { display: none !important; }

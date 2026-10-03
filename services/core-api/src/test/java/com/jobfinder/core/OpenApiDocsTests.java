@@ -47,6 +47,31 @@ class OpenApiDocsTests {
 	}
 
 	@Test
+	void apiDocsDescribeTheMockInterviewEndpoints() throws Exception {
+		String body = mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(status().isOk())
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+
+		assertThat(body).contains("\"/interview-sessions\"", "\"/interview-sessions/{id}\"",
+				"\"/interview-sessions/{id}/answers\"", "\"/interview-sessions/{id}/complete\"", "StartSessionRequest",
+				"AnswerRequest", "AnswerResult", "SessionView", "SessionPage", "FeedbackView", "SummaryView");
+	}
+
+	@Test
+	void apiDocsDescribeTheInterviewPrepEndpoints() throws Exception {
+		String body = mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(status().isOk())
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+
+		assertThat(body).contains("\"/interview-prep\"", "\"/interview-prep/{id}\"", "GeneratePrepRequest",
+				"InterviewPrepView", "CompanyBriefView", "BriefClaimView");
+	}
+
+	@Test
 	void apiDocsDescribeTheJobSearchEndpoints() throws Exception {
 		String body = mockMvc.perform(get("/v3/api-docs"))
 				.andExpect(status().isOk())

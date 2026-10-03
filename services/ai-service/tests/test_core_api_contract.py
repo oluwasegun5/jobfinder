@@ -276,3 +276,84 @@ def test_follow_up_email_with_an_invented_employer_matches_the_blocking_contract
 
     assert response.status_code == 200
     _pin("follow-up-email-blocked.json", _without_volatile(response.json()))
+
+
+def test_interview_prep_response_matches_the_contract_core_api_stubs(
+    client: TestClient, fake_provider: FakeProvider
+) -> None:
+    """A faithful prep: nine categorised questions and a brief whose claims all cite a field.
+
+    If this fails, the response shape of POST /v1/interview-prep changed. Update core-api's
+    AiInterviewClient if needed, then regenerate with UPDATE_CONTRACTS=1.
+    """
+    from tests.fixtures import interview as ix
+
+    fake_provider.queue(ix.questions_reply(), ix.brief_reply())
+
+    response = client.post("/v1/interview-prep", json=ix.request_body())
+
+    assert response.status_code == 200
+    _pin("interview-prep-ok.json", _without_volatile(response.json()))
+
+
+def test_interview_prep_with_an_injected_posting_matches_the_dropped_claims_contract(
+    client: TestClient, fake_provider: FakeProvider
+) -> None:
+    """A model that obeyed an injected instruction: the claims and question that were dropped."""
+    from tests.fixtures import interview as ix
+
+    fake_provider.queue(
+        ix.questions_reply(ix.obedient_questions()), ix.brief_reply(ix.obedient_brief())
+    )
+
+    response = client.post("/v1/interview-prep", json=ix.injected_request())
+
+    assert response.status_code == 200
+    _pin("interview-prep-injected.json", _without_volatile(response.json()))
+
+
+def test_mock_interview_turn_responses_match_the_contracts_core_api_stubs(
+    client: TestClient, fake_provider: FakeProvider
+) -> None:
+    """Feedback with the next question, feedback alone (the last turn), an opening question, and
+    the feedback of a model that obeyed an injected sentence in the answer.
+
+    If this fails, the response shape of POST /v1/mock-interview/turn changed. Update core-api's
+    AiMockInterviewClient if needed, then regenerate with UPDATE_CONTRACTS=1.
+    """
+    from tests.fixtures import mock_interview as mx
+
+    path = "/v1/mock-interview/turn"
+    fake_provider.queue(mx.turn_reply(question=mx.next_question()))
+    response = client.post(path, json=mx.request_body())
+    assert response.status_code == 200
+    _pin("mock-turn-ok.json", _without_volatile(response.json()))
+
+    fake_provider.queue(mx.turn_reply())
+    response = client.post(path, json=mx.request_body(need_next=False))
+    assert response.status_code == 200
+    _pin("mock-turn-last.json", _without_volatile(response.json()))
+
+    fake_provider.queue(mx.opening_reply())
+    response = client.post(path, json=mx.request_body(answer=None, asked=[]))
+    assert response.status_code == 200
+    _pin("mock-opening-ok.json", _without_volatile(response.json()))
+
+    fake_provider.queue(mx.turn_reply(fb=mx.obedient_feedback()))
+    response = client.post(
+        path,
+        json=mx.request_body(answer=mx.answering(mx.INJECTED_ANSWER), need_next=False),
+    )
+    assert response.status_code == 200
+    _pin("mock-turn-injected.json", _without_volatile(response.json()))
+
+
+def test_mock_interview_summary_response_matches_the_contract_core_api_stubs(
+    client: TestClient, fake_provider: FakeProvider
+) -> None:
+    from tests.fixtures import mock_interview as mx
+
+    fake_provider.queue(mx.summary_reply())
+    response = client.post("/v1/mock-interview/summary", json=mx.summary_request())
+    assert response.status_code == 200
+    _pin("mock-summary-ok.json", _without_volatile(response.json()))

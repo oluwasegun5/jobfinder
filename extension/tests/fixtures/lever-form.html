@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Example Corp - Backend Engineer</title>
+  <!-- Synthetic fixture shaped like a Lever application page. No real company or person. -->
+</head>
+<body>
+<div class="page">
+  <div class="posting-headline"><h2>Backend Engineer</h2><div class="posting-categories">Remote - Full-time</div></div>
+  <form id="application-form" method="POST" action="/exampleco/5f2c0a7e-1d3b-4c58-9a7e-0b1c2d3e4f50/apply" novalidate>
+    <input type="hidden" name="origin" value="">
+    <input type="hidden" name="source" value="">
+
+    <div class="application-question resume">
+      <label>
+        <div class="application-label">Resume/CV <span class="required">&#10033;</span></div>
+        <div class="application-field">
+          <span class="resume-upload-label">ATTACH RESUME/CV</span>
+          <input type="file" name="resume" id="resume-upload-input" data-qa="resume-upload-input" style="display:none">
+        </div>
+      </label>
+    </div>
+
+    <div class="application-question">
+      <label>
+        <div class="application-label">Full name <span class="required">&#10033;</span></div>
+        <div class="application-field"><input type="text" name="name" required></div>
+      </label>
+    </div>
+    <div class="application-question">
+      <label>
+        <div class="application-label">Email <span class="required">&#10033;</span></div>
+        <div class="application-field"><input type="email" name="email" required></div>
+      </label>
+    </div>
+    <div class="application-question">
+      <label>
+        <div class="application-label">Phone</div>
+        <div class="application-field"><input type="text" name="phone"></div>
+      </label>
+    </div>
+    <div class="application-question">
+      <label>
+        <div class="application-label">Current location</div>
+        <div class="application-field"><input type="text" name="location" id="location-input"></div>
+      </label>
+    </div>
+    <div class="application-question">
+      <label>
+        <div class="application-label">Current company</div>
+        <div class="application-field"><input type="text" name="org"></div>
+      </label>
+    </div>
+
+    <div class="application-question">
+      <label><div class="application-label">LinkedIn URL</div><div class="application-field"><input type="text" name="urls[LinkedIn]"></div></label>
+    </div>
+    <div class="application-question">
+      <label><div class="application-label">Twitter URL</div><div class="application-field"><input type="text" name="urls[Twitter]"></div></label>
+    </div>
+    <div class="application-question">
+      <label><div class="application-label">GitHub URL</div><div class="application-field"><input type="text" name="urls[GitHub]"></div></label>
+    </div>
+    <div class="application-question">
+      <label><div class="application-label">Portfolio URL</div><div class="application-field"><input type="text" name="urls[Portfolio]"></div></label>
+    </div>
+    <div class="application-question">
+      <label><div class="application-label">Other website</div><div class="application-field"><input type="text" name="urls[Other]"></div></label>
+    </div>
+
+    <div class="application-question custom-question">
+      <label>
+        <div class="application-label">Cover letter</div>
+        <div class="application-field"><textarea name="cards[8c1f2a60-0000-4000-8000-000000000001][field0]"></textarea></div>
+      </label>
+    </div>
+    <div class="application-question custom-question">
+      <label>
+        <div class="application-label">What are your salary expectations? <span class="required">&#10033;</span></div>
+        <div class="application-field"><input type="text" name="cards[8c1f2a60-0000-4000-8000-000000000002][field0]"></div>
+      </label>
+    </div>
+    <div class="application-question custom-question">
+      <label>
+        <div class="application-label">What is your notice period?</div>
+        <div class="application-field"><input type="text" name="cards[8c1f2a60-0000-4000-8000-000000000003][field0]"></div>
+      </label>
+    </div>
+    <div class="application-question custom-question">
+      <label>
+        <div class="application-label">Describe a system you designed and what you would change today.</div>
+        <div class="application-field"><textarea name="cards[8c1f2a60-0000-4000-8000-000000000004][field0]"></textarea></div>
+      </label>
+    </div>
+    <div class="application-question custom-question">
+      <label>
+        <div class="application-label">Are you authorized to work in the country this role is based in?</div>
+        <div class="application-field">
+          <select name="cards[8c1f2a60-0000-4000-8000-000000000005][field0]"><option value="">Select...</option><option>Yes</option><option>No</option></select>
+        </div>
+      </label>
+    </div>
+    <div class="application-question">
+      <label>
+        <div class="application-label">Additional information</div>
+        <div class="application-field"><textarea name="comments" placeholder="Add a cover letter or anything else you want to share."></textarea></div>
+      </label>
+    </div>
+
+    <div class="eeo-section">
+      <h4>U.S. Equal Employment Opportunity Information (voluntary)</h4>
+      <label><div class="application-label">Gender</div>
+        <select name="eeo[gender]"><option value="">Select...</option><option>Female</option><option>Male</option></select></label>
+      <label><div class="application-label">Race</div>
+        <select name="eeo[race]"><option value="">Select...</option><option>Asian</option></select></label>
+      <label><div class="application-label">Veteran status</div>
+        <select name="eeo[veteran]"><option value="">Select...</option><option>I am not a veteran</option></select></label>
+    </div>
+
+    <div class="application-question">
+      <label><input type="checkbox" name="consent[marketing]" value="yes"> I consent to Example Corp storing my information for future opportunities.</label>
+    </div>
+
+    <input type="hidden" name="hCaptchaResponse" value="">
+    <div class="h-captcha"><input type="text" name="captcha_text" aria-label="Captcha"></div>
+
+    <button type="submit" id="btn-submit" class="postings-btn template-btn-submit">Submit application</button>
+  </form>
+</div>
+<script>
+  window.__submitCount = 0;
+  window.__submitClicks = 0;
+  document.getElementById("application-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    window.__submitCount += 1;
+  });
+  document.getElementById("btn-submit").addEventListener("click", function () {
+    window.__submitClicks += 1;
+  });
+</script>
+</body>
+</html>
