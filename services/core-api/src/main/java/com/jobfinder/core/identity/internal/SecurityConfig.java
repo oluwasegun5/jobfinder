@@ -67,7 +67,7 @@ class SecurityConfig {
 
     // The API docs and health are part of the local/CI contract flow. Gate the docs before production (ADR 0011).
     private static final String[] PUBLIC_OPERATIONAL = {
-            "/actuator/health", "/actuator/health/**", "/actuator/info",
+            "/actuator/health", "/actuator/health/**",
             "/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**" };
 
     @Bean
