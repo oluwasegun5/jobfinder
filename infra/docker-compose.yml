@@ -72,6 +72,7 @@ services:
     entrypoint: >
       /bin/sh -c "
       for i in $(seq 1 30); do
+        aws --endpoint-url http://object-storage:9090 --region us-east-1 s3api head-bucket --bucket $$OBJECT_STORAGE_BUCKET >/dev/null 2>&1 && exit 0;
         aws --endpoint-url http://object-storage:9090 --region us-east-1 s3 mb s3://$$OBJECT_STORAGE_BUCKET && exit 0;
         sleep 2;
       done;
