@@ -217,12 +217,12 @@ public abstract class MockInterviewTestSupport extends InterviewTestSupport {
 
     /** What the user's usage ledger debited in total: the figure {@code credits_consumed} must agree with. */
     protected BigDecimal ledgerCredits(UUID userId) {
-        return jdbc.queryForObject("select coalesce(-sum(delta), 0) from credit_ledger where user_id = ?",
-                BigDecimal.class, userId);
+        return jdbc.queryForObject("select coalesce(-sum(delta), 0) from credit_ledger where user_id = ? "
+                + "and reason = 'AI_USAGE'", BigDecimal.class, userId);
     }
 
     protected int ledgerLines(UUID userId) {
-        return jdbc.queryForObject("select count(*) from credit_ledger where user_id = ?", Integer.class, userId);
+        return jdbc.queryForObject("select count(*) from credit_ledger where user_id = ? and reason = 'AI_USAGE'", Integer.class, userId);
     }
 
     protected int callsOf(UUID userId, String feature) {
@@ -242,6 +242,7 @@ public abstract class MockInterviewTestSupport extends InterviewTestSupport {
 
     /** $5 of AI today is far over the default cap of 500 credits ($0.50). */
     protected void spendTheCap(UUID userId) {
+        com.jobfinder.core.TestCredits.seed(jdbc, userId);
         usageLedger.record(new AiUsage("test:" + UUID.randomUUID(), userId, "parse_resume", "test", "m", 1, 1,
                 new BigDecimal("5.00"), 1, "p/v1", "test", AiCallStatus.SUCCEEDED));
     }

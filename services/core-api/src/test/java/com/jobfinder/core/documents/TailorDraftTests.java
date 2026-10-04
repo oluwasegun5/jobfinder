@@ -182,7 +182,7 @@ class TailorDraftTests extends DocumentsTestSupport {
                 "ai-service:" + callId);
         assertThat(call).containsEntry("user_id", candidate.userId()).containsEntry("feature", "tailor_resume")
                 .containsEntry("cost_micro_usd", 3_000L).containsEntry("status", "SUCCEEDED");
-        assertThat(jdbc.queryForObject("select count(*) from credit_ledger where user_id = ?", Integer.class,
+        assertThat(jdbc.queryForObject("select count(*) from credit_ledger where user_id = ? and reason = 'AI_USAGE'", Integer.class,
                 candidate.userId())).isEqualTo(1);
     }
 
@@ -236,6 +236,7 @@ class TailorDraftTests extends DocumentsTestSupport {
         Candidate candidate = seed(me);
         stubTailor(candidate.userId(), tailorOk(UUID.randomUUID(), "0.003"));
         // $5 of AI today is far over the default cap of 500 credits ($0.50).
+        com.jobfinder.core.TestCredits.seed(jdbc, candidate.userId());
         ledger.record(new AiUsage("test:" + UUID.randomUUID(), candidate.userId(), "parse_resume", "test", "m", 1, 1,
                 new BigDecimal("5.00"), 1, "p/v1", "test", AiCallStatus.SUCCEEDED));
 

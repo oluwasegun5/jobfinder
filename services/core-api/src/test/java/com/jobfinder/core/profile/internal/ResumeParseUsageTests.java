@@ -50,8 +50,8 @@ class ResumeParseUsageTests extends ResumeParsingTestSupport {
     }
 
     private BigDecimal balance(UUID userId) {
-        return jdbc.queryForObject("select coalesce((select balance_after from credit_ledger where user_id = ? "
-                + "order by id desc limit 1), 0)", BigDecimal.class, userId);
+        return jdbc.queryForObject("select coalesce(sum(delta), 0) from credit_ledger where user_id = ? "
+                + "and reason = 'AI_USAGE'", BigDecimal.class, userId);
     }
 
     @Test

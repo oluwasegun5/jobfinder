@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 
 import com.jobfinder.core.billing.AiUsage;
 
-/** The only writer of {@code ai_calls} and {@code credit_ledger}, and the reader of what a user spent. */
+/** The writer of {@code ai_calls} (its debits go through {@link CreditLedgerStore}) and the reader of what a user spent. */
 @Component
 class AiCallStore {
 
@@ -22,9 +22,11 @@ class AiCallStore {
     }
 
     private final JdbcClient jdbc;
+    private final CreditLedgerStore ledger;
 
-    AiCallStore(JdbcClient jdbc) {
+    AiCallStore(JdbcClient jdbc, CreditLedgerStore ledger) {
         this.jdbc = jdbc;
+        this.ledger = ledger;
     }
 
     /**
@@ -62,25 +64,11 @@ class AiCallStore {
     }
 
     /**
-     * Appends a debit of {@code credits} (a positive amount) to the user's ledger. Takes a per-user transaction lock
-     * first, so two debits for one user run one after the other and each computes its balance from the line before
-     * it; the lock is released with the surrounding transaction. Debits of different users do not wait on each other.
+     * Appends a debit of {@code credits} (a positive amount) to the user's ledger, under the per-user lock the ledger
+     * store takes (see {@link CreditLedgerStore}); the lock is released with the surrounding transaction.
      */
     void debit(UUID userId, UUID aiCallId, BigDecimal credits, Instant at) {
-        jdbc.sql("select count(*) from (select pg_advisory_xact_lock(hashtextextended(:user, 0))) l")
-                .param("user", userId.toString()).query(Long.class).single();
-        jdbc.sql("""
-                insert into credit_ledger (user_id, delta, reason, ai_call_id, balance_after, created_at)
-                values (:userId, :delta, 'AI_USAGE', :callId,
-                        coalesce((select balance_after from credit_ledger where user_id = :userId
-                                   order by id desc limit 1), 0) + :delta,
-                        :at)
-                """)
-                .param("userId", userId)
-                .param("delta", credits.negate())
-                .param("callId", aiCallId)
-                .param("at", OffsetDateTime.ofInstant(at, ZoneOffset.UTC))
-                .update();
+        ledger.append(userId, credits.negate(), LedgerReason.AI_USAGE, aiCallId, null, at);
     }
 
     /** Credits the user's AI calls consumed in {@code [from, to)}. */

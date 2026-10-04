@@ -83,9 +83,26 @@ public class TestcontainersConfiguration {
 		return server;
 	}
 
+	/**
+	 * Stands in for Stripe's and Paystack's APIs (WireMock: no test talks to a real provider). A holder type, not a bare
+	 * {@code WireMockServer}, so tests that autowire the ai-service stub by type stay unambiguous.
+	 */
+	public record PaymentProviderMock(WireMockServer server) {
+		public void stop() {
+			server.stop();
+		}
+	}
+
+	@Bean(destroyMethod = "stop")
+	PaymentProviderMock paymentProviderMock() {
+		WireMockServer server = new WireMockServer(WireMockConfiguration.options().dynamicPort());
+		server.start();
+		return new PaymentProviderMock(server);
+	}
+
 	@Bean
 	DynamicPropertyRegistrar testProperties(RedisContainer redis, MailpitContainer mailpit, S3MockContainer s3,
-			WireMockServer aiService) {
+			WireMockServer aiService, PaymentProviderMock payments) {
 		return registry -> {
 			registry.add("app.ai-service.base-url", () -> "http://localhost:" + aiService.port());
 			registry.add("app.ai-service.token", () -> AiServiceStubs.TOKEN);
@@ -101,6 +118,13 @@ public class TestcontainersConfiguration {
 			registry.add("app.auth.jwt.secret", () -> "test-only-jwt-secret-0123456789-abcdefghijklmnop");
 			// Cheap hashing keeps the suite fast; production default is 12.
 			registry.add("app.auth.bcrypt-strength", () -> 4);
+			// Fake keys and secrets, and the provider APIs pointed at WireMock: nothing real is ever contacted.
+			String paymentsUrl = "http://localhost:" + payments.server().port();
+			registry.add("app.billing.stripe.api-base", () -> paymentsUrl);
+			registry.add("app.billing.stripe.secret-key", () -> PaymentFixtures.STRIPE_KEY);
+			registry.add("app.billing.stripe.webhook-secret", () -> PaymentFixtures.STRIPE_WEBHOOK_SECRET);
+			registry.add("app.billing.paystack.api-base", () -> paymentsUrl);
+			registry.add("app.billing.paystack.secret-key", () -> PaymentFixtures.PAYSTACK_KEY);
 		};
 	}
 

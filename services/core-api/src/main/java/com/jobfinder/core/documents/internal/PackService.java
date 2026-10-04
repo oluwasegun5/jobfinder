@@ -16,6 +16,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.jobfinder.core.billing.AiAllowanceException;
 import com.jobfinder.core.billing.AiDailyCapReachedException;
 import com.jobfinder.core.documents.internal.DocumentDtos.DocumentStatus;
 import com.jobfinder.core.documents.internal.DocumentDtos.DocumentType;
@@ -185,9 +186,11 @@ class PackService {
                         + " moment.", true);
             }
             return PartRecord.ready(row.id());
-        } catch (AiDailyCapReachedException e) {
+        } catch (AiAllowanceException e) {
+            // The daily cap (with its reset time) or a spent credit balance (restored by a grant or top-up).
+            Instant resetsAt = e instanceof AiDailyCapReachedException cap ? cap.resetsAt() : null;
             return new PartRecord(PartState.BLOCKED_BY_CAP, null,
-                    new PartError(AiDailyCapReachedException.CODE, e.getMessage(), true, e.resetsAt()));
+                    new PartError(e.code(), e.getMessage(), true, resetsAt));
         } catch (ApiException e) {
             return failed(e.code(), e.getMessage(), e.status().is5xxServerError());
         } catch (RuntimeException e) {

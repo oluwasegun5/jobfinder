@@ -70,6 +70,7 @@ class ApplicationPackTests extends WritingTestSupport {
     }
 
     private void exhaustTheCap(UUID userId) {
+        com.jobfinder.core.TestCredits.seed(jdbc, userId);
         ledger.record(new AiUsage("test:" + UUID.randomUUID(), userId, "parse_resume", "test", "m", 1, 1,
                 new BigDecimal("5.00"), 1, "p/v1", "test", AiCallStatus.SUCCEEDED));
     }

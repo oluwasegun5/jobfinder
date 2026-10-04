@@ -157,6 +157,59 @@ app:
     # millionths of a dollar (1000: a tenth of a cent), so the default cap is $0.50 a day per user.
     daily-cap-credits: ${AI_DAILY_CAP_CREDITS:500}
     micro-usd-per-credit: ${AI_MICRO_USD_PER_CREDIT:1000}
+    # Plans, credits and payments (docs/adr/0036-plans-credits-and-payments.md). Every amount, price, provider plan id,
+    # key and secret is configuration. THE VALUES BELOW ARE PLACEHOLDERS: a price of 100 minor units and ids that start
+    # with PLACEHOLDER are obviously fake on purpose; set the real ones per environment. Secrets have no default:
+    # a provider without its keys is simply not offered.
+    # Unused plan credits expire when the next grant arrives, except up to this many (0: no rollover). Top-ups never expire.
+    rollover-cap-credits: ${BILLING_ROLLOVER_CAP_CREDITS:0}
+    # A past-due subscription (and an active one whose renewal never showed up) goes back to Free after this long.
+    grace-period: ${BILLING_GRACE_PERIOD:3d}
+    jobs:
+      enabled: ${BILLING_JOBS_ENABLED:true}
+      free-grant-cron: "0 10 0 * * *"
+      expiry-cron: "0 0 * * * *"
+    checkout:
+      return-url: ${BILLING_RETURN_URL:http://localhost:3000/billing/return}
+      cancel-url: ${BILLING_CANCEL_URL:http://localhost:3000/billing/return?canceled=1}
+    limits:
+      checkout-per-hour: 10
+      cancel-per-hour: 10
+    plans:
+      free:
+        # monthly-credits: set to override the seeded value (300) for the free plan
+        prices: {}
+      pro:
+        # monthly-credits: set to override the seeded value (6000)
+        prices:
+          USD:
+            provider: STRIPE
+            amount-minor: 100
+            provider-plan-id: ${STRIPE_PRICE_PRO_USD:price_PLACEHOLDER_pro_usd}
+          NGN:
+            provider: PAYSTACK
+            amount-minor: 100
+            provider-plan-id: ${PAYSTACK_PLAN_PRO_NGN:PLN_PLACEHOLDER_pro_ngn}
+    packs:
+      - id: pack_small
+        name: Small credit pack
+        credits: 2000
+        prices:
+          USD: { provider: STRIPE, amount-minor: 100 }
+          NGN: { provider: PAYSTACK, amount-minor: 100 }
+      - id: pack_large
+        name: Large credit pack
+        credits: 10000
+        prices:
+          USD: { provider: STRIPE, amount-minor: 100 }
+          NGN: { provider: PAYSTACK, amount-minor: 100 }
+    stripe:
+      api-base: https://api.stripe.com
+      secret-key: ${STRIPE_SECRET_KEY:}
+      webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+    paystack:
+      api-base: https://api.paystack.co
+      secret-key: ${PAYSTACK_SECRET_KEY:}
 
   matching:
     # The matching engine (docs/adr/0026-matching-engine.md). The prompt version is part of the score cache key and is

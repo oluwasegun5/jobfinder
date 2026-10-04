@@ -304,6 +304,7 @@ class CoverLetterTests extends WritingTestSupport {
     void anExhaustedDailyCapBlocksWithTheTypedErrorBeforeAnyCall() throws Exception {
         Setup s = setup();
         stubLetter(s.candidate().userId(), letterOk(s.candidate(), UUID.randomUUID(), "0.003"));
+        com.jobfinder.core.TestCredits.seed(jdbc, s.candidate().userId());
         ledger.record(new AiUsage("test:" + UUID.randomUUID(), s.candidate().userId(), "parse_resume", "test", "m", 1,
                 1, new BigDecimal("5.00"), 1, "p/v1", "test", AiCallStatus.SUCCEEDED));
 
