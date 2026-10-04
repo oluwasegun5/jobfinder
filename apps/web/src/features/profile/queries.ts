@@ -114,7 +114,7 @@ export function useSetPrimaryResume() {
 }
 
 /** Failures that are not the file's fault: the user may ask for the CV to be read again (core-api decides). */
-export const REPARSABLE_ERRORS = ["ai_daily_cap_reached", "parser_unavailable", "parse_queue_unavailable"];
+export const REPARSABLE_ERRORS = ["ai_daily_cap_reached", "insufficient_credits", "parser_unavailable", "parse_queue_unavailable"];
 
 /**
  * Asks core-api to read a CV again. While the daily AI limit is still used up the answer is 429

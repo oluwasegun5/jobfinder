@@ -282,6 +282,8 @@ export function parseFailureMessage(code: string | undefined): string {
       return "Our CV reader is unavailable right now.";
     case "ai_daily_cap_reached":
       return "You've reached today's AI limit, so this CV hasn't been read yet.";
+    case "insufficient_credits":
+      return "You are out of AI credits, so this CV hasn't been read yet.";
     default:
       return "We couldn't read that file.";
   }

@@ -1,6 +1,6 @@
 import { ApiProblem } from "@/features/profile/queries";
 
-export type FailureKind = "cap" | "conflict" | "unavailable" | "missing" | "validation" | "network" | "other";
+export type FailureKind = "cap" | "credits" | "conflict" | "unavailable" | "missing" | "validation" | "network" | "other";
 
 export type Failure = {
   kind: FailureKind;
@@ -28,6 +28,9 @@ export function capMessage(resetsAt: string | undefined): string {
     ? `You have used today's AI allowance. It comes back on ${when}. Nothing was lost: what is already made is kept.`
     : "You have used today's AI allowance. It comes back tomorrow. Nothing was lost: what is already made is kept.";
 }
+
+export const CREDITS_MESSAGE =
+  "You are out of AI credits. Nothing was lost: what is already made is kept. Upgrade or add credits to carry on.";
 
 /** Words for the stable `code` core-api puts on every problem document. */
 const MESSAGES: Record<string, string> = {
@@ -60,6 +63,9 @@ const MESSAGES: Record<string, string> = {
   job_fields_fixed: "The title and company of an application made from a job cannot be changed.",
   invalid_document: "One of the documents cannot be attached to this application.",
   document_job_mismatch: "One of the documents was made for a different job.",
+  provider_not_offered: "That payment method is not available for this item.",
+  already_subscribed: "You already have a paid plan.",
+  payment_provider_unavailable: "The payment provider is unavailable right now. Try again in a moment.",
   invalid_pack: "This pack cannot be attached to this application.",
 };
 
@@ -73,6 +79,9 @@ export function toFailure(error: unknown, fallback = "Something went wrong. Plea
   const status = error.status;
   if (status === 429 || code === "ai_daily_cap_reached") {
     return { kind: "cap", code: "ai_daily_cap_reached", message: capMessage(problem?.resetsAt), resetsAt: problem?.resetsAt, retryable: false, status };
+  }
+  if (status === 402 || code === "insufficient_credits") {
+    return { kind: "credits", code: "insufficient_credits", message: CREDITS_MESSAGE, retryable: false, status };
   }
   const known = code ? MESSAGES[code] : undefined;
   const detail = typeof problem?.detail === "string" && problem.detail.length > 0 ? problem.detail : undefined;

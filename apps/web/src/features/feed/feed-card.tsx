@@ -21,6 +21,7 @@ type Status = "shown" | "hidden" | "applied";
 
 const FALLBACK_TEXT: Record<string, string> = {
   DAILY_CAP_REACHED: "You have used today's AI allowance, so this job has not been scored by AI yet.",
+  INSUFFICIENT_CREDITS: "You are out of AI credits, so this job has not been scored by AI yet.",
   LLM_UNAVAILABLE: "AI scoring is unavailable right now, so this job has not been scored by AI yet.",
   LLM_FAILED: "AI could not score this job, so the estimate is shown.",
   JOB_EXPIRED: "This job is no longer listed, so it was not scored by AI.",

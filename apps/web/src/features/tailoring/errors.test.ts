@@ -17,6 +17,15 @@ describe("toFailure", () => {
     expect(failure.message).not.toMatch(/raw/);
   });
 
+  it("maps 402 insufficient credits to the upgrade kind, with no retry and none of the server's words", () => {
+    const failure = toFailure(problem(402, { code: "insufficient_credits", detail: "raw", balance: 0 }));
+    expect(failure.kind).toBe("credits");
+    expect(failure.retryable).toBe(false);
+    expect(failure.message).toMatch(/out of AI credits/);
+    expect(failure.message).not.toMatch(/raw/);
+    expect(toFailure(problem(402, {})).kind).toBe("credits");
+  });
+
   it("treats a bare 429 as the cap too", () => {
     expect(toFailure(problem(429, {})).kind).toBe("cap");
   });

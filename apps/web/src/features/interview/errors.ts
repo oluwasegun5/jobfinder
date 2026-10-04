@@ -31,7 +31,7 @@ const MESSAGES: Record<string, { message: string; retryable?: boolean }> = {
  */
 export function interviewFailure(error: unknown): Failure {
   const failure = toFailure(error);
-  if (failure.kind === "cap") return failure;
+  if (failure.kind === "cap" || failure.kind === "credits") return failure;
   const known = failure.code ? MESSAGES[failure.code] : undefined;
   if (!known) {
     return failure.kind === "unavailable"
