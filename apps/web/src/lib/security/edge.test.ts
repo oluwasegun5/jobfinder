@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { contentSecurityPolicy, isBlockedCorePath } from "./edge";
+import { contentSecurityPolicy, isBlockedCorePath, strictTransportSecurity } from "./edge";
 
 describe("isBlockedCorePath", () => {
   it.each([
@@ -46,5 +46,19 @@ describe("contentSecurityPolicy", () => {
 
   it("allows eval only in development", () => {
     expect(contentSecurityPolicy("abc", true)).toContain("'unsafe-eval'");
+  });
+});
+
+describe("strictTransportSecurity", () => {
+  it("is sent when the edge says the request came over https", () => {
+    expect(strictTransportSecurity("https", "http:")).toContain("max-age=31536000");
+    expect(strictTransportSecurity("https, http", "http:")).toContain("includeSubDomains");
+    expect(strictTransportSecurity(null, "https:")).toContain("max-age=");
+  });
+
+  it("is never sent over plain http", () => {
+    expect(strictTransportSecurity("http", "http:")).toBeNull();
+    expect(strictTransportSecurity(null, "http:")).toBeNull();
+    expect(strictTransportSecurity("http", "https:")).toBeNull();
   });
 });

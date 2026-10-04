@@ -62,6 +62,17 @@ export function contentSecurityPolicy(nonce: string, development: boolean): stri
   return directives.join("; ");
 }
 
+/**
+ * HSTS only when the request reached us over TLS (the edge says so with X-Forwarded-Proto, or the URL itself is https),
+ * so plain-http local development is never pinned to https.
+ */
+export function strictTransportSecurity(forwardedProto: string | null, protocol: string): string | null {
+  const proto = (forwardedProto ?? "").split(",")[0].trim().toLowerCase();
+  return proto === "https" || (proto === "" && protocol === "https:")
+    ? "max-age=31536000; includeSubDomains"
+    : null;
+}
+
 /** Headers added to every page response next to the CSP. */
 export const SECURITY_HEADERS: Readonly<Record<string, string>> = {
   "X-Content-Type-Options": "nosniff",
