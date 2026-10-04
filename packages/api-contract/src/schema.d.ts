@@ -404,6 +404,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/billing/subscription/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["checkout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/verify-email": {
         parameters: {
             query?: never;
@@ -900,6 +932,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/billing/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["plans"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["me"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing/ledger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ledger"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/billing/allowance": {
         parameters: {
             query?: never;
@@ -923,7 +1003,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["me"];
+        get: operations["me_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1681,6 +1761,48 @@ export interface components {
             rationale?: string;
             difficulty?: string;
         };
+        AllowanceView: {
+            dailyCap?: number;
+            used?: number;
+            remaining?: number;
+            /** Format: date-time */
+            resetsAt?: string;
+        };
+        Me: {
+            plan?: components["schemas"]["PlanSummary"];
+            status?: string;
+            subscription?: components["schemas"]["SubscriptionView"];
+            balance?: number;
+            grantedThisPeriod?: number;
+            usedThisPeriod?: number;
+            /** Format: date-time */
+            periodStart?: string;
+            /** Format: date-time */
+            periodEnd?: string;
+            allowance?: components["schemas"]["AllowanceView"];
+        };
+        PlanSummary: {
+            code?: string;
+            name?: string;
+            monthlyCredits?: number;
+        };
+        SubscriptionView: {
+            provider?: string;
+            status?: string;
+            /** Format: date-time */
+            currentPeriodEnd?: string;
+            cancelAtPeriodEnd?: boolean;
+            /** Format: date-time */
+            graceEndsAt?: string;
+        };
+        CheckoutRequest: {
+            plan?: string;
+            pack?: string;
+            provider: string;
+        };
+        CheckoutLinkView: {
+            url?: string;
+        };
         TokenRequest: {
             token: string;
         };
@@ -1956,7 +2078,7 @@ export interface components {
             /** @enum {string} */
             status?: "LLM_SCORED" | "UNRANKED" | "NOT_LLM_SCORED";
             /** @enum {string} */
-            reason?: "DAILY_CAP_REACHED" | "LLM_UNAVAILABLE" | "LLM_FAILED" | "JOB_EXPIRED";
+            reason?: "DAILY_CAP_REACHED" | "INSUFFICIENT_CREDITS" | "LLM_UNAVAILABLE" | "LLM_FAILED" | "JOB_EXPIRED";
             /** Format: int32 */
             score?: number;
             /** Format: double */
@@ -2028,7 +2150,7 @@ export interface components {
             strengths?: string[];
             gaps?: string[];
             /** @enum {string} */
-            fallbackReason?: "DAILY_CAP_REACHED" | "LLM_UNAVAILABLE" | "LLM_FAILED" | "JOB_EXPIRED";
+            fallbackReason?: "DAILY_CAP_REACHED" | "INSUFFICIENT_CREDITS" | "LLM_UNAVAILABLE" | "LLM_FAILED" | "JOB_EXPIRED";
             model?: string;
             /** Format: date-time */
             scoredAt?: string;
@@ -2130,6 +2252,43 @@ export interface components {
             sha256?: string;
             /** Format: date-time */
             createdAt?: string;
+        };
+        Catalogue: {
+            plans?: components["schemas"]["PlanView"][];
+            packs?: components["schemas"]["PackView"][];
+            rolloverCapCredits?: number;
+        };
+        PackView: {
+            id?: string;
+            name?: string;
+            credits?: number;
+            prices?: components["schemas"]["PriceView"][];
+        };
+        PlanView: {
+            code?: string;
+            name?: string;
+            monthlyCredits?: number;
+            prices?: components["schemas"]["PriceView"][];
+        };
+        PriceView: {
+            provider?: string;
+            currency?: string;
+            /** Format: int64 */
+            amountMinor?: number;
+        };
+        LedgerLine: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            delta?: number;
+            reason?: string;
+            balanceAfter?: number;
+            feature?: string;
+        };
+        LedgerPage: {
+            items?: components["schemas"]["LedgerLine"][];
+            nextCursor?: string;
         };
         AllowanceResponse: {
             dailyCap?: number;
@@ -3135,6 +3294,50 @@ export interface operations {
             };
         };
     };
+    cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Me"];
+                };
+            };
+        };
+    };
+    checkout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckoutRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CheckoutLinkView"];
+                };
+            };
+        };
+    };
     verifyEmail: {
         parameters: {
             query?: never;
@@ -4021,6 +4224,69 @@ export interface operations {
             };
         };
     };
+    plans: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Catalogue"];
+                };
+            };
+        };
+    };
+    me: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Me"];
+                };
+            };
+        };
+    };
+    ledger: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LedgerPage"];
+                };
+            };
+        };
+    };
     allowance: {
         parameters: {
             query?: never;
@@ -4041,7 +4307,7 @@ export interface operations {
             };
         };
     };
-    me: {
+    me_1: {
         parameters: {
             query?: never;
             header?: never;

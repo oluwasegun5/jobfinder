@@ -1192,6 +1192,56 @@
         }
       }
     },
+    "/billing/subscription/cancel": {
+      "post": {
+        "tags": [
+          "billing-controller"
+        ],
+        "operationId": "cancel",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/billing/checkout": {
+      "post": {
+        "tags": [
+          "billing-controller"
+        ],
+        "operationId": "checkout",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckoutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutLinkView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/verify-email": {
       "post": {
         "tags": [
@@ -2719,6 +2769,85 @@
         }
       }
     },
+    "/billing/plans": {
+      "get": {
+        "tags": [
+          "billing-controller"
+        ],
+        "operationId": "plans",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Catalogue"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/billing/me": {
+      "get": {
+        "tags": [
+          "billing-controller"
+        ],
+        "operationId": "me",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/billing/ledger": {
+      "get": {
+        "tags": [
+          "billing-controller"
+        ],
+        "operationId": "ledger",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LedgerPage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/billing/allowance": {
       "get": {
         "tags": [
@@ -2744,7 +2873,7 @@
         "tags": [
           "auth-controller"
         ],
-        "operationId": "me",
+        "operationId": "me_1",
         "responses": {
           "200": {
             "description": "OK",
@@ -5001,6 +5130,125 @@
           }
         }
       },
+      "AllowanceView": {
+        "type": "object",
+        "properties": {
+          "dailyCap": {
+            "type": "number"
+          },
+          "used": {
+            "type": "number"
+          },
+          "remaining": {
+            "type": "number"
+          },
+          "resetsAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Me": {
+        "type": "object",
+        "properties": {
+          "plan": {
+            "$ref": "#/components/schemas/PlanSummary"
+          },
+          "status": {
+            "type": "string"
+          },
+          "subscription": {
+            "$ref": "#/components/schemas/SubscriptionView"
+          },
+          "balance": {
+            "type": "number"
+          },
+          "grantedThisPeriod": {
+            "type": "number"
+          },
+          "usedThisPeriod": {
+            "type": "number"
+          },
+          "periodStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "allowance": {
+            "$ref": "#/components/schemas/AllowanceView"
+          }
+        }
+      },
+      "PlanSummary": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "monthlyCredits": {
+            "type": "number"
+          }
+        }
+      },
+      "SubscriptionView": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "currentPeriodEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cancelAtPeriodEnd": {
+            "type": "boolean"
+          },
+          "graceEndsAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CheckoutRequest": {
+        "type": "object",
+        "properties": {
+          "plan": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 0
+          },
+          "pack": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 0
+          },
+          "provider": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "provider"
+        ]
+      },
+      "CheckoutLinkView": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          }
+        }
+      },
       "TokenRequest": {
         "type": "object",
         "properties": {
@@ -5882,6 +6130,7 @@
             "type": "string",
             "enum": [
               "DAILY_CAP_REACHED",
+              "INSUFFICIENT_CREDITS",
               "LLM_UNAVAILABLE",
               "LLM_FAILED",
               "JOB_EXPIRED"
@@ -6079,6 +6328,7 @@
             "type": "string",
             "enum": [
               "DAILY_CAP_REACHED",
+              "INSUFFICIENT_CREDITS",
               "LLM_UNAVAILABLE",
               "LLM_FAILED",
               "JOB_EXPIRED"
@@ -6364,6 +6614,120 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "Catalogue": {
+        "type": "object",
+        "properties": {
+          "plans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanView"
+            }
+          },
+          "packs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackView"
+            }
+          },
+          "rolloverCapCredits": {
+            "type": "number"
+          }
+        }
+      },
+      "PackView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "credits": {
+            "type": "number"
+          },
+          "prices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceView"
+            }
+          }
+        }
+      },
+      "PlanView": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "monthlyCredits": {
+            "type": "number"
+          },
+          "prices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceView"
+            }
+          }
+        }
+      },
+      "PriceView": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "amountMinor": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "LedgerLine": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "delta": {
+            "type": "number"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "balanceAfter": {
+            "type": "number"
+          },
+          "feature": {
+            "type": "string"
+          }
+        }
+      },
+      "LedgerPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LedgerLine"
+            }
+          },
+          "nextCursor": {
+            "type": "string"
           }
         }
       },
