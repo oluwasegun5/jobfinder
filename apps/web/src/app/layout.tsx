@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { Providers } from "./providers";
@@ -23,7 +24,9 @@ export const metadata: Metadata = {
     "Find jobs from many sources, see how well you match, tailor your CV and track every application.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+// Every page is rendered per request so Next can stamp the CSP nonce (src/proxy.ts) on its scripts.
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  await connection();
   return (
     <html
       lang="en"
