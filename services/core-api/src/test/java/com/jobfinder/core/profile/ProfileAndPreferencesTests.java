@@ -1,5 +1,6 @@
 package com.jobfinder.core.profile;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -92,6 +93,7 @@ class ProfileAndPreferencesTests extends ResumeTestSupport {
         getJson("/profile", me).andExpect(jsonPath("$.fullName").value("Mine"));
     }
 
+    @CoversEndpoints({"GET /profile", "PUT /profile", "GET /preferences", "PUT /preferences"})
     @Test
     void usersNeverSeeEachOthersProfileOrPreferences() throws Exception {
         Session ada = newSession();

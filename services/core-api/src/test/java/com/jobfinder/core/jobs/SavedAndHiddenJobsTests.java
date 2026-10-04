@@ -1,5 +1,6 @@
 package com.jobfinder.core.jobs;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -133,6 +134,7 @@ class SavedAndHiddenJobsTests extends JobsTestSupport {
 
     // --- ownership ---
 
+    @CoversEndpoints({"PUT /jobs/{id}/save", "DELETE /jobs/{id}/save", "PUT /jobs/{id}/hide", "DELETE /jobs/{id}/hide", "GET /saved-jobs", "GET /jobs", "GET /jobs/{id}"})
     @Test
     void oneUsersStateIsNeverVisibleToOrChangeableByAnother() throws Exception {
         UUID job = insert("Shared posting");

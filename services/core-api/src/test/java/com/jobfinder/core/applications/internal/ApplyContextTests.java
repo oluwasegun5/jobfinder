@@ -1,5 +1,6 @@
 package com.jobfinder.core.applications.internal;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -106,6 +107,7 @@ class ApplyContextTests extends ApplicationsTestSupport {
                 .andExpect(jsonPath("$.packSummary.version").value(1));
     }
 
+    @CoversEndpoints({"GET /extension/apply-context"})
     @Test
     void anotherUsersApplicationAndPackAreNeverShown() throws Exception {
         Session a = newSession();

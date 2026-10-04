@@ -1,5 +1,6 @@
 package com.jobfinder.core.documents;
 
+import com.jobfinder.core.CoversEndpoints;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
@@ -221,6 +222,7 @@ class LetterReviewTests extends WritingTestSupport {
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
+    @CoversEndpoints({"PATCH /documents/{id}", "POST /documents/{id}/approve"})
     @Test
     void anotherUsersLetterCannotBeEditedOrApprovedAndTheDraftIsUntouched() throws Exception {
         Draft d = draft();

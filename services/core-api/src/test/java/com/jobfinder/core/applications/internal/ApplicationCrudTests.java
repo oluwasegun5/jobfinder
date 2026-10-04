@@ -1,5 +1,6 @@
 package com.jobfinder.core.applications.internal;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -190,6 +191,7 @@ class ApplicationCrudTests extends ApplicationsTestSupport {
         assertThat(rows("applications", mine.userId())).isZero();
     }
 
+    @CoversEndpoints({"POST /applications"})
     @Test
     void aPackOfSomeoneElseIsRefusedAndSoIsADocumentMadeForAnotherJob() throws Exception {
         Session me = newSession();
@@ -275,6 +277,7 @@ class ApplicationCrudTests extends ApplicationsTestSupport {
 
     // --- ownership ---
 
+    @CoversEndpoints({"GET /applications/{id}", "PATCH /applications/{id}", "POST /applications/{id}/status", "DELETE /applications/{id}", "GET /applications/{id}/reminders", "POST /applications/{id}/reminders", "DELETE /applications/{id}/reminders/{reminderId}", "GET /applications"})
     @Test
     void someoneElsesApplicationIsNotFoundForEveryOperation() throws Exception {
         Session mine = newSession();

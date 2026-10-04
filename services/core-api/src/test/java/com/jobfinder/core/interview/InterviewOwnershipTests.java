@@ -1,5 +1,6 @@
 package com.jobfinder.core.interview;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -20,6 +21,7 @@ class InterviewOwnershipTests extends InterviewTestSupport {
         mvc.perform(get("/interview-prep/" + UUID.randomUUID())).andExpect(status().isUnauthorized());
     }
 
+    @CoversEndpoints({"GET /interview-prep/{id}"})
     @Test
     void anotherUserCannotReadMyPrepAndGetsTheSameAnswerAsForOneThatDoesNotExist() throws Exception {
         Session a = newSession();
@@ -63,6 +65,7 @@ class InterviewOwnershipTests extends InterviewTestSupport {
         assertThat(preps(second.userId())).isEqualTo(1);
     }
 
+    @CoversEndpoints({"POST /interview-prep"})
     @Test
     void aUserCannotUseAnotherUsersGeneratingRowToSkipTheirOwnGeneration() throws Exception {
         Session a = newSession();

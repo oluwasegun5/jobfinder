@@ -1,5 +1,6 @@
 package com.jobfinder.core.applications.internal;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -35,6 +36,7 @@ class FollowUpDraftTests extends ApplicationsTestSupport {
         return new Setup(me, candidate, manual(me, "Backend Engineer"));
     }
 
+    @CoversEndpoints({"POST /applications/{id}/follow-up-draft"})
     @Test
     void itRequiresTheOwnerOfTheApplication() throws Exception {
         Setup s = setup();

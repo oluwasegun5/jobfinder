@@ -1,5 +1,6 @@
 package com.jobfinder.core.profile.internal;
 
+import com.jobfinder.core.CoversEndpoints;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -184,6 +185,7 @@ class ResumeParseUsageTests extends ResumeParsingTestSupport {
         }
     }
 
+    @CoversEndpoints({"POST /resumes/{id}/reparse"})
     @Test
     void reparseIsScopedToTheOwnerAndNeedsASignIn() throws Exception {
         Session owner = newSession();

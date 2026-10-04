@@ -1,5 +1,6 @@
 package com.jobfinder.core.interview;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -35,6 +36,7 @@ class MockInterviewOwnershipTests extends MockInterviewTestSupport {
         mvc.perform(post("/interview-sessions/" + id + "/complete")).andExpect(status().isUnauthorized());
     }
 
+    @CoversEndpoints({"GET /interview-sessions/{id}", "POST /interview-sessions/{id}/answers", "POST /interview-sessions/{id}/complete"})
     @Test
     void anotherUserCannotReadAnswerOrCompleteMySessionAndGetsTheAnswerForOneThatDoesNotExist() throws Exception {
         Session a = newSession();
@@ -82,6 +84,7 @@ class MockInterviewOwnershipTests extends MockInterviewTestSupport {
         complete(a, id).andExpect(status().isOk());
     }
 
+    @CoversEndpoints({"GET /interview-sessions", "POST /interview-sessions"})
     @Test
     void theHistoryListsOnlyMySessions() throws Exception {
         Session a = newSession();

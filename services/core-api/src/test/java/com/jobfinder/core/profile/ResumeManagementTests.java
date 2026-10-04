@@ -1,5 +1,6 @@
 package com.jobfinder.core.profile;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -26,6 +27,7 @@ class ResumeManagementTests extends ResumeTestSupport {
         return JsonPath.read(body, "$[*].id");
     }
 
+    @CoversEndpoints({"GET /resumes", "POST /resumes"})
     @Test
     void listsOnlyTheCallersResumesNewestFirst() throws Exception {
         Session me = newSession();
@@ -98,6 +100,7 @@ class ResumeManagementTests extends ResumeTestSupport {
         upload(session, "again.pdf", "application/pdf", pdf()).andExpect(jsonPath("$.primary").value(true));
     }
 
+    @CoversEndpoints({"GET /resumes/{id}/download-url", "PUT /resumes/{id}/primary", "DELETE /resumes/{id}"})
     @Test
     void otherUsersCannotSeeDownloadChangeOrDeleteMyResume() throws Exception {
         Session owner = newSession();

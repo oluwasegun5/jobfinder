@@ -1,5 +1,6 @@
 package com.jobfinder.core.notifications.internal;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -62,6 +63,7 @@ class SavedSearchTests extends NotificationsTestSupport {
         getAs(me, "/saved-searches").andExpect(jsonPath("$.items.length()").value(0));
     }
 
+    @CoversEndpoints({"GET /saved-searches", "GET /saved-searches/{id}", "PUT /saved-searches/{id}", "DELETE /saved-searches/{id}", "POST /saved-searches"})
     @Test
     void anotherUsersSearchIsNeitherListedNorReachable() throws Exception {
         Session owner = newSession();

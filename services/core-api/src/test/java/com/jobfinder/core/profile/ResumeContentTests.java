@@ -1,5 +1,6 @@
 package com.jobfinder.core.profile;
 
+import com.jobfinder.core.CoversEndpoints;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -170,6 +171,7 @@ class ResumeContentTests extends ResumeParsingTestSupport {
                 .andExpect(jsonPath("$.content.contact.full_name").value("Ada Lovelace"));
     }
 
+    @CoversEndpoints({"GET /resumes/{id}/content", "PUT /resumes/{id}/content"})
     @Test
     void anotherUsersResumeIsNotFoundForBothReadAndWrite() throws Exception {
         Session owner = newSession();

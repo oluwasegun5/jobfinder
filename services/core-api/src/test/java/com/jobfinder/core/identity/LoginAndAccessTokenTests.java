@@ -1,5 +1,6 @@
 package com.jobfinder.core.identity;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -110,6 +111,7 @@ class LoginAndAccessTokenTests extends AuthTestSupport {
                 .andExpect(jsonPath("$.code").value("invalid_credentials"));
     }
 
+    @CoversEndpoints({"GET /auth/me"})
     @Test
     void meReturnsTheAuthenticatedUsersOwnRecordAndNooneElses() throws Exception {
         String emailA = registerVerifiedUser();

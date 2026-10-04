@@ -1,5 +1,6 @@
 package com.jobfinder.core.documents;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -478,6 +479,7 @@ class ApplicationPackTests extends WritingTestSupport {
 
     // ------------------------------------------------------------------------------------------------- authz
 
+    @CoversEndpoints({"GET /application-packs/{id}", "POST /application-packs/{id}/retry", "GET /application-packs", "POST /jobs/{id}/application-pack"})
     @Test
     void aPackBelongsToItsOwnerAlone() throws Exception {
         Setup s = setup();

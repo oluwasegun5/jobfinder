@@ -1,5 +1,6 @@
 package com.jobfinder.core.billing.internal;
 
+import com.jobfinder.core.CoversEndpoints;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
@@ -253,6 +254,22 @@ class BillingApiTests extends PaymentTestSupport {
         checkout(account, "{\"pack\":\"pack_small\",\"provider\":\"STRIPE\"}").andExpect(status().isOk());
     }
 
+    @CoversEndpoints({"POST /billing/checkout"})
+    @Test
+    void anotherUsersPaidPlanNeitherBlocksNorIsTouchedByMyCheckout() throws Exception {
+        stubStripeCheckout();
+        Account a = activeSubscriber("STRIPE", "sub_co_" + UUID.randomUUID().toString().substring(0, 8));
+        Account b = newAccount();
+
+        // The body names no user; B starts a plan checkout although A holds one, and it is bound to B alone.
+        checkout(b, "{\"plan\":\"pro\",\"provider\":\"STRIPE\",\"userId\":\"" + a.id() + "\"}")
+                .andExpect(status().isOk());
+        assertThat(subscriptionRow(a.id())).containsEntry("status", "ACTIVE");
+        getAs(a, "/billing/me").andExpect(jsonPath("$.status").value("ACTIVE"));
+        getAs(b, "/billing/me").andExpect(jsonPath("$.subscription.status").value("PENDING"));
+        assertThat(subscriptionRow(b.id())).containsEntry("status", "PENDING");
+    }
+
     @Test
     void checkoutIsRateLimitedPerUser() throws Exception {
         stubStripeCheckout();
@@ -337,6 +354,7 @@ class BillingApiTests extends PaymentTestSupport {
                 .andExpect(jsonPath("$.code").value("invalid_cursor"));
     }
 
+    @CoversEndpoints({"GET /billing/ledger", "GET /billing/me", "POST /billing/subscription/cancel"})
     @Test
     void oneUserNeverSeesOrTouchesAnotherUsersLedgerOrSubscription() throws Exception {
         String ref = "sub_owner_" + UUID.randomUUID().toString().substring(0, 8);

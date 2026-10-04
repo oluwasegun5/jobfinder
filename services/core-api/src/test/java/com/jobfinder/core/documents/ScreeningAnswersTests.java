@@ -1,5 +1,6 @@
 package com.jobfinder.core.documents;
 
+import com.jobfinder.core.CoversEndpoints;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
@@ -306,6 +307,26 @@ class ScreeningAnswersTests extends WritingTestSupport {
         assertThat(statusOf(id)).isEqualTo("DRAFT");
     }
 
+    @CoversEndpoints({"POST /jobs/{id}/screening-answers"})
+    @Test
+    void theSameJobGivesEachCallerTheirOwnAnswersFromTheirOwnResume() throws Exception {
+        Setup s = setup();
+        Session other = newSession();
+        Candidate theirs = seed(other);
+        stubTextCheck(theirs);
+        stubAnswers(s.candidate().userId(), answersOk(s.candidate(), UUID.randomUUID(), "0.002"));
+        stubAnswers(theirs.userId(), answersOk(theirs, UUID.randomUUID(), "0.002"));
+
+        String mine = idOf(screeningAnswers(s.session(), s.job(), null).andExpect(status().isCreated()));
+        String his = idOf(screeningAnswers(other, s.job(), null).andExpect(status().isCreated()));
+
+        assertThat(mine).isNotEqualTo(his);
+        assertThat(documents(s.candidate().userId())).isEqualTo(1);
+        assertThat(documents(theirs.userId())).isEqualTo(1);
+        getAs(s.session(), "/documents/" + his).andExpect(status().isNotFound());
+    }
+
+    @CoversEndpoints({"GET /documents/{id}", "PATCH /documents/{id}", "POST /documents/{id}/approve", "DELETE /documents/{id}"})
     @Test
     void anotherUsersAnswersAreNotFound() throws Exception {
         Setup s = setup();

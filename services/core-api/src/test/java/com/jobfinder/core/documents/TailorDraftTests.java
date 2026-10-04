@@ -1,5 +1,7 @@
 package com.jobfinder.core.documents;
 
+import com.jobfinder.core.CoversEndpoints;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -340,6 +342,7 @@ class TailorDraftTests extends DocumentsTestSupport {
                 .andExpect(jsonPath("$.code").value("document_generating"));
     }
 
+    @CoversEndpoints({"POST /jobs/{id}/tailor"})
     @Test
     void theListHoldsTheCallersDraftsOnly() throws Exception {
         Session me = newSession();
