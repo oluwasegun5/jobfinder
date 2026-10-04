@@ -81,7 +81,8 @@ abstract class AggregatorTestSupport {
     }
 
     static AggregatorHttp http(AggregatorProperties properties) {
-        return new AggregatorHttp(properties, JSON);
+        return new AggregatorHttp(properties, JSON,
+                new com.jobfinder.core.shared.SsrfGuard(new com.jobfinder.core.shared.SsrfGuard.Policy(true, true)));
     }
 
     static FetchTarget target(String identifier) {
