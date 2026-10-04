@@ -19,6 +19,7 @@ import com.jobfinder.core.profile.internal.ResumeDtos.DownloadUrlResponse;
 import com.jobfinder.core.profile.internal.ResumeDtos.ResumeResponse;
 import com.jobfinder.core.shared.ApiException;
 import com.jobfinder.core.storage.ObjectStorage;
+import com.jobfinder.core.storage.UploadScans;
 
 /**
  * CV upload (which queues parsing), listing, download links, primary selection and deletion. Every method takes the
@@ -42,10 +43,12 @@ class ResumeService {
     private final ApplicationEventPublisher events;
     private final ResumeParseStore parseStore;
     private final AiUsageGate gate;
+    private final UploadScans scans;
 
     ResumeService(ResumeRepository resumes, ResumeVersionRepository versions, ObjectStorage storage,
             ResumeProperties properties, TransactionTemplate tx, Clock clock, ApplicationEventPublisher events,
-            ResumeParseStore parseStore, AiUsageGate gate) {
+            ResumeParseStore parseStore, AiUsageGate gate, UploadScans scans) {
+        this.scans = scans;
         this.parseStore = parseStore;
         this.gate = gate;
         this.resumes = resumes;
@@ -62,7 +65,8 @@ class ResumeService {
         return "resumes/" + userId + "/";
     }
 
-    ResumeResponse upload(UUID userId, byte[] content, String originalFilename, String requestedLabel) {
+    ResumeResponse upload(UUID userId, byte[] content, String originalFilename, String declaredType,
+            String requestedLabel) {
         if (content.length == 0) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "empty_file", "The uploaded file is empty.");
         }
@@ -72,6 +76,9 @@ class ResumeService {
         }
         ResumeFormat format = FileSniffer.sniff(content).orElseThrow(() -> new ApiException(
                 HttpStatus.UNSUPPORTED_MEDIA_TYPE, "unsupported_file_type", "Only PDF and DOCX files are accepted."));
+        UploadChecks.requireAgreement(format, originalFilename, declaredType);
+        // Before anything is stored or handed to the parser (docs/adr/0037-security-hardening.md).
+        scans.requireClean(content);
         if (resumes.countByUserId(userId) >= properties.maxPerUser()) {
             throw new ApiException(HttpStatus.CONFLICT, "resume_limit_reached",
                     "You can keep at most " + properties.maxPerUser() + " CVs. Delete one to upload another.");

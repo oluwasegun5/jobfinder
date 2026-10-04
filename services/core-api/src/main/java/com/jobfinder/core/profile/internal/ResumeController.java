@@ -43,7 +43,7 @@ class ResumeController {
     ResponseEntity<ResumeResponse> upload(@RequestParam("file") MultipartFile file,
             @RequestParam(name = "label", required = false) String label) throws IOException {
         ResumeResponse created = service.upload(CurrentUser.require().id(), file.getBytes(),
-                file.getOriginalFilename(), label);
+                file.getOriginalFilename(), file.getContentType(), label);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 

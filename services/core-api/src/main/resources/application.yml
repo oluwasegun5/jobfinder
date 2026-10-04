@@ -76,6 +76,15 @@ app:
     access-key: ${OBJECT_STORAGE_ACCESS_KEY:}
     secret-key: ${OBJECT_STORAGE_SECRET_KEY:}
     path-style: ${OBJECT_STORAGE_PATH_STYLE:true}
+  upload:
+    # Virus scanning of every upload, before it is stored or parsed (docs/adr/0037-security-hardening.md). none = no-op
+    # adapter (development and tests); clamav = stream to a clamd daemon (INSTREAM over TCP). on-error is what happens
+    # when the scanner cannot answer: closed (default, production) refuses the upload, open logs and accepts it.
+    scanner:
+      type: ${UPLOAD_SCANNER_TYPE:none}
+      host: ${UPLOAD_SCANNER_HOST:localhost}
+      port: ${UPLOAD_SCANNER_PORT:3310}
+      on-error: ${UPLOAD_SCANNER_ON_ERROR:closed}
   resumes:
     max-size: 5MB
     max-per-user: 10

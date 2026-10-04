@@ -53,8 +53,11 @@ class ResumeUploadTests extends ResumeTestSupport {
                 .andExpect(jsonPath("$.code").value("unsupported_file_type"));
         upload(session, "cv.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 notAWordDocument).andExpect(status().isUnsupportedMediaType());
-        // A real PDF is a PDF whatever it is called or declared as.
-        upload(session, "notes.txt", "text/plain", pdf()).andExpect(status().isCreated())
+        // The bytes decide what a file is (a PDF stays a PDF), but since ADR 0037 the name and declared type must also
+        // agree with them: a real PDF under a .txt name and text/plain is refused (UploadSafetyTests covers the rest).
+        upload(session, "notes.txt", "text/plain", pdf()).andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.code").value("file_type_mismatch"));
+        upload(session, "notes.pdf", "application/octet-stream", pdf()).andExpect(status().isCreated())
                 .andExpect(jsonPath("$.fileType").value("PDF"));
         assertThat(count("select count(*) from resumes where user_id = ?", userIdOf(session.accessToken())))
                 .isEqualTo(1);
