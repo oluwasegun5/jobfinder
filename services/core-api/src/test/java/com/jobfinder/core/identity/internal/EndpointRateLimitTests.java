@@ -118,7 +118,11 @@ class EndpointRateLimitTests extends AuthTestSupport {
     void theCatchAllClassesFailOpenAndTheExpensiveOnesFailClosedWhenRedisIsDown() throws Exception {
         RateLimitProperties dead = new RateLimitProperties("redis://127.0.0.1:1", Map.of(), Map.of());
         RateLimiter limiter = new RateLimiter(dead);
-        EndpointRateLimitInterceptor interceptor = new EndpointRateLimitInterceptor(limiter, dead);
+        EndpointRateLimitInterceptor interceptor = new EndpointRateLimitInterceptor(limiter, dead,
+                new ClientIpResolver(new WebSecurityProperties(
+                        new WebSecurityProperties.Cors(java.util.List.of(), false, java.time.Duration.ofMinutes(10)),
+                        new WebSecurityProperties.Csrf(java.util.List.of()),
+                        new WebSecurityProperties.Hsts(java.time.Duration.ofDays(365), true), java.util.List.of())));
         HandlerMethod handler = new HandlerMethod(this, Object.class.getMethod("hashCode"));
 
         assertThat(interceptor.preHandle(request("GET", "/saved-jobs"), new MockHttpServletResponse(), handler)).isTrue();

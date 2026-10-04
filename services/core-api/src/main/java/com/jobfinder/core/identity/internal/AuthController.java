@@ -42,44 +42,47 @@ class AuthController {
     private final AuthService auth;
     private final AuthProperties properties;
 
-    AuthController(AuthService auth, AuthProperties properties) {
+    private final ClientIpResolver clientIp;
+
+    AuthController(AuthService auth, AuthProperties properties, ClientIpResolver clientIp) {
         this.auth = auth;
         this.properties = properties;
+        this.clientIp = clientIp;
     }
 
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.ACCEPTED)
     void signup(@Valid @RequestBody SignupRequest request, HttpServletRequest http) {
-        auth.signup(request.email(), request.password(), http.getRemoteAddr());
+        auth.signup(request.email(), request.password(), clientIp.resolve(http));
     }
 
     @PostMapping("/verify-email")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void verifyEmail(@Valid @RequestBody TokenRequest request, HttpServletRequest http) {
-        auth.verifyEmail(request.token(), http.getRemoteAddr());
+        auth.verifyEmail(request.token(), clientIp.resolve(http));
     }
 
     @PostMapping("/resend-verification")
     @ResponseStatus(HttpStatus.ACCEPTED)
     void resendVerification(@Valid @RequestBody EmailRequest request, HttpServletRequest http) {
-        auth.resendVerification(request.email(), http.getRemoteAddr());
+        auth.resendVerification(request.email(), clientIp.resolve(http));
     }
 
     @PostMapping("/login")
     ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
-        return respond(auth.login(request.email(), request.password(), http.getRemoteAddr()));
+        return respond(auth.login(request.email(), request.password(), clientIp.resolve(http)));
     }
 
     @PostMapping("/google")
     ResponseEntity<AuthResponse> google(@Valid @RequestBody GoogleLoginRequest request, HttpServletRequest http) {
-        return respond(auth.googleLogin(request.idToken(), http.getRemoteAddr()));
+        return respond(auth.googleLogin(request.idToken(), clientIp.resolve(http)));
     }
 
     @PostMapping("/refresh")
     ResponseEntity<AuthResponse> refresh(HttpServletRequest http) {
         Cookie cookie = WebUtils.getCookie(http, properties.refreshCookie().name());
         try {
-            return respond(auth.refresh(cookie != null ? cookie.getValue() : null, http.getRemoteAddr()));
+            return respond(auth.refresh(cookie != null ? cookie.getValue() : null, clientIp.resolve(http)));
         } catch (AuthException e) {
             if (e.code().equals("invalid_refresh_token")) {
                 // Drop the dead cookie so the browser stops sending it.
@@ -99,13 +102,13 @@ class AuthController {
     @PostMapping("/forgot-password")
     @ResponseStatus(HttpStatus.ACCEPTED)
     void forgotPassword(@Valid @RequestBody EmailRequest request, HttpServletRequest http) {
-        auth.forgotPassword(request.email(), http.getRemoteAddr());
+        auth.forgotPassword(request.email(), clientIp.resolve(http));
     }
 
     @PostMapping("/reset-password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void resetPassword(@Valid @RequestBody ResetPasswordRequest request, HttpServletRequest http) {
-        auth.resetPassword(request.token(), request.newPassword(), http.getRemoteAddr());
+        auth.resetPassword(request.token(), request.newPassword(), clientIp.resolve(http));
     }
 
     @GetMapping("/me")

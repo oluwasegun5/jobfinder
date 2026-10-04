@@ -19,13 +19,18 @@ import jakarta.validation.constraints.NotNull;
  * {@code app.auth.web-base-url}): the Next server proxies {@code /api/core} and forwards the browser's {@code Origin},
  * so that origin must always be known. A wildcard is refused at startup, and credentials are only ever allowed to the
  * listed origins.
+ *
+ * <p>{@code trustedProxies}: the addresses (or CIDR blocks) whose {@code X-Forwarded-For} is believed; see
+ * {@link ClientIpResolver}. The default is the private ranges, where the web container and a load balancer live.
  */
 @ConfigurationProperties("app.security")
 @Validated
 record WebSecurityProperties(
         @Valid @DefaultValue Cors cors,
         @Valid @DefaultValue Csrf csrf,
-        @Valid @DefaultValue Hsts hsts) {
+        @Valid @DefaultValue Hsts hsts,
+        @DefaultValue({ "127.0.0.0/8", "::1/128", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7" })
+        List<String> trustedProxies) {
 
     record Cors(
             @DefaultValue List<String> allowedOrigins,

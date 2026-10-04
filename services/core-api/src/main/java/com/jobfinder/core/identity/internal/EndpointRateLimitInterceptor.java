@@ -31,9 +31,12 @@ class EndpointRateLimitInterceptor implements HandlerInterceptor {
     private final RateLimiter limiter;
     private final RateLimitProperties properties;
 
-    EndpointRateLimitInterceptor(RateLimiter limiter, RateLimitProperties properties) {
+    private final ClientIpResolver clientIp;
+
+    EndpointRateLimitInterceptor(RateLimiter limiter, RateLimitProperties properties, ClientIpResolver clientIp) {
         this.limiter = limiter;
         this.properties = properties;
+        this.clientIp = clientIp;
     }
 
     @Override
@@ -59,11 +62,11 @@ class EndpointRateLimitInterceptor implements HandlerInterceptor {
         return true;
     }
 
-    private static String subject(HttpServletRequest request) {
+    private String subject(HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication instanceof JwtAuthenticationToken token && token.getToken().getSubject() != null) {
             return "user:" + token.getToken().getSubject();
         }
-        return "ip:" + request.getRemoteAddr();
+        return "ip:" + clientIp.resolve(request);
     }
 }
