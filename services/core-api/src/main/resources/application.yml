@@ -4,7 +4,8 @@ spring:
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:jobfinder}
     username: ${POSTGRES_USER:jobfinder}
-    password: ${POSTGRES_PASSWORD:jobfinder}
+    # No default on purpose: startup fails unless POSTGRES_PASSWORD is set.
+    password: ${POSTGRES_PASSWORD}
   flyway:
     enabled: true
   jpa:
@@ -27,7 +28,8 @@ spring:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USER:jobfinder}
-    password: ${RABBITMQ_PASSWORD:jobfinder}
+    # No default on purpose: startup fails unless RABBITMQ_PASSWORD is set.
+    password: ${RABBITMQ_PASSWORD}
     # Uploads publish to the broker; fail fast (the resume is then marked FAILED) instead of hanging.
     connection-timeout: 3s
     listener:
@@ -415,7 +417,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health
   endpoint:
     health:
       probes:

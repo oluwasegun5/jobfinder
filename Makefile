@@ -1,6 +1,16 @@
 COMPOSE := docker compose -f infra/docker-compose.yml --env-file .env
 
-.PHONY: up down logs test fmt lint contract embeddings-backfill search-perf match-eval
+.PHONY: env up down logs test fmt lint contract embeddings-backfill search-perf match-eval
+
+# Creates .env from .env.example with a fresh random value for every change-me-* placeholder (never overwrites).
+env:
+	@test ! -e .env || { echo ".env already exists; not touching it"; exit 0; }; \
+	while IFS= read -r line; do \
+	  case "$$line" in \
+	    *=change-me-*) printf '%s=%s\n' "$${line%%=*}" "$$(openssl rand -hex 24)";; \
+	    *) printf '%s\n' "$$line";; \
+	  esac; \
+	done < .env.example > .env; echo "created .env with generated secrets"
 
 up:
 	$(COMPOSE) up -d --wait

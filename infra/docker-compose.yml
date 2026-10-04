@@ -5,10 +5,10 @@ services:
     image: pgvector/pgvector:pg16
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-jobfinder}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jobfinder}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env (see .env.example)}
       POSTGRES_DB: ${POSTGRES_DB:-jobfinder}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -20,7 +20,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -33,10 +33,10 @@ services:
     image: rabbitmq:4.3.6-management-alpine
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-jobfinder}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-jobfinder}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD in .env (see .env.example)}
     ports:
-      - "${RABBITMQ_PORT:-5672}:5672"
-      - "${RABBITMQ_MGMT_PORT:-15672}:15672"
+      - "127.0.0.1:${RABBITMQ_PORT:-5672}:5672"
+      - "127.0.0.1:${RABBITMQ_MGMT_PORT:-15672}:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
@@ -57,7 +57,7 @@ services:
     environment:
       debug: "false"
     ports:
-      - "${OBJECT_STORAGE_PORT:-9000}:9090"
+      - "127.0.0.1:${OBJECT_STORAGE_PORT:-9000}:9090"
 
   object-storage-init:
     image: amazon/aws-cli:2.37.4
@@ -65,8 +65,8 @@ services:
       object-storage:
         condition: service_started
     environment:
-      AWS_ACCESS_KEY_ID: local
-      AWS_SECRET_ACCESS_KEY: local
+      AWS_ACCESS_KEY_ID: ${OBJECT_STORAGE_ACCESS_KEY:?set OBJECT_STORAGE_ACCESS_KEY in .env (see .env.example)}
+      AWS_SECRET_ACCESS_KEY: ${OBJECT_STORAGE_SECRET_KEY:?set OBJECT_STORAGE_SECRET_KEY in .env (see .env.example)}
       AWS_EC2_METADATA_DISABLED: "true"
       OBJECT_STORAGE_BUCKET: ${OBJECT_STORAGE_BUCKET:-jobfinder}
     entrypoint: >
@@ -83,8 +83,8 @@ services:
   mailpit:
     image: axllent/mailpit:v1.31.2
     ports:
-      - "${MAILPIT_SMTP_PORT:-1025}:1025"
-      - "${MAILPIT_UI_PORT:-8025}:8025"
+      - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8025/readyz"]
       interval: 5s
@@ -114,13 +114,13 @@ services:
       POSTGRES_PORT: 5432
       POSTGRES_DB: ${POSTGRES_DB:-jobfinder}
       POSTGRES_USER: ${POSTGRES_USER:-jobfinder}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jobfinder}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env (see .env.example)}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER:-jobfinder}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-jobfinder}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD in .env (see .env.example)}
       AI_SERVICE_URL: http://ai-service:8000
       AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:?set AI_SERVICE_TOKEN in .env (see .env.example)}
       # The pinned embedding space; ai-service gets the same two values (docs/adr/0022-embeddings-pipeline.md).
@@ -145,8 +145,8 @@ services:
       OBJECT_STORAGE_ENDPOINT: http://object-storage:9090
       OBJECT_STORAGE_PUBLIC_ENDPOINT: http://localhost:${OBJECT_STORAGE_PORT:-9000}
       OBJECT_STORAGE_BUCKET: ${OBJECT_STORAGE_BUCKET:-jobfinder}
-      OBJECT_STORAGE_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY:-local}
-      OBJECT_STORAGE_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY:-local}
+      OBJECT_STORAGE_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY:?set OBJECT_STORAGE_ACCESS_KEY in .env (see .env.example)}
+      OBJECT_STORAGE_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY:?set OBJECT_STORAGE_SECRET_KEY in .env (see .env.example)}
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env (see .env.example)}
       WEB_BASE_URL: ${WEB_BASE_URL:-http://localhost:3000}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
@@ -160,7 +160,7 @@ services:
       INGESTION_ALERT_RECIPIENTS: ${INGESTION_ALERT_RECIPIENTS:-}
       SERVER_PORT: 8080
     ports:
-      - "${CORE_API_PORT:-8080}:8080"
+      - "127.0.0.1:${CORE_API_PORT:-8080}:8080"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 10s
@@ -193,7 +193,7 @@ services:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER:-jobfinder}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-jobfinder}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD in .env (see .env.example)}
     # Internal only (PLAN.md §3): published on localhost for local debugging, never publicly.
     ports:
       - "127.0.0.1:${AI_SERVICE_PORT:-8000}:8000"
