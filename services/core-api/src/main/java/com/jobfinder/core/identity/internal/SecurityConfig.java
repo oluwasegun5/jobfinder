@@ -24,6 +24,8 @@ import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtClaimNames;
+import org.springframework.security.oauth2.jwt.JwtClaimValidator;
 import org.springframework.security.oauth2.jwt.JwtIssuerValidator;
 import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
@@ -144,7 +146,9 @@ class SecurityConfig {
         // No clock-skew leeway: access tokens live 15 minutes and that is what we promise.
         decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
                 new JwtTimestampValidator(Duration.ZERO),
-                new JwtIssuerValidator(properties.jwt().issuer())));
+                new JwtIssuerValidator(properties.jwt().issuer()),
+                new JwtClaimValidator<List<String>>(JwtClaimNames.AUD,
+                        aud -> aud != null && aud.contains(properties.jwt().audience()))));
         return decoder;
     }
 

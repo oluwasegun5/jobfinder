@@ -70,11 +70,12 @@ class AuthService {
         rateLimiter.check(RateLimitRule.SIGNUP_IP, ip);
         requireAcceptablePassword(password);
 
+        // Hash first, whether or not the address is taken, so the response time does not tell the two apart.
+        String hash = passwordEncoder.encode(password);
         if (users.findByEmail(email).isPresent()) {
             events.publishEvent(new AuthEmailEvent.AccountAlreadyExists(email));
             return;
         }
-        String hash = passwordEncoder.encode(password);
         try {
             tx.executeWithoutResult(status -> {
                 User user = users.saveAndFlush(new User(email, hash));

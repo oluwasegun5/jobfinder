@@ -12,6 +12,9 @@ import org.springframework.http.MediaType;
 
 class SignupAndVerificationTests extends AuthTestSupport {
 
+    @org.springframework.test.context.bean.override.mockito.MockitoSpyBean
+    org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
     @Test
     void signupCreatesUnverifiedUserAndEmailsAVerificationLink() throws Exception {
         String email = newEmail();
@@ -51,6 +54,20 @@ class SignupAndVerificationTests extends AuthTestSupport {
         // The owner is told about the attempt instead of receiving a second verification link.
         List<String> mails = awaitMails(email, 2);
         assertThat(mails.get(0)).contains("already has an account").doesNotContain("token=");
+    }
+
+    @Test
+    void signupDoesTheSamePasswordHashingWhetherOrNotTheAddressIsTaken() throws Exception {
+        String taken = newEmail();
+        postJson("/auth/signup", credentials(taken, PASSWORD), newIp()).andExpect(status().isAccepted());
+        awaitMails(taken, 1);
+        org.mockito.Mockito.clearInvocations(passwordEncoder);
+
+        postJson("/auth/signup", credentials(taken, PASSWORD), newIp()).andExpect(status().isAccepted());
+        org.mockito.Mockito.verify(passwordEncoder, org.mockito.Mockito.times(1)).encode(PASSWORD);
+        org.mockito.Mockito.clearInvocations(passwordEncoder);
+        postJson("/auth/signup", credentials(newEmail(), PASSWORD), newIp()).andExpect(status().isAccepted());
+        org.mockito.Mockito.verify(passwordEncoder, org.mockito.Mockito.times(1)).encode(PASSWORD);
     }
 
     @Test
