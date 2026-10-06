@@ -24,7 +24,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import com.jayway.jsonpath.JsonPath;
-import com.jobfinder.core.TestcontainersConfiguration.MailpitContainer;
+import com.jobfinder.core.TestcontainersConfiguration.Mailpit;
 import com.jobfinder.core.matching.MatchService;
 import com.jobfinder.core.matching.MatchingTestSupport;
 
@@ -40,7 +40,7 @@ abstract class NotificationsTestSupport extends MatchingTestSupport {
     private static final Pattern TOKEN_IN_URL = Pattern.compile("/(?:unsubscribe\\?token=|notifications/unsubscribe/)([A-Za-z0-9_.-]+)");
 
     @Autowired
-    protected MailpitContainer mail;
+    protected Mailpit mail;
 
     @Autowired
     protected MatchService matchService;

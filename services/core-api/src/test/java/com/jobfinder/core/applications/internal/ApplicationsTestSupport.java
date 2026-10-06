@@ -29,7 +29,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import com.jayway.jsonpath.JsonPath;
-import com.jobfinder.core.TestcontainersConfiguration.MailpitContainer;
+import com.jobfinder.core.TestcontainersConfiguration.Mailpit;
 import com.jobfinder.core.documents.WritingTestSupport;
 
 import tools.jackson.databind.JsonNode;
@@ -46,7 +46,7 @@ abstract class ApplicationsTestSupport extends WritingTestSupport {
     private static final HttpClient HTTP = HttpClient.newHttpClient();
 
     @Autowired
-    protected MailpitContainer mailpit;
+    protected Mailpit mailpit;
 
     /** An email as Mailpit holds it. */
     record Mail(String subject, String text, String html) {
