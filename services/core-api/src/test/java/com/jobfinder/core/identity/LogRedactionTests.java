@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
@@ -31,17 +32,22 @@ class LogRedactionTests extends AuthTestSupport {
 
     private final Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
     private ListAppender<ILoggingEvent> captured;
+    private Level originalLevel;
 
     @BeforeEach
     void capture() {
         captured = new ListAppender<>();
         captured.start();
+        // Another test context in the same JVM may have changed the level; the capture must not depend on it.
+        originalLevel = root.getLevel();
+        root.setLevel(Level.INFO);
         root.addAppender(captured);
     }
 
     @AfterEach
     void release() {
         root.detachAppender(captured);
+        root.setLevel(originalLevel);
     }
 
     private String everythingLogged() {
@@ -82,8 +88,10 @@ class LogRedactionTests extends AuthTestSupport {
         mvc.perform(post("/jobs/" + UUID.randomUUID() + "/tailor").header("Authorization",
                 "Bearer " + session.accessToken()));
 
+        // Proves the capture works, so an empty result cannot pass for "nothing leaked".
+        LoggerFactory.getLogger(LogRedactionTests.class).warn("capture-probe-{}", marker);
         String logs = everythingLogged();
-        assertThat(logs).isNotBlank();
+        assertThat(logs).contains("capture-probe-" + marker);
         assertThat(logs).doesNotContain(password).doesNotContain(bearer).doesNotContain(cookie)
                 .doesNotContain(cvText).doesNotContain(session.accessToken()).doesNotContain(PASSWORD)
                 .doesNotContain(email).doesNotContain(owner);
