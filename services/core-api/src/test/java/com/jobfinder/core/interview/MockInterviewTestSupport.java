@@ -120,6 +120,20 @@ public abstract class MockInterviewTestSupport extends InterviewTestSupport {
                 .willReturn(okJson(mapper.writeValueAsString(body)).withFixedDelay(delayMillis)));
     }
 
+    /**
+     * A slow opening question where every request gets a {@code call_id} of its own, as ai-service gives each model
+     * call. Two concurrent starts make two calls; with one shared id the ledger would record whichever came second as a
+     * duplicate worth 0 credits, and that may be the request that wins the insert.
+     */
+    protected void stubSlowOpeningPerCall(UUID userId, String costUsd, int delayMillis) {
+        String body = mapper.writeValueAsString(opening(TEMPLATED_CALL, costUsd))
+                .replace(TEMPLATED_CALL.toString(), "{{randomValue type='UUID'}}");
+        aiService.stubFor(forUser(TURN_PATH, userId).willReturn(okJson(body).withFixedDelay(delayMillis)
+                .withTransformers("response-template")));
+    }
+
+    private static final UUID TEMPLATED_CALL = new UUID(0L, 0L);
+
     protected void stubTurn(UUID userId, int status, String body) {
         aiService.stubFor(forUser(TURN_PATH, userId).willReturn(aResponse().withStatus(status)
                 .withHeader("Content-Type", "application/problem+json").withBody(body)));
