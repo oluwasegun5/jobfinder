@@ -10,7 +10,7 @@ machine.
 
 ## Findings
 
-Result: 20 found, 20 fixed, 0 open. No critical. High 7, medium 8, low 4, informational 1.
+Result: 21 found, 21 fixed, 0 open. No critical. High 7, medium 8, low 5, informational 1.
 
 | Id | Area | ASVS | Severity | Status | Evidence / test |
 |---|---|---|---|---|---|
@@ -34,6 +34,8 @@ Result: 20 found, 20 fixed, 0 open. No critical. High 7, medium 8, low 4, inform
 | SEC-18 | `shadcn` (build-time CLI) shipped among web production dependencies | 14.2.1, 14.2.4 | low | fixed | `apps/web/package.json`; production audit shows none of its subtree |
 | SEC-19 | core-api container ran as root; no production compose overlay (published data-store ports, no capability drops) | 14.1.x | medium | fixed | `ContainerHygieneTests` (non-root final stage, pinned tags, loopback dev ports, prod overlay resets ports, drops capabilities, read-only roots) |
 | SEC-20 | Logs: no test that secrets and personal data stay out of logs | 7.1.1, 7.1.2 | informational | fixed (test added, redaction layer is a residual) | `identity/LogRedactionTests` |
+| SEC-21 | web: the edge block on `/actuator/**` (SEC-09) also stopped the app's own status badge, which reads `/actuator/health` (found by running the stack, not by a unit test) | 14.4, 1.14 | low | fixed | `apps/web/src/lib/security/edge.test.ts` (only `/actuator/health` passes; `/actuator`, `/actuator/env`, `/actuator/health/liveness` and dot-segment spellings stay blocked), `apps/web/e2e/security.spec.ts` (health answers 200 with `status` and `groups` only, `/actuator/env` stays 404) |
+
 
 ## Checked and found fine
 

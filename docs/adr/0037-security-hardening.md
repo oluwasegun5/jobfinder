@@ -111,7 +111,8 @@ never set in a deployed profile.
 ### Information exposure (ASVS 7.4, 14.3)
 `application-prod.yml`: Swagger UI and the API description off, actuator `health` only with no detail, no error message,
 binding errors or stack trace in error bodies. The base profile also exposes `health` only (`/actuator/info` is gone).
-The OpenAPI description stays available in development because the web client is generated from it.
+The web proxy refuses `/internal/**` and every actuator path except exactly `/actuator/health`, which the status badge
+reads (the body is the status and its groups, nothing more). The OpenAPI description stays available in development because the web client is generated from it.
 
 ### Secrets, dependencies, infrastructure
 - No secret has a usable default in `application.yml`, `application-prod.yml`, the compose files, Dockerfiles or CI
