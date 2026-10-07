@@ -106,3 +106,11 @@ All are low or informational and none has a fix that fits P6.2; each names where
 | SEC-R9 | Eight high npm advisories in dev tooling (`braces`, `micromatch`, `fast-glob`, `ts-morph`, `@ts-morph/common`, `shadcn`, `eslint-config-next`, `@next/eslint-plugin-next`), reached only through `shadcn` and the ESLint config. The only "fix" offered downgrades `shadcn` to 1.0.0 and `eslint-config-next` to 14. None is in the production tree or runs on untrusted input | low | No fix without a downgrade. Time-boxed exception: re-check by 2027-01-06 or when `shadcn` or `eslint-config-next` ship a release that bumps `braces` | CI informational job |
 | SEC-R10 | The upload scanner defaults to `type=none` (a no-op) in compose; production must set `UPLOAD_SCANNER_TYPE=clamav` and run a clamd | low | Independent checks (type, magic bytes, macro and archive refusal, size) always apply; with `clamav` the default is fail-closed. The deployment must enable it | P6.5 |
 | SEC-R11 | The core-api read-only root filesystem and `cap_drop` in the production overlay were checked from the file only, not by starting that overlay | informational | Needs real SMTP and storage values; see "Verification" in the task summary | P6.5 |
+
+## Privacy and data rights (P6.4)
+
+Account deletion, the personal data export, consent to AI processing and the retention jobs are specified in
+`docs/adr/0040-compliance-and-account-data.md`; the data inventory and retention table are in
+`docs/compliance/data-inventory.md`. Deletion is asserted for the whole schema by
+`identity/AccountDeletionCompletenessTests`, so a new table holding user data cannot ship without an owner-cascade, an
+export decision and a test.
