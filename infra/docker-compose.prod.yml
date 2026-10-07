@@ -73,6 +73,10 @@ services:
       OBJECT_STORAGE_PATH_STYLE: "false"
       WEB_BASE_URL: ${WEB_BASE_URL:?set WEB_BASE_URL to the public https URL}
       APP_SECURITY_CORS_ALLOWED_ORIGINS: ${WEB_BASE_URL}
+      # Where the hosted checkout sends the browser back to (the web route apps/web/src/app/(app)/billing/return);
+      # the application defaults point at localhost.
+      BILLING_RETURN_URL: ${WEB_BASE_URL}/billing/return
+      BILLING_CANCEL_URL: ${WEB_BASE_URL}/billing/return?canceled=1
       UPLOAD_SCANNER_TYPE: ${UPLOAD_SCANNER_TYPE:-none}
       UPLOAD_SCANNER_HOST: ${UPLOAD_SCANNER_HOST:-clamav}
       UPLOAD_SCANNER_ON_ERROR: ${UPLOAD_SCANNER_ON_ERROR:-closed}

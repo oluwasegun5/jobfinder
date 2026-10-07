@@ -77,6 +77,20 @@ class ContainerHygieneTests {
     }
 
     @Test
+    void theProductionOverlayPointsTheCheckoutReturnAndCancelUrlsAtTheWebApp() throws IOException {
+        // The application defaults are localhost URLs; in production a paying user must come back to the real site.
+        String overlay = Files.readString(REPO.resolve("infra/docker-compose.prod.yml"));
+        String application = Files.readString(Path.of("src/main/resources/application.yml"));
+        assertThat(application).contains("return-url: ${BILLING_RETURN_URL:").contains("cancel-url: ${BILLING_CANCEL_URL:");
+        Matcher block = Pattern.compile("(?m)^  core-api:\\n((?:    .*\\n|\\n)*)").matcher(overlay);
+        assertThat(block.find()).isTrue();
+        assertThat(block.group(1)).contains("BILLING_RETURN_URL: ${WEB_BASE_URL}/billing/return\n")
+                .contains("BILLING_CANCEL_URL: ${WEB_BASE_URL}/billing/return?canceled=1\n");
+        // The route they name exists in the web app.
+        assertThat(REPO.resolve("apps/web/src/app/(app)/billing/return/page.tsx")).exists();
+    }
+
+    @Test
     void theProductionOverlayResetsEveryPublishedPortExceptWebAndDropsCapabilities() throws IOException {
         String overlay = Files.readString(REPO.resolve("infra/docker-compose.prod.yml"));
 
