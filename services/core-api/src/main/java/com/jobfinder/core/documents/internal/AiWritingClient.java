@@ -28,6 +28,8 @@ import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
+import io.micrometer.observation.ObservationRegistry;
+
 /**
  * Calls ai-service {@code POST /v1/cover-letter}, {@code /v1/screening-answers} and {@code /v1/fact-check-text}
  * (docs/adr/0031-cover-letters-and-application-pack.md) and checks what comes back before anything is stored.
@@ -80,12 +82,12 @@ class AiWritingClient {
     private final JsonMapper json;
 
     AiWritingClient(DocumentsAiProperties properties, DocumentsProperties documents, AiTailoringClient shared,
-            JsonMapper json) {
+            JsonMapper json, ObservationRegistry observations) {
         this.shared = shared;
         this.json = json;
-        this.client = AiTailoringClient.client(properties, documents.tailoring().connectTimeout(),
+        this.client = AiTailoringClient.client(properties, observations, documents.tailoring().connectTimeout(),
                 documents.tailoring().readTimeout());
-        this.factCheckClient = AiTailoringClient.client(properties, documents.factCheck().connectTimeout(),
+        this.factCheckClient = AiTailoringClient.client(properties, observations, documents.factCheck().connectTimeout(),
                 documents.factCheck().readTimeout());
     }
 

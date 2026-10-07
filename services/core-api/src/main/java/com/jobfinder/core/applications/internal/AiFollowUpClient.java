@@ -27,6 +27,8 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
 
+import io.micrometer.observation.ObservationRegistry;
+
 /**
  * Calls ai-service {@code POST /v1/follow-up-email} (docs/adr/0032-application-tracker.md) and checks what comes back
  * before anything is shown.
@@ -80,13 +82,13 @@ class AiFollowUpClient {
     private final AiUsageLedger ledger;
 
     AiFollowUpClient(ApplicationsAiProperties ai, ApplicationsProperties properties, JsonMapper json,
-            AiUsageLedger ledger) {
+            AiUsageLedger ledger, ObservationRegistry observations) {
         this.json = json;
         this.ledger = ledger;
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1).connectTimeout(properties.followUp().connectTimeout()).build());
         factory.setReadTimeout(properties.followUp().readTimeout());
-        this.client = RestClient.builder().baseUrl(ai.baseUrl()).defaultHeader("X-Service-Token", ai.token())
+        this.client = RestClient.builder().observationRegistry(observations).baseUrl(ai.baseUrl()).defaultHeader("X-Service-Token", ai.token())
                 .requestFactory(factory).build();
     }
 

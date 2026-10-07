@@ -30,7 +30,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * Authentication for {@code /internal/**}: one filter chain of its own, matched before the user-facing one, that
+ * Authentication for {@code /internal/**} and the Prometheus scrape endpoint ({@code /actuator/prometheus}, ADR 0039):
+ * one filter chain of its own, matched before the user-facing one, that
  * accepts only the shared service token ({@code X-Service-Token}, the same secret core-api sends to ai-service).
  * A user's JWT, even an admin's, does not open these endpoints.
  */
@@ -54,7 +55,7 @@ class InternalSecurityConfig {
         ServiceTokenFilter filter = new ServiceTokenFilter(token);
         SecurityHeaderDefaults.apply(http, Duration.ZERO, false);
         return http
-                .securityMatcher("/internal/**")
+                .securityMatcher("/internal/**", "/actuator/prometheus")
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())

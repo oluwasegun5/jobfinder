@@ -33,6 +33,8 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
 
+import io.micrometer.observation.ObservationRegistry;
+
 /**
  * Calls ai-service {@code POST /v1/tailor-resume} and {@code POST /v1/fact-check}
  * (docs/adr/0029-resume-tailoring.md) and checks what comes back before anything is stored.
@@ -84,20 +86,21 @@ class AiTailoringClient {
     private final AiUsageLedger ledger;
 
     AiTailoringClient(DocumentsAiProperties properties, DocumentsProperties documents, JsonMapper json,
-            AiUsageLedger ledger) {
+            AiUsageLedger ledger, ObservationRegistry observations) {
         this.json = json;
         this.ledger = ledger;
-        this.tailoringClient = client(properties, documents.tailoring().connectTimeout(),
+        this.tailoringClient = client(properties, observations, documents.tailoring().connectTimeout(),
                 documents.tailoring().readTimeout());
-        this.factCheckClient = client(properties, documents.factCheck().connectTimeout(),
+        this.factCheckClient = client(properties, observations, documents.factCheck().connectTimeout(),
                 documents.factCheck().readTimeout());
     }
 
-    static RestClient client(DocumentsAiProperties properties, Duration connect, Duration read) {
+    static RestClient client(DocumentsAiProperties properties, ObservationRegistry observations, Duration connect,
+            Duration read) {
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(
                 HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(connect).build());
         factory.setReadTimeout(read);
-        return RestClient.builder().baseUrl(properties.baseUrl())
+        return RestClient.builder().observationRegistry(observations).baseUrl(properties.baseUrl())
                 .defaultHeader("X-Service-Token", properties.token()).requestFactory(factory).build();
     }
 
