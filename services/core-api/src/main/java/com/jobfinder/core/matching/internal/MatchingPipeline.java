@@ -273,7 +273,8 @@ class MatchingPipeline implements MatchService {
                     gate.requireAllowance(userId, AiMatchClient.FEATURE);
                 } catch (AiAllowanceException e) {
                     stopped = e instanceof InsufficientCreditsException ? FallbackReason.INSUFFICIENT_CREDITS
-                            : FallbackReason.DAILY_CAP_REACHED;
+                            : e instanceof com.jobfinder.core.billing.AiConsentRequiredException
+                                    ? FallbackReason.CONSENT_REQUIRED : FallbackReason.DAILY_CAP_REACHED;
                     capped = true;
                 }
             }

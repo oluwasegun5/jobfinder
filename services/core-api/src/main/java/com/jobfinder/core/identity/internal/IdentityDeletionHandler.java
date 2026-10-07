@@ -7,7 +7,7 @@ import com.jobfinder.core.identity.UserDeletionRequested;
 
 /**
  * Identity's share of an account deletion: everything keyed by the user except the user row,
- * which {@link AuthService#deleteAccount} removes last. Runs in the deleting transaction.
+ * which {@link AuthService#deleteAccount} removes last, and the user's rate-limit keys in Redis. Runs in the deleting transaction.
  */
 @Component
 class IdentityDeletionHandler {
@@ -15,9 +15,11 @@ class IdentityDeletionHandler {
     private final RefreshTokenRepository refreshTokens;
     private final EmailTokenRepository emailTokens;
     private final OAuthAccountRepository oauthAccounts;
+    private final RateLimiter rateLimiter;
 
     IdentityDeletionHandler(RefreshTokenRepository refreshTokens, EmailTokenRepository emailTokens,
-            OAuthAccountRepository oauthAccounts) {
+            OAuthAccountRepository oauthAccounts, RateLimiter rateLimiter) {
+        this.rateLimiter = rateLimiter;
         this.refreshTokens = refreshTokens;
         this.emailTokens = emailTokens;
         this.oauthAccounts = oauthAccounts;
@@ -28,5 +30,6 @@ class IdentityDeletionHandler {
         refreshTokens.deleteAllForUser(event.userId());
         emailTokens.deleteAllForUser(event.userId());
         oauthAccounts.deleteAllForUser(event.userId());
+        rateLimiter.forgetSubject(event.userId());
     }
 }

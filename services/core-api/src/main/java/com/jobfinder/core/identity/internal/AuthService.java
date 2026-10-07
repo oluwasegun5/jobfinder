@@ -65,7 +65,7 @@ class AuthService {
         this.dummyHash = passwordEncoder.encode(UUID.randomUUID().toString());
     }
 
-    void signup(String rawEmail, String password, String ip) {
+    void signup(String rawEmail, String password, boolean aiConsent, String ip) {
         String email = normalize(rawEmail);
         rateLimiter.check(RateLimitRule.SIGNUP_IP, ip);
         requireAcceptablePassword(password);
@@ -78,7 +78,11 @@ class AuthService {
         }
         try {
             tx.executeWithoutResult(status -> {
-                User user = users.saveAndFlush(new User(email, hash));
+                User created = new User(email, hash);
+                if (aiConsent) {
+                    created.grantAiConsent(AiConsentService.CURRENT_VERSION, clock.instant());
+                }
+                User user = users.saveAndFlush(created);
                 String token = emailTokens.issue(user.getId(), EmailTokenType.VERIFY_EMAIL,
                         properties.verificationTokenTtl());
                 events.publishEvent(new AuthEmailEvent.VerifyEmail(email, token));

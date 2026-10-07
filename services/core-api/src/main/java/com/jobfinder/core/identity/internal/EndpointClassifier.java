@@ -46,6 +46,7 @@ final class EndpointClassifier {
             // Export.
             post("/documents/{id}/render", EndpointClass.EXPORT),
             post("/resumes/{id}/render", EndpointClass.EXPORT),
+            get("/me/export", EndpointClass.DATA_EXPORT),
             // Search.
             get("/jobs", EndpointClass.SEARCH),
             get("/jobs/{id}/similar", EndpointClass.SEARCH),

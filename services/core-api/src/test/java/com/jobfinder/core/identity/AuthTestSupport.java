@@ -92,7 +92,7 @@ public abstract class AuthTestSupport {
     }
 
     protected static String credentials(String email, String password) {
-        return "{\"email\":\"%s\",\"password\":\"%s\"}".formatted(email, password);
+        return "{\"email\":\"%s\",\"password\":\"%s\",\"aiProcessingConsent\":true}".formatted(email, password);
     }
 
     /** Signs up and verifies through the real email link; returns the email address. */

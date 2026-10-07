@@ -14,6 +14,7 @@ test("signup → verify email → login → protected page → logout", async ({
   await fill(page.getByLabel("Email"), email);
   await fill(page.getByLabel("Password", { exact: true }), password);
   await fill(page.getByLabel("Confirm password"), password);
+  await page.getByRole("checkbox", { name: /I agree/ }).check();
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page.getByRole("heading", { name: "Check your email" })).toBeVisible();
 
@@ -67,6 +68,7 @@ test("forgot password → reset → login with the new password", async ({ page 
   await fill(page.getByLabel("Email"), email);
   await fill(page.getByLabel("Password", { exact: true }), password);
   await fill(page.getByLabel("Confirm password"), password);
+  await page.getByRole("checkbox", { name: /I agree/ }).check();
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page.getByRole("heading", { name: "Check your email" })).toBeVisible();
 
@@ -87,4 +89,20 @@ test("forgot password → reset → login with the new password", async ({ page 
   await fill(page.getByLabel("Password"), newPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/onboarding\/cv$/);
+});
+
+test("signup needs the AI processing consent, and the legal pages are public", async ({ page }) => {
+  await page.goto("/signup");
+  await expect(page.getByRole("checkbox", { name: /I agree/ })).not.toBeChecked();
+
+  for (const [path, heading] of [
+    ["/privacy", "Privacy policy"],
+    ["/terms", "Terms of service"],
+    ["/cookies", "Cookie notice"],
+    ["/subprocessors", "Subprocessors"],
+  ] as const) {
+    await page.goto(path);
+    await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
+    await expect(page.getByRole("note")).toContainText("not legal advice");
+  }
 });

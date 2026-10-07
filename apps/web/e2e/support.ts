@@ -27,6 +27,7 @@ export async function signUpAndSignIn(page: Page, tag: string) {
   await fill(page.getByLabel("Email"), email);
   await fill(page.getByLabel("Password", { exact: true }), password);
   await fill(page.getByLabel("Confirm password"), password);
+  await page.getByRole("checkbox", { name: /I agree/ }).check();
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page.getByRole("heading", { name: "Check your email" })).toBeVisible();
 

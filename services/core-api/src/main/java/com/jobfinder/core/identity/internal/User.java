@@ -38,6 +38,11 @@ class User {
 
     private Instant deletedAt;
 
+    // Consent to AI processing (V35); null when never given or withdrawn.
+    private String aiConsentVersion;
+
+    private Instant aiConsentAt;
+
     private Instant createdAt;
 
     private Instant updatedAt;
@@ -92,6 +97,11 @@ class User {
 
     void promoteToAdmin() {
         this.role = Role.ADMIN;
+    }
+
+    void grantAiConsent(String version, Instant at) {
+        this.aiConsentVersion = version;
+        this.aiConsentAt = at;
     }
 
     boolean canAuthenticate() {

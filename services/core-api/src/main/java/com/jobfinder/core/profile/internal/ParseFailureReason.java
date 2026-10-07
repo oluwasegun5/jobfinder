@@ -25,6 +25,8 @@ enum ParseFailureReason {
     AI_DAILY_CAP_REACHED("ai_daily_cap_reached", false),
     /** The user has no credits left; a plan grant or a top-up lets them ask for the parse again. */
     INSUFFICIENT_CREDITS("insufficient_credits", false),
+    /** The user has not agreed (or withdrew) to AI processing; giving consent lets them ask for the parse again. */
+    AI_CONSENT_REQUIRED("ai_consent_required", false),
     UNEXPECTED_ERROR("unexpected_error", false);
 
     private final String code;
@@ -41,7 +43,7 @@ enum ParseFailureReason {
 
     /** Whether the user may ask for the parse again: the cause was not their file, and may have passed. */
     boolean userRetryable() {
-        return this == AI_DAILY_CAP_REACHED || this == INSUFFICIENT_CREDITS || this == PARSER_UNAVAILABLE || this == QUEUE_UNAVAILABLE;
+        return this == AI_DAILY_CAP_REACHED || this == INSUFFICIENT_CREDITS || this == AI_CONSENT_REQUIRED || this == PARSER_UNAVAILABLE || this == QUEUE_UNAVAILABLE;
     }
 
     static Optional<ParseFailureReason> fromCode(String code) {

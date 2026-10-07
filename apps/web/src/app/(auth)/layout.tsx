@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { GuestOnly } from "@/features/auth/route-guards";
+import { LegalLinks } from "@/features/legal/legal-page";
 
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
@@ -17,6 +18,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
           </GuestOnly>
         </CardContent>
       </Card>
+      <LegalLinks />
     </main>
   );
 }

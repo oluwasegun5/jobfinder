@@ -37,7 +37,7 @@ function backend(options: { subscribed?: boolean; balance?: number } = {}) {
     state.requests.push(key);
 
     if (key === "POST /auth/refresh") return ok({ accessToken: "e2e-token", expiresIn: 900 });
-    if (key === "GET /auth/me") return ok({ id: "u1", email: "e2e@example.test", role: "USER", emailVerified: true });
+    if (key === "GET /auth/me") return ok({ id: "u1", email: "e2e@example.test", role: "USER", emailVerified: true, aiConsent: true });
     if (key === "GET /profile") return ok({ onboardingCompleted: true });
     if (key === "GET /billing/plans") {
       return ok({

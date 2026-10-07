@@ -352,6 +352,44 @@
         }
       }
     },
+    "/me/consent/ai": {
+      "put": {
+        "tags": [
+          "consent-controller"
+        ],
+        "operationId": "grant",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "consent-controller"
+        ],
+        "operationId": "withdraw",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/jobs/{id}/save": {
       "put": {
         "tags": [
@@ -643,6 +681,16 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         }
       }
@@ -677,6 +725,16 @@
           },
           "402": {
             "description": "The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -843,6 +901,16 @@
               }
             }
           },
+          "403": {
+            "description": "The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "429": {
             "description": "Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After).",
             "content": {
@@ -895,6 +963,16 @@
           },
           "402": {
             "description": "The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -963,6 +1041,16 @@
               }
             }
           },
+          "403": {
+            "description": "The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "429": {
             "description": "Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After).",
             "content": {
@@ -1015,6 +1103,16 @@
           },
           "402": {
             "description": "The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1126,6 +1224,16 @@
               }
             }
           },
+          "403": {
+            "description": "The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "429": {
             "description": "Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After).",
             "content": {
@@ -1169,6 +1277,16 @@
           },
           "402": {
             "description": "The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1238,6 +1356,16 @@
               }
             }
           },
+          "403": {
+            "description": "The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "429": {
             "description": "Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After).",
             "content": {
@@ -1280,6 +1408,16 @@
           },
           "402": {
             "description": "The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1878,6 +2016,16 @@
               }
             }
           },
+          "403": {
+            "description": "The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "429": {
             "description": "Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After).",
             "content": {
@@ -1930,6 +2078,16 @@
           },
           "402": {
             "description": "The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2323,6 +2481,46 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/DownloadUrlResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/export": {
+      "get": {
+        "tags": [
+          "data-export-controller"
+        ],
+        "operationId": "export",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "$ref": "#/components/schemas/StreamingResponseBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/consent": {
+      "get": {
+        "tags": [
+          "consent-controller"
+        ],
+        "operationId": "get_2",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentResponse"
                 }
               }
             }
@@ -2746,6 +2944,16 @@
               }
             }
           },
+          "403": {
+            "description": "The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "429": {
             "description": "Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After).",
             "content": {
@@ -2795,7 +3003,7 @@
         "tags": [
           "interview-controller"
         ],
-        "operationId": "get_2",
+        "operationId": "get_3",
         "parameters": [
           {
             "name": "id",
@@ -4294,6 +4502,24 @@
           }
         }
       },
+      "ConsentResponse": {
+        "type": "object",
+        "properties": {
+          "aiProcessing": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "string"
+          },
+          "grantedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "currentVersion": {
+            "type": "string"
+          }
+        }
+      },
       "SetSourceEnabledRequest": {
         "type": "object",
         "properties": {
@@ -5515,9 +5741,13 @@
             "type": "string",
             "maxLength": 72,
             "minLength": 10
+          },
+          "aiProcessingConsent": {
+            "type": "boolean"
           }
         },
         "required": [
+          "aiProcessingConsent",
           "email",
           "password"
         ]
@@ -6275,6 +6505,7 @@
           }
         }
       },
+      "StreamingResponseBody": {},
       "Attribution": {
         "type": "object",
         "properties": {
@@ -6408,6 +6639,7 @@
               "INSUFFICIENT_CREDITS",
               "LLM_UNAVAILABLE",
               "LLM_FAILED",
+              "CONSENT_REQUIRED",
               "JOB_EXPIRED"
             ]
           },
@@ -6606,6 +6838,7 @@
               "INSUFFICIENT_CREDITS",
               "LLM_UNAVAILABLE",
               "LLM_FAILED",
+              "CONSENT_REQUIRED",
               "JOB_EXPIRED"
             ]
           },
@@ -7041,6 +7274,9 @@
             "type": "string"
           },
           "emailVerified": {
+            "type": "boolean"
+          },
+          "aiConsent": {
             "type": "boolean"
           }
         }

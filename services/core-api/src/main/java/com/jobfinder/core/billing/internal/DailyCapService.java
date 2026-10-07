@@ -10,11 +10,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.jobfinder.core.billing.AiConsentRequiredException;
 import com.jobfinder.core.billing.AiDailyCapReachedException;
 import com.jobfinder.core.billing.AiUsageGate;
 import com.jobfinder.core.billing.Allowance;
 import com.jobfinder.core.billing.GateStatus;
 import com.jobfinder.core.billing.InsufficientCreditsException;
+import com.jobfinder.core.identity.AiConsent;
 
 /**
  * The gate in front of every user-attributed AI call: the credit balance must be above zero and the per-user daily
@@ -23,6 +25,9 @@ import com.jobfinder.core.billing.InsufficientCreditsException;
  * <p>The cap: a day is a UTC calendar day, the cap is the most credits the user's AI calls may consume in it
  * ({@code app.billing.daily-cap-credits}, one total for all features). What a user spent is read from their credit
  * ledger, so the cap and the ledger cannot disagree. The balance is the last line's {@code balance_after}.
+ *
+ * <p>Before anything else the user must have agreed to AI processing of their data ({@link AiConsent}); without it the
+ * call is refused with {@link AiConsentRequiredException}, for background jobs as much as for requests.
  *
  * <p>Before looking at the balance, a user on the Free plan is granted the credits of the current month if they have
  * none yet ({@link CreditGrants#grantFreeIfDue}), which is how existing users get their first grant and how a missed
@@ -38,9 +43,11 @@ class DailyCapService implements AiUsageGate {
     private final CreditGrants grants;
     private final BillingProperties properties;
     private final Clock clock;
+    private final AiConsent consent;
 
     DailyCapService(AiCallStore store, CreditLedgerStore ledger, CreditGrants grants, BillingProperties properties,
-            Clock clock) {
+            Clock clock, AiConsent consent) {
+        this.consent = consent;
         this.store = store;
         this.ledger = ledger;
         this.grants = grants;
@@ -54,6 +61,10 @@ class DailyCapService implements AiUsageGate {
     }
 
     void requireAllowance(UUID userId, String feature, Instant now) {
+        if (!consent.isGranted(userId)) {
+            log.info("AI blocked, no consent: user={} feature={}", userId, feature);
+            throw new AiConsentRequiredException();
+        }
         grants.grantFreeIfDue(userId, now);
         BigDecimal balance = ledger.balance(userId);
         if (balance.signum() <= 0) {
@@ -71,6 +82,9 @@ class DailyCapService implements AiUsageGate {
     @Override
     public GateStatus status(UUID userId) {
         Instant now = Instant.now(clock);
+        if (!consent.isGranted(userId)) {
+            return GateStatus.CONSENT_REQUIRED;
+        }
         grants.grantFreeIfDue(userId, now);
         if (ledger.balance(userId).signum() <= 0) {
             return GateStatus.INSUFFICIENT_CREDITS;

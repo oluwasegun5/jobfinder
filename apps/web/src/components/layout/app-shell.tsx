@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Bookmark, BookmarkCheck, Briefcase, Coins, CreditCard, DatabaseZap, KanbanSquare, LayoutDashboard, Menu, MessagesSquare, Sparkles, UserRound, X } from "lucide-react";
+import { Bell, Bookmark, BookmarkCheck, Briefcase, Coins, CreditCard, DatabaseZap, KanbanSquare, LayoutDashboard, Menu, MessagesSquare, ShieldCheck, Sparkles, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ComponentType, type ReactNode } from "react";
@@ -29,6 +29,7 @@ const navItems: NavItem[] = [
   { label: "Profile", icon: UserRound, href: "/profile" },
   { label: "Billing", icon: CreditCard, href: "/billing" },
   { label: "Notifications", icon: Bell, href: "/settings/notifications" },
+  { label: "Privacy and data", icon: ShieldCheck, href: "/settings/privacy" },
 ];
 
 /** Shown to administrators only (core-api enforces the role; this just keeps the menu honest). */

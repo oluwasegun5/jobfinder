@@ -111,8 +111,11 @@ class EmbeddingService {
                     if (current(row.model(), row.inputHash(), hash)) {
                         skipped.add(new Skipped(id, "UP_TO_DATE"));
                     } else if (blocked.computeIfAbsent(row.userId(), gate::status) != GateStatus.OK) {
-                        skipped.add(new Skipped(id, blocked.get(row.userId()) == GateStatus.INSUFFICIENT_CREDITS
-                                ? "INSUFFICIENT_CREDITS" : "AI_DAILY_CAP_REACHED"));
+                        skipped.add(new Skipped(id, switch (blocked.get(row.userId())) {
+                            case INSUFFICIENT_CREDITS -> "INSUFFICIENT_CREDITS";
+                            case CONSENT_REQUIRED -> "CONSENT_REQUIRED";
+                            default -> "AI_DAILY_CAP_REACHED";
+                        }));
                     } else {
                         items.add(new InputItem(id, row.userId(), text, hash));
                     }

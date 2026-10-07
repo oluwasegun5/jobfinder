@@ -100,6 +100,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/consent/ai": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["grant"];
+        post?: never;
+        delete: operations["withdraw"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/jobs/{id}/save": {
         parameters: {
             query?: never;
@@ -772,6 +788,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["export"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/consent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/jobs": {
         parameters: {
             query?: never;
@@ -859,7 +907,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_2"];
+        get: operations["get_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1385,6 +1433,13 @@ export interface components {
             digestsUnsubscribed?: boolean;
             allUnsubscribed?: boolean;
         };
+        ConsentResponse: {
+            aiProcessing?: boolean;
+            version?: string;
+            /** Format: date-time */
+            grantedAt?: string;
+            currentVersion?: string;
+        };
         SetSourceEnabledRequest: {
             enabled: boolean;
         };
@@ -1809,6 +1864,7 @@ export interface components {
             /** Format: email */
             email: string;
             password: string;
+            aiProcessingConsent: boolean;
         };
         ResetPasswordRequest: {
             token: string;
@@ -2042,6 +2098,7 @@ export interface components {
             /** Format: date-time */
             expiresAt?: string;
         };
+        StreamingResponseBody: unknown;
         Attribution: {
             name?: string;
             text?: string;
@@ -2086,7 +2143,7 @@ export interface components {
             /** @enum {string} */
             status?: "LLM_SCORED" | "UNRANKED" | "NOT_LLM_SCORED";
             /** @enum {string} */
-            reason?: "DAILY_CAP_REACHED" | "INSUFFICIENT_CREDITS" | "LLM_UNAVAILABLE" | "LLM_FAILED" | "JOB_EXPIRED";
+            reason?: "DAILY_CAP_REACHED" | "INSUFFICIENT_CREDITS" | "LLM_UNAVAILABLE" | "LLM_FAILED" | "CONSENT_REQUIRED" | "JOB_EXPIRED";
             /** Format: int32 */
             score?: number;
             /** Format: double */
@@ -2158,7 +2215,7 @@ export interface components {
             strengths?: string[];
             gaps?: string[];
             /** @enum {string} */
-            fallbackReason?: "DAILY_CAP_REACHED" | "INSUFFICIENT_CREDITS" | "LLM_UNAVAILABLE" | "LLM_FAILED" | "JOB_EXPIRED";
+            fallbackReason?: "DAILY_CAP_REACHED" | "INSUFFICIENT_CREDITS" | "LLM_UNAVAILABLE" | "LLM_FAILED" | "CONSENT_REQUIRED" | "JOB_EXPIRED";
             model?: string;
             /** Format: date-time */
             scoredAt?: string;
@@ -2312,6 +2369,7 @@ export interface components {
             email?: string;
             role?: string;
             emailVerified?: boolean;
+            aiConsent?: boolean;
         };
         ApplicationListResponse: {
             items?: components["schemas"]["ApplicationView"][];
@@ -2703,6 +2761,46 @@ export interface operations {
             };
         };
     };
+    grant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsentResponse"];
+                };
+            };
+        };
+    };
+    withdraw: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsentResponse"];
+                };
+            };
+        };
+    };
     save: {
         parameters: {
             query?: never;
@@ -2940,6 +3038,15 @@ export interface operations {
                     "*/*": components["schemas"]["ResumeResponse"];
                 };
             };
+            /** @description The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
         };
     };
     reparse: {
@@ -2964,6 +3071,15 @@ export interface operations {
             };
             /** @description The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it. */
             402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3085,6 +3201,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
+            /** @description The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
             /** @description Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After). */
             429: {
                 headers: {
@@ -3122,6 +3247,15 @@ export interface operations {
             };
             /** @description The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it. */
             402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3173,6 +3307,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
+            /** @description The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
             /** @description Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After). */
             429: {
                 headers: {
@@ -3210,6 +3353,15 @@ export interface operations {
             };
             /** @description The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it. */
             402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3291,6 +3443,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
+            /** @description The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
             /** @description Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After). */
             429: {
                 headers: {
@@ -3324,6 +3485,15 @@ export interface operations {
             };
             /** @description The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it. */
             402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3375,6 +3545,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
+            /** @description The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
             /** @description Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After). */
             429: {
                 headers: {
@@ -3410,6 +3589,15 @@ export interface operations {
             };
             /** @description The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it. */
             402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3871,6 +4059,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
+            /** @description The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
             /** @description Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After). */
             429: {
                 headers: {
@@ -3908,6 +4105,15 @@ export interface operations {
             };
             /** @description The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it. */
             402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4197,6 +4403,46 @@ export interface operations {
             };
         };
     };
+    export: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": components["schemas"]["StreamingResponseBody"];
+                };
+            };
+        };
+    };
+    get_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsentResponse"];
+                };
+            };
+        };
+    };
     search: {
         parameters: {
             query?: {
@@ -4307,6 +4553,15 @@ export interface operations {
                     "*/*": components["schemas"]["MatchResponse"];
                 };
             };
+            /** @description The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required). They give it again with PUT /me/consent/ai. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
             /** @description Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After). */
             429: {
                 headers: {
@@ -4340,7 +4595,7 @@ export interface operations {
             };
         };
     };
-    get_2: {
+    get_3: {
         parameters: {
             query?: never;
             header?: never;
