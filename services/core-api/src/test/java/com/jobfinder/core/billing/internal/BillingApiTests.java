@@ -377,6 +377,14 @@ class BillingApiTests extends PaymentTestSupport {
             assertThat(ids).isNotEmpty().doesNotContainAnyElementsOf(aIds);
         }
 
+        // B's figures are B's own (the 300 free credits less 20 used): none of A's 6,000 granted credits or 10 used credits
+        // leaks into B's balance, grant and usage totals, and an extra userId parameter is ignored. A's are unchanged.
+        getAs(b, "/billing/me?userId=" + a.id()).andExpect(status().isOk())
+                .andExpect(jsonPath("$.balance").value(280)).andExpect(jsonPath("$.grantedThisPeriod").value(300))
+                .andExpect(jsonPath("$.usedThisPeriod").value(20));
+        getAs(a, "/billing/me").andExpect(jsonPath("$.balance").value(5990))
+                .andExpect(jsonPath("$.grantedThisPeriod").value(6000)).andExpect(jsonPath("$.usedThisPeriod").value(10));
+
         // B has no subscription of A's to see, and cancelling does nothing to A's.
         getAs(b, "/billing/me").andExpect(jsonPath("$.plan.code").value("free"))
                 .andExpect(jsonPath("$.subscription").doesNotExist());

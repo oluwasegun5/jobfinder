@@ -145,3 +145,15 @@ reads (the body is the status and its groups, nothing more). The OpenAPI descrip
   Dockerfile base images (the registry was unreachable here), an IP allow-list or mutual TLS for `/internal/**`, log
   redaction as a layer instead of by discipline, access-token revocation before the 15 minute expiry, and SRI or a
   stricter `style-src` for the web app (P6.3 and P6.5).
+
+---
+
+## Addendum (Phase 6 review)
+
+- The ownership guard verifies that a covering test is registered for an endpoint (`@CoversEndpoints`), not what that
+  test asserts, so a reviewer still has to read the test body (the billing `/billing/me` and `/billing/ledger` test now also
+  asserts the other user's balance, grants and usage never appear).
+- The edge proxy now strips path parameters (`;...`) from every segment before it resolves `.` and `..`, because a servlet
+  container does the same: `/api/core/foo/..;/actuator/env` is `/api/core/actuator/env` to core-api and is blocked.
+- `/webhooks/**` is no longer exempt from rate limiting: it has the per-IP `WEBHOOK` class above, and webhook bodies over 1 MB
+  are refused with 413 before the signature is checked.
