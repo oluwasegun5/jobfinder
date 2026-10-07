@@ -11,6 +11,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
 import com.jobfinder.core.billing.AiAllowanceException;
+import com.jobfinder.core.billing.AiConsentRequiredException;
 import com.jobfinder.core.billing.AiDailyCapReachedException;
 import com.jobfinder.core.billing.InsufficientCreditsException;
 import com.jobfinder.core.billing.AiUsageGate;
@@ -104,6 +105,9 @@ class ResumeParseWorker {
                     target.resumeId());
         } catch (ImmediateRequeueAmqpException e) {
             throw e;
+        } catch (AiConsentRequiredException e) {
+            log.info("Parsing resume {} blocked: the user has not agreed to AI processing", target.resumeId());
+            store.fail(target.resumeId(), ParseFailureReason.AI_CONSENT_REQUIRED);
         } catch (InsufficientCreditsException e) {
             log.info("Parsing resume {} blocked: the user has no AI credits left", target.resumeId());
             store.fail(target.resumeId(), ParseFailureReason.INSUFFICIENT_CREDITS);

@@ -17,6 +17,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.jobfinder.core.billing.AiUsageGate;
 import com.jobfinder.core.profile.internal.ResumeDtos.DownloadUrlResponse;
 import com.jobfinder.core.profile.internal.ResumeDtos.ResumeResponse;
+import com.jobfinder.core.billing.AiConsentRequiredException;
+import com.jobfinder.core.identity.AiConsent;
 import com.jobfinder.core.shared.ApiException;
 import com.jobfinder.core.storage.ObjectStorage;
 import com.jobfinder.core.storage.UploadScans;
@@ -44,10 +46,12 @@ class ResumeService {
     private final ResumeParseStore parseStore;
     private final AiUsageGate gate;
     private final UploadScans scans;
+    private final AiConsent consent;
 
     ResumeService(ResumeRepository resumes, ResumeVersionRepository versions, ObjectStorage storage,
             ResumeProperties properties, TransactionTemplate tx, Clock clock, ApplicationEventPublisher events,
-            ResumeParseStore parseStore, AiUsageGate gate, UploadScans scans) {
+            ResumeParseStore parseStore, AiUsageGate gate, UploadScans scans, AiConsent consent) {
+        this.consent = consent;
         this.scans = scans;
         this.parseStore = parseStore;
         this.gate = gate;
@@ -67,6 +71,10 @@ class ResumeService {
 
     ResumeResponse upload(UUID userId, byte[] content, String originalFilename, String declaredType,
             String requestedLabel) {
+        // Uploading a CV means a model reads it: refuse before anything is stored if the user has not agreed.
+        if (!consent.isGranted(userId)) {
+            throw new AiConsentRequiredException();
+        }
         if (content.length == 0) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "empty_file", "The uploaded file is empty.");
         }

@@ -65,8 +65,8 @@ public abstract class MatchingTestSupport extends JobsTestSupport {
 
     protected UUID newUser() {
         UUID id = UUID.randomUUID();
-        jdbc.update("insert into users (id, email, role, status, created_at, updated_at) "
-                + "values (?, ?, 'USER', 'ACTIVE', now(), now())", id, "match-" + id + "@example.test");
+        jdbc.update("insert into users (id, email, role, status, ai_consent_version, ai_consent_at, created_at, "
+                + "updated_at) values (?, ?, 'USER', 'ACTIVE', 'test', now(), now(), now())", id, "match-" + id + "@example.test");
         return id;
     }
 

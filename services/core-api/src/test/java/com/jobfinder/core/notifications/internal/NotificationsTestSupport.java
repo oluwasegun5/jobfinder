@@ -98,8 +98,8 @@ abstract class NotificationsTestSupport extends MatchingTestSupport {
     protected Account verified() {
         UUID id = UUID.randomUUID();
         String email = "digest-" + id + "@example.test";
-        jdbc.update("insert into users (id, email, role, status, email_verified_at, created_at, updated_at) "
-                + "values (?, ?, 'USER', 'ACTIVE', now(), now(), now())", id, email);
+        jdbc.update("insert into users (id, email, role, status, email_verified_at, ai_consent_version, ai_consent_at, "
+                + "created_at, updated_at) values (?, ?, 'USER', 'ACTIVE', now(), 'test', now(), now(), now())", id, email);
         signedInDaysAgo(id, 0);
         return new Account(id, email);
     }

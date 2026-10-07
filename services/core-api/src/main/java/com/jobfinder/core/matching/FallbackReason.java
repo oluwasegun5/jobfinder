@@ -10,6 +10,8 @@ public enum FallbackReason {
     LLM_UNAVAILABLE,
     /** The model answered for the batch but not usefully for this job (invalid JSON twice, a refusal, no entry). */
     LLM_FAILED,
+    /** The user has not agreed to AI processing of their data (or withdrew it), so no model sees it. */
+    CONSENT_REQUIRED,
     /** The job is no longer active, so no model call is spent on it. */
     JOB_EXPIRED
 }

@@ -2,8 +2,10 @@ package com.jobfinder.core.identity.internal;
 
 import java.util.UUID;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 final class AuthDtos {
@@ -13,7 +15,9 @@ final class AuthDtos {
 
     record SignupRequest(
             @NotBlank @Email @Size(max = 254) String email,
-            @NotBlank @Size(min = 10, max = 72) String password) {
+            @NotBlank @Size(min = 10, max = 72) String password,
+            // The AI-processing consent is explicit and required: an account cannot be created without it.
+            @NotNull @AssertTrue Boolean aiProcessingConsent) {
     }
 
     record LoginRequest(
@@ -39,6 +43,11 @@ final class AuthDtos {
     record AuthResponse(String accessToken, String tokenType, long expiresIn) {
     }
 
-    record MeResponse(UUID id, String email, String role, boolean emailVerified) {
+    record MeResponse(UUID id, String email, String role, boolean emailVerified, boolean aiConsent) {
+    }
+
+    /** The user's AI-processing consent; {@code version} and {@code grantedAt} are null when it is not granted. */
+    record ConsentResponse(boolean aiProcessing, String version, java.time.Instant grantedAt,
+            String currentVersion) {
     }
 }

@@ -43,8 +43,10 @@ class AuthController {
     private final AuthProperties properties;
 
     private final ClientIpResolver clientIp;
+    private final AiConsentService consent;
 
-    AuthController(AuthService auth, AuthProperties properties, ClientIpResolver clientIp) {
+    AuthController(AuthService auth, AuthProperties properties, ClientIpResolver clientIp, AiConsentService consent) {
+        this.consent = consent;
         this.auth = auth;
         this.properties = properties;
         this.clientIp = clientIp;
@@ -53,7 +55,8 @@ class AuthController {
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.ACCEPTED)
     void signup(@Valid @RequestBody SignupRequest request, HttpServletRequest http) {
-        auth.signup(request.email(), request.password(), clientIp.resolve(http));
+        auth.signup(request.email(), request.password(), Boolean.TRUE.equals(request.aiProcessingConsent()),
+                clientIp.resolve(http));
     }
 
     @PostMapping("/verify-email")
@@ -114,7 +117,8 @@ class AuthController {
     @GetMapping("/me")
     MeResponse me() {
         User user = auth.currentUser(CurrentUser.require().id());
-        return new MeResponse(user.getId(), user.getEmail(), user.getRole().name(), user.isEmailVerified());
+        return new MeResponse(user.getId(), user.getEmail(), user.getRole().name(), user.isEmailVerified(),
+                consent.isGranted(user.getId()));
     }
 
     private ResponseEntity<AuthResponse> respond(AuthService.Session session) {
