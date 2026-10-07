@@ -1,34 +1,123 @@
-# Production overlay (ADR 0037, ASVS 14.1): docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml \
-#   --env-file .env up -d
+# Production overlay (ADR 0037 hardening, ADR 0041 deployment):
+#
+#   docker compose -p jobfinder -f infra/docker-compose.yml -f infra/docker-compose.prod.yml --env-file .env up -d --wait
+#
+# infra/deploy/deploy.sh wraps this (preflight, pre-deploy backup, pull, up, smoke test, automatic rollback). The values
+# it needs are listed in infra/deploy/env.production.example.
 #
 # What it changes against the development file:
-#  - only the web app publishes a port; Postgres, Redis, RabbitMQ, core-api and ai-service stay on the compose network
-#  - core-api runs with the prod profile (no Swagger, health only, no error detail)
-#  - containers drop every capability, cannot gain privileges, and (core-api, ai-service, web) have a read-only root
-#  - Mailpit and the S3 mock do not start: set the real SMTP and object-storage values below
-#  - restart policies, pid and memory limits (override the placeholders to fit the host)
+#  - the only published ports are 80 and 443, owned by the Caddy edge proxy (automatic TLS); web, core-api, ai-service,
+#    Postgres, Redis and RabbitMQ stay on private networks. The data stores sit on an `internal` network with no route to
+#    the internet; the app tier has egress (LLM, payment, job sources, SMTP, object storage)
+#  - application images come from a registry by tag (IMAGE_REGISTRY, IMAGE_TAG) and are never built on the server
+#  - core-api runs with the prod profile; Flyway migrations run when it starts (backward compatible by rule, so the
+#    previous image keeps working against the new schema: that is what makes rollback safe)
+#  - Redis requires a password; uploads are scanned by ClamAV and refused when the scanner cannot answer
+#  - containers drop capabilities, cannot gain privileges, application containers have a read-only root; every service
+#    has a restart policy, memory and CPU limits and rotated logs
+#  - Mailpit and the S3 mock do not start (profile dev-only): set the real SMTP and object-storage values
+#  - a backup sidecar dumps the database daily and keeps it for BACKUP_RETENTION_DAYS (docs/runbooks/backup-restore.md)
 #
-# Not done here, recorded for P6.5: TLS termination in front of web, Redis authentication, managed Postgres and
-# RabbitMQ with network policy, image digests for the application images, log shipping, secret manager instead of .env.
+# Postgres, Redis and RabbitMQ keep the default capabilities: their images start as root and drop to their own user.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+networks:
+  edge: {}
+  app: {}
+  # Data stores and nothing else: no route out of the host.
+  data:
+    internal: true
+  # The only network the backup sidecar shares with the internet, for the off-host copy.
+  offsite: {}
+
+volumes:
+  caddy_data:
+  caddy_config:
+  backup_data:
+  clamav_data:
 
 services:
+  caddy:
+    image: caddy:2.11.7-alpine@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS to the public host name}
+      CADDY_TLS: ${CADDY_TLS:-}
+      CADDY_GLOBAL: ${ACME_EMAIL:+email ${ACME_EMAIL}}
+    ports:
+      - "${PUBLIC_BIND:-0.0.0.0}:${HTTP_PORT:-80}:80"
+      - "${PUBLIC_BIND:-0.0.0.0}:${HTTPS_PORT:-443}:443"
+      - "${PUBLIC_BIND:-0.0.0.0}:${HTTPS_PORT:-443}:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [edge]
+    # The official image runs as root to bind 80/443; every capability but that one is dropped.
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: ["ALL"]
+    cap_add: ["NET_BIND_SERVICE"]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 128
+    mem_limit: ${CADDY_MEM_LIMIT:-192m}
+    cpus: ${CADDY_CPUS:-0.5}
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 80 && nc -z 127.0.0.1 443"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 15s
+    logging: *logging
+
   postgres:
     ports: !reset []
     restart: unless-stopped
     security_opt: ["no-new-privileges:true"]
     mem_limit: ${POSTGRES_MEM_LIMIT:-1g}
+    cpus: ${POSTGRES_CPUS:-1.5}
+    stop_grace_period: 60s
+    networks: [data]
+    logging: *logging
 
   redis:
     ports: !reset []
     restart: unless-stopped
     security_opt: ["no-new-privileges:true"]
     mem_limit: ${REDIS_MEM_LIMIT:-256m}
+    cpus: ${REDIS_CPUS:-0.5}
+    networks: [data]
+    # Rate-limit counters only (ADR 0037): losing them on a restart is harmless, an unauthenticated Redis is not.
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD (letters and digits only, 32+ characters)}
+    command:
+      - sh
+      - -c
+      - exec redis-server --requirepass "$$REDIS_PASSWORD" --appendonly yes --maxmemory 192mb --maxmemory-policy volatile-lru
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    logging: *logging
 
   rabbitmq:
     ports: !reset []
     restart: unless-stopped
     security_opt: ["no-new-privileges:true"]
     mem_limit: ${RABBITMQ_MEM_LIMIT:-512m}
+    cpus: ${RABBITMQ_CPUS:-1}
+    stop_grace_period: 60s
+    networks: [data]
+    logging: *logging
 
   # Development-only helpers: not started by `up` without `--profile dev-only`.
   mailpit:
@@ -40,7 +129,24 @@ services:
   object-storage-init:
     profiles: ["dev-only"]
 
+  # Virus scanner for CV uploads (SEC-R10). core-api refuses uploads while it cannot answer (fail closed), so it does
+  # not gate core-api's start. Needs about 1.5 GB of memory once the signature database is loaded; set
+  # UPLOAD_SCANNER_TYPE=none (and accept the risk in writing) only on a host that cannot spare it.
+  clamav:
+    image: clamav/clamav:1.4@sha256:57deb108fc4c72778aa83eafbca7bb7153e28c3f57c005afd38d31f16da86f23
+    restart: unless-stopped
+    networks: [app]
+    volumes:
+      - clamav_data:/var/lib/clamav
+    environment:
+      CLAMAV_NO_FRESHCLAMD: "false"
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: ${CLAMAV_MEM_LIMIT:-2g}
+    cpus: ${CLAMAV_CPUS:-1}
+    logging: *logging
+
   core-api:
+    image: ${IMAGE_REGISTRY:-jobfinder}/core-api:${IMAGE_TAG:-local}
     depends_on: !override
       postgres:
         condition: service_healthy
@@ -51,6 +157,7 @@ services:
       ai-service:
         condition: service_started
     ports: !reset []
+    networks: [app, data]
     restart: unless-stopped
     read_only: true
     tmpfs: ["/tmp"]
@@ -58,31 +165,59 @@ services:
     security_opt: ["no-new-privileges:true"]
     pids_limit: ${CORE_API_PIDS_LIMIT:-512}
     mem_limit: ${CORE_API_MEM_LIMIT:-1536m}
+    cpus: ${CORE_API_CPUS:-1.5}
+    stop_grace_period: 40s
+    logging: *logging
     environment:
       SPRING_PROFILES_ACTIVE: prod
       AUTH_COOKIE_SECURE: "true"
+      # Spring Boot 4.1 reads the OTLP span-export switch as management.tracing.export.otlp.enabled (the application.yml key
+      # management.otlp.tracing.export.enabled no longer turns it off): without this, core-api keeps trying to reach
+      # a collector that is not there (log noise every 15 s). OTEL_TRACING_EXPORT=true still turns export on.
+      MANAGEMENT_TRACING_EXPORT_OTLP_ENABLED: ${OTEL_TRACING_EXPORT:-false}
+      # Redis with a password: the base file builds the URI from host and port only (property app.rate-limit.redis-uri).
+      APP_RATELIMIT_REDISURI: redis://:${REDIS_PASSWORD}@redis:6379
       # Real services; the development values (Mailpit, S3 mock) are not defaults here.
       MAIL_HOST: ${MAIL_HOST:?set MAIL_HOST to the SMTP server}
       MAIL_PORT: ${MAIL_PORT:?set MAIL_PORT}
       SPRING_MAIL_USERNAME: ${SMTP_USERNAME:-}
       SPRING_MAIL_PASSWORD: ${SMTP_PASSWORD:-}
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: ${SMTP_AUTH:-true}
-      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: ${SMTP_STARTTLS:-true}
       OBJECT_STORAGE_ENDPOINT: ${OBJECT_STORAGE_ENDPOINT:?set OBJECT_STORAGE_ENDPOINT (the R2 or S3 endpoint)}
       OBJECT_STORAGE_PUBLIC_ENDPOINT: ${OBJECT_STORAGE_PUBLIC_ENDPOINT:-}
-      OBJECT_STORAGE_PATH_STYLE: "false"
+      OBJECT_STORAGE_PATH_STYLE: ${OBJECT_STORAGE_PATH_STYLE:-false}
       WEB_BASE_URL: ${WEB_BASE_URL:?set WEB_BASE_URL to the public https URL}
       APP_SECURITY_CORS_ALLOWED_ORIGINS: ${WEB_BASE_URL}
       # Where the hosted checkout sends the browser back to (the web route apps/web/src/app/(app)/billing/return);
       # the application defaults point at localhost.
       BILLING_RETURN_URL: ${WEB_BASE_URL}/billing/return
       BILLING_CANCEL_URL: ${WEB_BASE_URL}/billing/return?canceled=1
-      UPLOAD_SCANNER_TYPE: ${UPLOAD_SCANNER_TYPE:-none}
+      UPLOAD_SCANNER_TYPE: ${UPLOAD_SCANNER_TYPE:-clamav}
       UPLOAD_SCANNER_HOST: ${UPLOAD_SCANNER_HOST:-clamav}
       UPLOAD_SCANNER_ON_ERROR: ${UPLOAD_SCANNER_ON_ERROR:-closed}
+      # Cloudflare R2 signs with the region "auto"; other S3-compatible stores use their own.
+      OBJECT_STORAGE_REGION: ${OBJECT_STORAGE_REGION:-auto}
+      NOTIFICATIONS_PUBLIC_API_URL: ${NOTIFICATIONS_PUBLIC_API_URL:-}
+      # Billing (ADR 0036). The base compose file does not pass these on. A provider whose key is set while one of its
+      # prices is still the placeholder makes core-api refuse to start (BillingPriceGuard): that is intended.
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_PRICE_PRO_USD: ${STRIPE_PRICE_PRO_USD:-price_PLACEHOLDER_pro_usd}
+      PAYSTACK_SECRET_KEY: ${PAYSTACK_SECRET_KEY:-}
+      PAYSTACK_PLAN_PRO_NGN: ${PAYSTACK_PLAN_PRO_NGN:-PLN_PLACEHOLDER_pro_ngn}
+      BILLING_PRICE_PRO_USD_MINOR: ${BILLING_PRICE_PRO_USD_MINOR:-100}
+      BILLING_PRICE_PRO_NGN_MINOR: ${BILLING_PRICE_PRO_NGN_MINOR:-100}
+      BILLING_PRICE_PACK_SMALL_USD_MINOR: ${BILLING_PRICE_PACK_SMALL_USD_MINOR:-100}
+      BILLING_PRICE_PACK_SMALL_NGN_MINOR: ${BILLING_PRICE_PACK_SMALL_NGN_MINOR:-100}
+      BILLING_PRICE_PACK_LARGE_USD_MINOR: ${BILLING_PRICE_PACK_LARGE_USD_MINOR:-100}
+      BILLING_PRICE_PACK_LARGE_NGN_MINOR: ${BILLING_PRICE_PACK_LARGE_NGN_MINOR:-100}
+      BILLING_ROLLOVER_CAP_CREDITS: ${BILLING_ROLLOVER_CAP_CREDITS:-0}
 
   ai-service:
+    image: ${IMAGE_REGISTRY:-jobfinder}/ai-service:${IMAGE_TAG:-local}
     ports: !reset []
+    networks: [app, data]
     restart: unless-stopped
     read_only: true
     tmpfs: ["/tmp"]
@@ -90,8 +225,13 @@ services:
     security_opt: ["no-new-privileges:true"]
     pids_limit: ${AI_SERVICE_PIDS_LIMIT:-256}
     mem_limit: ${AI_SERVICE_MEM_LIMIT:-1g}
+    cpus: ${AI_SERVICE_CPUS:-1}
+    logging: *logging
 
   web:
+    image: ${IMAGE_REGISTRY:-jobfinder}/web:${IMAGE_TAG:-local}
+    ports: !reset []
+    networks: [edge, app]
     restart: unless-stopped
     read_only: true
     tmpfs: ["/tmp", "/app/apps/web/.next/cache"]
@@ -99,3 +239,47 @@ services:
     security_opt: ["no-new-privileges:true"]
     pids_limit: ${WEB_PIDS_LIMIT:-256}
     mem_limit: ${WEB_MEM_LIMIT:-512m}
+    cpus: ${WEB_CPUS:-1}
+    logging: *logging
+
+  # Daily pg_dump with a retention period, optional off-host copy, restore tooling (infra/deploy/backup/).
+  backup:
+    build:
+      context: ./deploy/backup
+      dockerfile: ../../docker/backup.Dockerfile
+    image: ${IMAGE_REGISTRY:-jobfinder}/backup:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    # After core-api: its Flyway migrations create the schema, and a dump of an empty database is refused.
+    depends_on:
+      postgres:
+        condition: service_healthy
+      core-api:
+        condition: service_healthy
+    networks: [data, offsite]
+    volumes:
+      - backup_data:/backups
+      # Passphrase file for file-level encryption (optional): BACKUP_PASSPHRASE_HOST_FILE points at a root-readable file
+      # on the host; the default is an empty file mounted from /dev/null, meaning "not encrypted".
+      - ${BACKUP_PASSPHRASE_HOST_FILE:-/dev/null}:/run/secrets/backup_passphrase:ro
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:-jobfinder}
+      PGDATABASE: ${POSTGRES_DB:-jobfinder}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+      BACKUP_TIME_UTC: ${BACKUP_TIME_UTC:-01:40}
+      BACKUP_MAX_AGE_HOURS: ${BACKUP_MAX_AGE_HOURS:-30}
+      BACKUP_PASSPHRASE_FILE: ${BACKUP_PASSPHRASE_FILE:-}
+      BACKUP_S3_URI: ${BACKUP_S3_URI:-}
+      BACKUP_S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:-}
+      BACKUP_S3_ACCESS_KEY: ${BACKUP_S3_ACCESS_KEY:-}
+      BACKUP_S3_SECRET_KEY: ${BACKUP_S3_SECRET_KEY:-}
+      BACKUP_S3_REGION: ${BACKUP_S3_REGION:-auto}
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    read_only: true
+    tmpfs: ["/tmp", "/var/run/postgresql"]
+    pids_limit: 128
+    mem_limit: ${BACKUP_MEM_LIMIT:-256m}
+    cpus: ${BACKUP_CPUS:-0.5}
+    logging: *logging

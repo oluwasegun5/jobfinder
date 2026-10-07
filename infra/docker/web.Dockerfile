@@ -1,7 +1,9 @@
 # syntax=docker/dockerfile:1
+# Base images are pinned by tag AND digest (ADR 0041). Bump both together; a scheduled workflow (base-images.yml)
+# reports when a newer digest exists for the tag.
 # Built from the repo root so the npm workspace (apps/web + packages/api-contract) resolves.
 
-FROM node:24-alpine AS build
+FROM node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS build
 WORKDIR /repo
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -18,7 +20,7 @@ ARG CORE_API_URL=http://core-api:8080
 ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID=
 RUN CORE_API_URL=$CORE_API_URL NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID npm run build -w web
 
-FROM node:24-alpine
+FROM node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
