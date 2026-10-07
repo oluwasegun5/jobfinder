@@ -90,7 +90,8 @@ class SubscriptionService {
         Subscription found = find(event).orElse(null);
         UUID userId = found != null ? found.userId() : event.userId();
         if (userId == null) {
-            throw new EventNotResolvableException("payment for a subscription we cannot match yet");
+            unresolvable(event, now, "payment for a subscription we cannot match yet");
+            return;
         }
         ledger.lock(userId);
         Subscription sub = found == null ? null : store.find(found.id()).orElse(null);
@@ -142,7 +143,8 @@ class SubscriptionService {
             return pending.get();
         }
         if (event.planCode() == null) {
-            throw new EventNotResolvableException("payment without a plan");
+            unresolvable(event, now, "payment without a plan");
+            return null;
         }
         Optional<Plan> plan = plans.byCode(event.planCode());
         if (plan.isEmpty()) {
@@ -152,6 +154,22 @@ class SubscriptionService {
         }
         return store.insertActive(userId, plan.get().id(), event.provider(), event.subscriptionRef(),
                 event.customer(), null, event.at(), now);
+    }
+
+    /**
+     * An event that needs a companion that has not arrived: asks for a redelivery (503) while the event is younger than
+     * {@code app.billing.webhooks.unmatched-event-max-age}, so legitimate out-of-order delivery still works. Past that
+     * age the companion is not coming, so the event is acknowledged (the caller returns normally and the webhook marks
+     * it handled) and logged at WARN with its id and type only.
+     */
+    private void unresolvable(ProviderEvent event, Instant now, String why) {
+        Instant limit = now.minus(properties.webhooks().unmatchedEventMaxAge());
+        if (event.at().isBefore(limit)) {
+            log.warn("Webhook event cannot be matched and is too old to wait for, acknowledged without effect: "
+                    + "provider={} id={} type={}", event.provider().slug(), event.id(), event.type());
+            return;
+        }
+        throw new EventNotResolvableException(why);
     }
 
     private void paymentFailed(ProviderEvent event, Instant now) {
@@ -185,7 +203,7 @@ class SubscriptionService {
         if (candidate.isEmpty()) {
             if (event.provider() == Provider.PAYSTACK) {
                 // The payment that creates the subscription is processed first; try again until it has been.
-                throw new EventNotResolvableException("subscription created before its payment");
+                unresolvable(event, now, "subscription created before its payment");
             }
             return;
         }

@@ -37,7 +37,8 @@ record BillingProperties(@DefaultValue("500") BigDecimal dailyCapCredits,
         @DefaultValue Map<String, PlanConfig> plans,
         @DefaultValue List<Pack> packs,
         @DefaultValue Stripe stripe,
-        @DefaultValue Paystack paystack) {
+        @DefaultValue Paystack paystack,
+        @DefaultValue Webhooks webhooks) {
 
     BillingProperties {
         if (dailyCapCredits == null || dailyCapCredits.signum() < 0) {
@@ -143,6 +144,20 @@ record BillingProperties(@DefaultValue("500") BigDecimal dailyCapCredits,
     /** Where the hosted checkout sends the browser back to (our web app). */
     record Checkout(@DefaultValue("http://localhost:3000/billing/return") String returnUrl,
             @DefaultValue("http://localhost:3000/billing/return?canceled=1") String cancelUrl) {
+    }
+
+    /**
+     * Webhook handling. {@code unmatchedEventMaxAge}: a payment event that cannot be matched to a user is answered 503
+     * (so the provider redelivers it, for out-of-order delivery) only while it is younger than this, measured from the
+     * event's own timestamp; an older one is acknowledged, logged and recorded as handled, so the provider stops
+     * retrying something that will never match.
+     */
+    record Webhooks(@DefaultValue("24h") Duration unmatchedEventMaxAge) {
+        Webhooks {
+            if (unmatchedEventMaxAge == null || unmatchedEventMaxAge.isNegative()) {
+                throw new IllegalArgumentException("app.billing.webhooks.unmatched-event-max-age must not be negative");
+            }
+        }
     }
 
     /** Rate limits of the user-facing write endpoints (per user). */

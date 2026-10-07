@@ -26,7 +26,8 @@ class PlanCatalogTests {
                 List.of(new Pack("p", "P", BigDecimal.TEN, prices)),
                 new BillingProperties.Stripe("http://s", stripeKey, stripeWebhook, Duration.ofMinutes(5),
                         Duration.ofSeconds(5)),
-                new BillingProperties.Paystack("http://p", paystackKey, Duration.ofSeconds(5)));
+                new BillingProperties.Paystack("http://p", paystackKey, Duration.ofSeconds(5)),
+                new BillingProperties.Webhooks(Duration.ofHours(24)));
     }
 
     @Test

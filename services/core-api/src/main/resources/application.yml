@@ -185,6 +185,9 @@ app:
     checkout:
       return-url: ${BILLING_RETURN_URL:http://localhost:3000/billing/return}
       cancel-url: ${BILLING_CANCEL_URL:http://localhost:3000/billing/return?canceled=1}
+    webhooks:
+      # An unmatchable payment event older than this is acknowledged (200) instead of asking for a retry (503).
+      unmatched-event-max-age: ${BILLING_WEBHOOK_UNMATCHED_MAX_AGE:24h}
     limits:
       checkout-per-hour: 10
       cancel-per-hour: 10
