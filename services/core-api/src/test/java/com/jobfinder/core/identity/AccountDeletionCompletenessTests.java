@@ -195,7 +195,7 @@ class AccountDeletionCompletenessTests extends ResumeTestSupport {
         jdbc.update("insert into application_events (id, application_id, user_id, to_status, at) "
                 + "values (?, ?, ?, 'APPLIED', now())", UUID.randomUUID(), app, userId);
         jdbc.update("insert into reminders (id, application_id, user_id, kind, due_at, created_at, updated_at) "
-                + "values (?, ?, ?, 'CUSTOM', now() + interval '1 day', now(), now())", UUID.randomUUID(), app, userId);
+                + "values (?, ?, ?, 'CUSTOM', now() + interval '30 days', now(), now())", UUID.randomUUID(), app, userId);
         jdbc.update("insert into oauth_accounts (id, user_id, provider, provider_user_id, created_at, updated_at) "
                 + "values (?, ?, 'GOOGLE', ?, now(), now())", UUID.randomUUID(), userId, "sub-" + userId);
         String renderKey = "renders/" + userId + "/doc/ats-a4-" + UUID.randomUUID() + ".pdf";
