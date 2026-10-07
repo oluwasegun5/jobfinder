@@ -100,3 +100,6 @@ target countries; if analytics is ever added it needs consent first.
   time-limited, a `RetentionTask`; the completeness test enforces the first two.
 - Open for the owner: lawyer review of the templates and fill-in of the placeholders; the ledger-erasure question above;
   inactive-account deletion; backup retention in P6.5.
+
+## Update (P6.5)
+Backup retention is resolved: 30 days, configurable with `BACKUP_RETENTION_DAYS`, stated in the privacy policy via `RETENTION_DAYS.backups`. See ADR 0041 and `docs/runbooks/backup-restore.md`. Re-applying deletions after a restore remains a manual step.

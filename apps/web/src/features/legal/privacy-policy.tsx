@@ -145,7 +145,9 @@ export function PrivacyPolicy() {
             When you delete your account, everything about you is erased at once from our database, file storage and
             caches, in one step; if a step fails the deletion is refused and you can try again. The exceptions: records of AI
             calls (feature, model, token counts, cost) stay without any link to you; your payment provider keeps the
-            records the law requires it to keep; backups are overwritten within <Fill of="backupRetention" />.
+            records the law requires it to keep. Our database backups are kept for {RETENTION_DAYS.backups} days and then deleted, so
+            data you deleted disappears from them at the latest {RETENTION_DAYS.backups} days later; a backup is only ever restored
+            to recover from a failure, and nothing in it is used for any other purpose.
           </li>
           <li>
             Accounts whose email was never verified: deleted after {RETENTION_DAYS.unverifiedAccounts} days. Expired sign-in and
@@ -153,6 +155,7 @@ export function PrivacyPolicy() {
           </li>
           <li>Log of emails sent: {RETENTION_DAYS.emailLog} days. Generated PDF and DOCX files (they can be made again): {RETENTION_DAYS.renderedFiles} days.</li>
           <li>Job postings collected from job boards: 30 days (they are not about you).</li>
+          <li>Database backups: {RETENTION_DAYS.backups} days (encrypted before they leave our server).</li>
         </ul>
       </Section>
 
