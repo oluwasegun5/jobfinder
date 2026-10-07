@@ -90,7 +90,7 @@ function backend(options: { capOnce?: boolean; failOnce?: boolean } = {}) {
     const problem = (status: number, code: string, extra: Record<string, unknown> = {}) => ok({ status, code, detail: code, ...extra }, status);
 
     if (key === "POST /auth/refresh") return ok({ accessToken: "e2e-token", expiresIn: 900 });
-    if (key === "GET /auth/me") return ok({ id: "u1", email: "e2e@example.test", role: "USER", emailVerified: true });
+    if (key === "GET /auth/me") return ok({ id: "u1", email: "e2e@example.test", role: "USER", emailVerified: true, aiConsent: true });
     if (key === "GET /profile") return ok({ onboardingCompleted: true });
     if (key === `GET /jobs/${JOB}`) {
       return ok({ id: JOB, title: "Java Engineer", company: { id: "c1", name: "Acme" }, status: "ACTIVE", description: "Build things.", skills: ["Java"], applyUrl: "https://acme.example/apply" });
