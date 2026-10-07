@@ -2,6 +2,7 @@ package com.jobfinder.core.identity.internal;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -75,6 +76,37 @@ class RateLimiter implements RateLimits, DisposableBean {
         if (!probe.isConsumed()) {
             long seconds = Math.max(1, TimeUnit.NANOSECONDS.toSeconds(probe.getNanosToWaitForRefill()) + 1);
             throw AuthException.rateLimited(seconds);
+        }
+    }
+
+    /**
+     * Erases every bucket kept for a signed-in user (keys {@code rl:*:<user id>}), so no Redis key outlives the account.
+     * Best effort by design: the buckets hold only counters under an opaque id and expire on their own within the hour,
+     * so an unreachable Redis must not block the deletion; it is logged and the keys age out.
+     *
+     * @return how many keys were removed
+     */
+    int forgetSubject(UUID userId) {
+        try {
+            proxyManager();
+            int removed = 0;
+            try (var connection = client.connect()) {
+                var commands = connection.sync();
+                var args = io.lettuce.core.ScanArgs.Builder.matches("rl:*:" + userId).limit(500);
+                io.lettuce.core.KeyScanCursor<String> cursor = commands.scan(args);
+                while (true) {
+                    if (!cursor.getKeys().isEmpty()) {
+                        removed += commands.del(cursor.getKeys().toArray(String[]::new)).intValue();
+                    }
+                    if (cursor.isFinished()) {
+                        return removed;
+                    }
+                    cursor = commands.scan(cursor, args);
+                }
+            }
+        } catch (RuntimeException e) {
+            log.warn("Could not erase the rate-limit keys of a deleted account; they expire on their own", e);
+            return 0;
         }
     }
 
