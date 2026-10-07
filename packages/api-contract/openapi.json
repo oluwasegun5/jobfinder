@@ -674,6 +674,26 @@
                 }
               }
             }
+          },
+          "402": {
+            "description": "The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         }
       }
@@ -812,6 +832,26 @@
                 }
               }
             }
+          },
+          "402": {
+            "description": "The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         }
       }
@@ -849,6 +889,26 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/DraftResponse"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -892,6 +952,26 @@
                 }
               }
             }
+          },
+          "402": {
+            "description": "The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         }
       }
@@ -929,6 +1009,26 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/PackResponse"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -1015,6 +1115,26 @@
                 }
               }
             }
+          },
+          "402": {
+            "description": "The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         }
       }
@@ -1043,6 +1163,26 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionView"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -1087,6 +1227,26 @@
                 }
               }
             }
+          },
+          "402": {
+            "description": "The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         }
       }
@@ -1114,6 +1274,26 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/InterviewPrepView"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -1687,6 +1867,26 @@
                 }
               }
             }
+          },
+          "402": {
+            "description": "The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         }
       }
@@ -1724,6 +1924,26 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/PackResponse"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -1804,6 +2024,47 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/IngestionRunStartedResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/billing/users/{userId}/adjustments": {
+      "post": {
+        "tags": [
+          "admin-billing-controller"
+        ],
+        "operationId": "adjust",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdjustmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdjustmentResponse"
                 }
               }
             }
@@ -2484,6 +2745,16 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         }
       }
@@ -3113,37 +3384,6 @@
                       "$ref": "#/components/schemas/Link"
                     }
                   }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/actuator/info": {
-      "get": {
-        "tags": [
-          "Actuator"
-        ],
-        "summary": "Actuator web endpoint 'info'",
-        "operationId": "info",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/vnd.spring-boot.actuator.v3+json": {
-                "schema": {
-                  "type": "object"
-                }
-              },
-              "application/vnd.spring-boot.actuator.v2+json": {
-                "schema": {
-                  "type": "object"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "object"
                 }
               }
             }
@@ -5789,6 +6029,41 @@
           }
         }
       },
+      "AdjustmentRequest": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "delta": {
+            "type": "number",
+            "exclusiveMaximum": 0
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "delta",
+          "idempotencyKey",
+          "reason"
+        ]
+      },
+      "AdjustmentResponse": {
+        "type": "object",
+        "properties": {
+          "applied": {
+            "type": "boolean"
+          },
+          "balance": {
+            "type": "number"
+          }
+        }
+      },
       "Operation": {
         "type": "object",
         "properties": {
@@ -7037,6 +7312,35 @@
           },
           "costUsd": {
             "type": "number"
+          }
+        }
+      },
+      "ProblemDetail": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "description": "Stable, machine-readable error code"
+          },
+          "resetsAt": {
+            "type": "string",
+            "description": "ISO-8601 UTC; only for ai_daily_cap_reached"
           }
         }
       }

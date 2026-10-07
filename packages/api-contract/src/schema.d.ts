@@ -692,6 +692,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/billing/users/{userId}/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adjust"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/documents/{id}": {
         parameters: {
             query?: never;
@@ -1101,23 +1117,6 @@ export interface paths {
         };
         /** Actuator root web endpoint */
         get: operations["links"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/actuator/info": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Actuator web endpoint 'info' */
-        get: operations["info"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1965,6 +1964,15 @@ export interface components {
             source?: string;
             status?: string;
         };
+        AdjustmentRequest: {
+            idempotencyKey: string;
+            delta: number;
+            reason: string;
+        };
+        AdjustmentResponse: {
+            applied?: boolean;
+            balance?: number;
+        };
         Operation: {
             /** @enum {string} */
             op: "SET_STATE" | "EDIT";
@@ -2403,6 +2411,18 @@ export interface components {
             /** Format: int64 */
             outputTokens?: number;
             costUsd?: number;
+        };
+        ProblemDetail: {
+            type?: string;
+            title?: string;
+            /** Format: int32 */
+            status?: number;
+            detail?: string;
+            instance?: string;
+            /** @description Stable, machine-readable error code */
+            code?: string;
+            /** @description ISO-8601 UTC; only for ai_daily_cap_reached */
+            resetsAt?: string;
         };
     };
     responses: never;
@@ -2942,6 +2962,24 @@ export interface operations {
                     "*/*": components["schemas"]["ResumeResponse"];
                 };
             };
+            /** @description The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it. */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
         };
     };
     renderResume: {
@@ -3038,6 +3076,24 @@ export interface operations {
                     "*/*": components["schemas"]["DraftResponse"];
                 };
             };
+            /** @description The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it. */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
         };
     };
     screeningAnswers: {
@@ -3062,6 +3118,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["DraftResponse"];
+                };
+            };
+            /** @description The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it. */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -3090,6 +3164,24 @@ export interface operations {
                     "*/*": components["schemas"]["DraftResponse"];
                 };
             };
+            /** @description The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it. */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
         };
     };
     createPack: {
@@ -3114,6 +3206,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PackResponse"];
+                };
+            };
+            /** @description The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it. */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -3172,6 +3282,24 @@ export interface operations {
                     "*/*": components["schemas"]["SessionView"];
                 };
             };
+            /** @description The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it. */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
         };
     };
     completeInterviewSession: {
@@ -3192,6 +3320,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SessionView"];
+                };
+            };
+            /** @description The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it. */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -3220,6 +3366,24 @@ export interface operations {
                     "*/*": components["schemas"]["AnswerResult"];
                 };
             };
+            /** @description The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it. */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
         };
     };
     generate: {
@@ -3242,6 +3406,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["InterviewPrepView"];
+                };
+            };
+            /** @description The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it. */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -3680,6 +3862,24 @@ export interface operations {
                     "*/*": components["schemas"]["FollowUpDraft"];
                 };
             };
+            /** @description The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it. */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
         };
     };
     retryPack: {
@@ -3704,6 +3904,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PackResponse"];
+                };
+            };
+            /** @description The user's credit balance is spent (code insufficient_credits); a plan grant or a top-up restores it. */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -3768,6 +3986,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["IngestionRunStartedResponse"];
+                };
+            };
+        };
+    };
+    adjust: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdjustmentRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdjustmentResponse"];
                 };
             };
         };
@@ -4061,6 +4305,15 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MatchResponse"];
+                };
+            };
+            /** @description Too many requests (code rate_limited, with Retry-After) or today's AI allowance is used up (code ai_daily_cap_reached, with resetsAt and Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -4469,28 +4722,6 @@ export interface operations {
                             [key: string]: components["schemas"]["Link"];
                         };
                     };
-                };
-            };
-        };
-    };
-    info: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/vnd.spring-boot.actuator.v3+json": Record<string, never>;
-                    "application/vnd.spring-boot.actuator.v2+json": Record<string, never>;
-                    "application/json": Record<string, never>;
                 };
             };
         };
