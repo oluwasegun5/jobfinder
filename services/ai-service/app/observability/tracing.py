@@ -33,7 +33,13 @@ def setup_tracing(
         provider.add_span_processor(
             BatchSpanProcessor(OTLPSpanExporter(endpoint=settings.otel_traces_endpoint))
         )
-    FastAPIInstrumentor.instrument_app(app, tracer_provider=provider, excluded_urls=_EXCLUDED_URLS)
+    FastAPIInstrumentor.instrument_app(
+        app,
+        tracer_provider=provider,
+        excluded_urls=_EXCLUDED_URLS,
+        # The per-message ASGI spans add nothing to a request span.
+        exclude_spans=["receive", "send"],
+    )
     httpx_instrumentor = HTTPXClientInstrumentor()
     if httpx_instrumentor.is_instrumented_by_opentelemetry:
         httpx_instrumentor.uninstrument()

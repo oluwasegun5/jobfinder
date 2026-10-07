@@ -232,3 +232,11 @@ def test_probes_and_scrapes_make_no_spans(
     traced_client.get("/health")
     traced_client.get("/metrics")
     assert exporter.spans == []
+
+
+def test_only_the_request_span_is_made_per_request(
+    traced_client: TestClient, exporter: MemoryExporter
+) -> None:
+    traced_client.post("/v1/diagnostics/llm", json={"user_id": str(uuid.uuid4())})
+    names = [s.name for s in exporter.spans]  # type: ignore[attr-defined]
+    assert names == ["POST /v1/diagnostics/llm"]
