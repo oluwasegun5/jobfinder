@@ -3,6 +3,7 @@ package com.jobfinder.core.billing.internal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.jobfinder.core.billing.internal.BillingProperties.Pack;
+import com.jobfinder.core.billing.internal.BillingProperties.Price;
 import com.jobfinder.core.billing.internal.PlanCatalog.Plan;
 import com.jobfinder.core.billing.internal.SubscriptionStore.Status;
 import com.jobfinder.core.billing.internal.SubscriptionStore.Subscription;
@@ -105,9 +107,14 @@ class SubscriptionService {
             }
         }
         Plan plan = plans.byId(sub.planId()).orElseThrow();
+        // The credits are granted only for what the catalog says the plan costs; the state change below does not
+        // depend on it (the provider says the subscription is paid).
+        boolean credit = paidPriceMatches(event, plans.prices(plan), plan.code());
         if (sub.status() == Status.CANCELED) {
             // A payment for a subscription we already ended (late or replayed): its credits are owed once, no revival.
-            grants.grantPlanPeriod(userId, plan, sub.id(), event.periodEnd(), false, now);
+            if (credit) {
+                grants.grantPlanPeriod(userId, plan, sub.id(), event.periodEnd(), false, now);
+            }
             return;
         }
         boolean first = sub.currentPeriodEnd() == null;
@@ -115,7 +122,9 @@ class SubscriptionService {
                 || (event.periodEnd().equals(sub.currentPeriodEnd()) && event.at().isAfter(sub.lastEventAt()));
         if (!forward) {
             log.info("Payment event for an older period ignored for state: subscription={}", sub.id());
-            grants.grantPlanPeriod(userId, plan, sub.id(), event.periodEnd(), false, now);
+            if (credit) {
+                grants.grantPlanPeriod(userId, plan, sub.id(), event.periodEnd(), false, now);
+            }
             return;
         }
         Instant lastEventAt = max(event.at(), sub.lastEventAt());
@@ -124,7 +133,30 @@ class SubscriptionService {
                 sub.providerCustomer() != null ? sub.providerCustomer() : event.customer(), Status.ACTIVE,
                 event.periodEnd(), sub.cancelAtPeriodEnd(), null, lastEventAt, sub.createdAt(), now);
         store.save(next, now);
-        grants.grantPlanPeriod(userId, plan, sub.id(), event.periodEnd(), !first, now);
+        if (credit) {
+            grants.grantPlanPeriod(userId, plan, sub.id(), event.periodEnd(), !first, now);
+        }
+    }
+
+    /**
+     * Whether what the provider says was paid is what the catalog says {@code item} costs in that currency. A payment
+     * of 0 (a 100% coupon), of another amount, in a currency the item has no price in for this provider, or one that
+     * states no amount does not match: the caller grants no credits, the event is still acknowledged and recorded, and
+     * the mismatch is logged at WARN with the event id and the expected and actual figures only.
+     */
+    private boolean paidPriceMatches(ProviderEvent event, Map<String, Price> prices, String item) {
+        Long paid = event.amountMinor();
+        Optional<Price> expected = prices.entrySet().stream()
+                .filter(e -> e.getValue().provider() == event.provider() && e.getKey().equalsIgnoreCase(event.currency()))
+                .map(Map.Entry::getValue).findFirst();
+        if (paid != null && paid > 0 && expected.isPresent() && expected.get().amountMinor() == paid) {
+            return true;
+        }
+        log.warn("Payment does not match the catalog price, no credits granted: provider={} id={} type={} item={} "
+                + "expected={} actual={} {}", event.provider().slug(), event.id(), event.type(), item,
+                expected.map(p -> p.amountMinor() + " " + event.currency()).orElse("no price in " + event.currency()),
+                paid, event.currency());
+        return false;
     }
 
     /** The first payment of a checkout: the user's PENDING row becomes the subscription, or a row is made. */
@@ -254,6 +286,9 @@ class SubscriptionService {
         Optional<Pack> pack = properties.pack(event.packId());
         if (pack.isEmpty()) {
             log.warn("Top-up for an unknown pack ignored: provider={} pack={}", event.provider(), event.packId());
+            return;
+        }
+        if (!paidPriceMatches(event, pack.get().prices(), pack.get().id())) {
             return;
         }
         boolean credited = grants.topup(event.userId(), pack.get().credits(), event.provider(), event.paymentRef(),

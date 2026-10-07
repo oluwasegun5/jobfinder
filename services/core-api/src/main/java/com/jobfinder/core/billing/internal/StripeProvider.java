@@ -216,9 +216,15 @@ class StripeProvider implements PaymentProvider {
                     return ProviderEvent.ignored(Provider.STRIPE, id, type, at);
                 }
                 JsonNode meta = subscriptionMetadata(object);
+                // Before tax and after discounts: what the catalog price must equal. Falls back to what was paid.
+                Long paid = Jn.number(object, "total_excluding_tax");
+                if (paid == null) {
+                    paid = Jn.number(object, "amount_paid");
+                }
                 return new ProviderEvent(Provider.STRIPE, id, type, Kind.PLAN_PAID, at,
                         Jn.uuid(Jn.text(meta, META_USER)), Jn.text(meta, META_ITEM), null, subscription,
-                        Jn.text(object, "customer"), Jn.text(object, "id"), periodEnd, null);
+                        Jn.text(object, "customer"), Jn.text(object, "id"), periodEnd, null, paid,
+                        Jn.text(object, "currency"));
             }
             case "invoice.payment_failed" -> {
                 String subscription = firstText(object, new String[] { "subscription" },
@@ -227,7 +233,7 @@ class StripeProvider implements PaymentProvider {
                     return ProviderEvent.ignored(Provider.STRIPE, id, type, at);
                 }
                 return new ProviderEvent(Provider.STRIPE, id, type, Kind.PAYMENT_FAILED, at, null, null, null,
-                        subscription, Jn.text(object, "customer"), null, null, null);
+                        subscription, Jn.text(object, "customer"), null, null, null, null, null);
             }
             case "customer.subscription.updated", "customer.subscription.deleted" -> {
                 String status = Jn.text(object, "status");
@@ -241,7 +247,8 @@ class StripeProvider implements PaymentProvider {
                         || Jn.at(object, "cancel_at") != null;
                 return new ProviderEvent(Provider.STRIPE, id, type,
                         ended ? Kind.SUBSCRIPTION_ENDED : Kind.SUBSCRIPTION_UPDATED, at, null, null, null,
-                        Jn.text(object, "id"), Jn.text(object, "customer"), null, periodEnd, cancelScheduled);
+                        Jn.text(object, "id"), Jn.text(object, "customer"), null, periodEnd, cancelScheduled, null,
+                        null);
             }
             default -> {
                 return ProviderEvent.ignored(Provider.STRIPE, id, type, at);
@@ -256,14 +263,19 @@ class StripeProvider implements PaymentProvider {
         if ("payment".equals(mode) && "paid".equals(Jn.text(session, "payment_status"))
                 && KIND_PACK.equals(Jn.text(meta, META_KIND))) {
             String payment = Jn.text(session, "payment_intent");
+            // The total less tax: the pack's catalog price, whatever tax the provider added on top.
+            Long total = Jn.number(session, "amount_total");
+            Long tax = Jn.number(session, "total_details", "amount_tax");
+            Long net = total == null ? null : total - (tax == null ? 0 : tax);
             return new ProviderEvent(Provider.STRIPE, id, type, Kind.TOPUP_PAID, at, user, null,
                     Jn.text(meta, META_ITEM), null, Jn.text(session, "customer"),
-                    payment == null ? Jn.text(session, "id") : payment, null, null);
+                    payment == null ? Jn.text(session, "id") : payment, null, null, net,
+                    Jn.text(session, "currency"));
         }
         if ("subscription".equals(mode) && Jn.text(session, "subscription") != null) {
             return new ProviderEvent(Provider.STRIPE, id, type, Kind.SUBSCRIPTION_LINKED, at, user,
                     Jn.text(meta, META_ITEM), null, Jn.text(session, "subscription"), Jn.text(session, "customer"),
-                    null, null, null);
+                    null, null, null, null, null);
         }
         return ProviderEvent.ignored(Provider.STRIPE, id, type, at);
     }

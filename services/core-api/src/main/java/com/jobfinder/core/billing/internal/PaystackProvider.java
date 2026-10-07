@@ -174,7 +174,7 @@ class PaystackProvider implements PaymentProvider {
                 if (KIND_PACK.equals(kind) && reference != null) {
                     return new ProviderEvent(Provider.PAYSTACK, id, type, Kind.TOPUP_PAID, at,
                             Jn.uuid(Jn.text(meta, META_USER)), null, Jn.text(meta, META_ITEM), null, customer,
-                            reference, null, null);
+                            reference, null, null, Jn.number(data, "amount"), Jn.text(data, "currency"));
                 }
                 String planCode = KIND_PLAN.equals(kind) ? Jn.text(meta, META_ITEM) : null;
                 boolean planCharge = planCode != null || Jn.text(data, "plan", "plan_code") != null;
@@ -184,7 +184,7 @@ class PaystackProvider implements PaymentProvider {
                 Instant periodEnd = at.atZone(ZoneOffset.UTC).plusMonths(1).toInstant();
                 return new ProviderEvent(Provider.PAYSTACK, id, type, Kind.PLAN_PAID, at,
                         Jn.uuid(Jn.text(meta, META_USER)), planCode, null, null, customer, reference, periodEnd,
-                        null);
+                        null, Jn.number(data, "amount"), Jn.text(data, "currency"));
             }
             case "subscription.create" -> {
                 String code = Jn.text(data, "subscription_code");
@@ -192,7 +192,7 @@ class PaystackProvider implements PaymentProvider {
                     return ProviderEvent.ignored(Provider.PAYSTACK, id, type, at);
                 }
                 return new ProviderEvent(Provider.PAYSTACK, id, type, Kind.SUBSCRIPTION_LINKED, at, null, null, null,
-                        code, customer, null, firstInstant(data, "next_payment_date"), null);
+                        code, customer, null, firstInstant(data, "next_payment_date"), null, null, null);
             }
             case "invoice.payment_failed" -> {
                 String code = Jn.text(data, "subscription", "subscription_code");
@@ -200,7 +200,7 @@ class PaystackProvider implements PaymentProvider {
                     return ProviderEvent.ignored(Provider.PAYSTACK, id, type, at);
                 }
                 return new ProviderEvent(Provider.PAYSTACK, id, type, Kind.PAYMENT_FAILED, at, null, null, null, code,
-                        customer, null, null, null);
+                        customer, null, null, null, null, null);
             }
             case "subscription.not_renew", "subscription.disable" -> {
                 String code = Jn.text(data, "subscription_code");
@@ -208,7 +208,7 @@ class PaystackProvider implements PaymentProvider {
                     return ProviderEvent.ignored(Provider.PAYSTACK, id, type, at);
                 }
                 return new ProviderEvent(Provider.PAYSTACK, id, type, Kind.SUBSCRIPTION_UPDATED, at, null, null, null,
-                        code, customer, null, null, Boolean.TRUE);
+                        code, customer, null, null, Boolean.TRUE, null, null);
             }
             default -> {
                 return ProviderEvent.ignored(Provider.PAYSTACK, id, type, at);

@@ -99,15 +99,23 @@ abstract class PaymentTestSupport extends BillingTestSupport {
 
     protected static String stripeInvoicePaid(String eventId, Instant at, String subscription, String customer,
             UUID user, String plan, Instant periodEnd) {
+        return stripeInvoicePaid(eventId, at, subscription, customer, user, plan, periodEnd, PaymentFixtures.PRO_USD,
+                "usd");
+    }
+
+    /** An {@code invoice.paid} that paid {@code amount} (minor units, before tax) in {@code currency}. */
+    protected static String stripeInvoicePaid(String eventId, Instant at, String subscription, String customer,
+            UUID user, String plan, Instant periodEnd, long amount, String currency) {
         String meta = user == null ? "{}" : "{\"jf_user\":\"%s\",\"jf_kind\":\"plan\",\"jf_item\":\"%s\"}"
                 .formatted(user, plan);
         return stripeEvent(eventId, "invoice.paid", at, """
-                {"id":"in_%s","object":"invoice","customer":"%s","subscription":"%s","amount_paid":100,
+                {"id":"in_%s","object":"invoice","customer":"%s","subscription":"%s","amount_paid":%d,"total_excluding_tax":%d,"currency":"%s",
                  "period_end":%d,
                  "parent":{"subscription_details":{"subscription":"%s","metadata":%s}},
                  "lines":{"data":[{"period":{"start":%d,"end":%d}}]}}"""
-                .formatted(UUID.randomUUID().toString().substring(0, 8), customer, subscription,
-                        at.getEpochSecond(), subscription, meta, at.getEpochSecond(), periodEnd.getEpochSecond()));
+                .formatted(UUID.randomUUID().toString().substring(0, 8), customer, subscription, amount, amount,
+                        currency, at.getEpochSecond(), subscription, meta, at.getEpochSecond(),
+                        periodEnd.getEpochSecond()));
     }
 
     protected static String stripeInvoiceFailed(String eventId, Instant at, String subscription, String customer) {
@@ -139,13 +147,31 @@ abstract class PaymentTestSupport extends BillingTestSupport {
                 .formatted(UUID.randomUUID().toString().substring(0, 8), customer, subscription, user, plan));
     }
 
+    /** The catalogue price of a pack in USD or NGN (minor units). */
+    protected static long packPrice(String pack, String currency) {
+        boolean usd = currency.equalsIgnoreCase("USD");
+        return switch (pack) {
+            case "pack_small" -> usd ? PaymentFixtures.PACK_SMALL_USD : PaymentFixtures.PACK_SMALL_NGN;
+            case "pack_large" -> usd ? PaymentFixtures.PACK_LARGE_USD : PaymentFixtures.PACK_LARGE_NGN;
+            default -> throw new IllegalArgumentException(pack);
+        };
+    }
+
     protected static String stripePackCheckout(String eventId, Instant at, String paymentIntent, UUID user,
             String pack) {
+        return stripePackCheckout(eventId, at, paymentIntent, user, pack, packPrice(pack, "usd"), "usd");
+    }
+
+    /** A paid pack checkout that charged {@code amount} (before tax) in {@code currency}. */
+    protected static String stripePackCheckout(String eventId, Instant at, String paymentIntent, UUID user,
+            String pack, long amount, String currency) {
         return stripeEvent(eventId, "checkout.session.completed", at, """
                 {"id":"cs_%s","object":"checkout.session","mode":"payment","payment_status":"paid",
-                 "customer":null,"payment_intent":"%s",
+                 "customer":null,"payment_intent":"%s","amount_total":%d,"currency":"%s",
+                 "total_details":{"amount_tax":0},
                  "metadata":{"jf_user":"%s","jf_kind":"pack","jf_item":"%s"}}"""
-                .formatted(UUID.randomUUID().toString().substring(0, 8), paymentIntent, user, pack));
+                .formatted(UUID.randomUUID().toString().substring(0, 8), paymentIntent, amount, currency, user,
+                        pack));
     }
 
     // ---- Paystack -------------------------------------------------------------------------------------------
@@ -169,29 +195,45 @@ abstract class PaymentTestSupport extends BillingTestSupport {
 
     protected static String paystackChargePlan(UUID user, String plan, String reference, String customer,
             Instant paidAt) {
+        return paystackChargePlan(user, plan, reference, customer, paidAt, PaymentFixtures.PRO_NGN, "NGN");
+    }
+
+    protected static String paystackChargePlan(UUID user, String plan, String reference, String customer,
+            Instant paidAt, long amount, String currency) {
         return """
                 {"event":"charge.success","data":{"id":%d,"status":"success","reference":"%s","paid_at":"%s",
-                 "amount":100,"currency":"NGN","customer":{"customer_code":"%s"},
+                 "amount":%d,"currency":"%s","customer":{"customer_code":"%s"},
                  "plan":{"plan_code":"PLN_PLACEHOLDER_pro_ngn"},
                  "metadata":{"jf_user":"%s","jf_kind":"plan","jf_item":"%s"}}}"""
-                .formatted(Math.abs(reference.hashCode()), reference, paidAt, customer, user, plan);
+                .formatted(Math.abs(reference.hashCode()), reference, paidAt, amount, currency, customer, user,
+                        plan);
     }
 
     /** A renewal: Paystack sends no metadata, only the customer and the plan. */
     protected static String paystackChargeRenewal(String reference, String customer, Instant paidAt) {
+        return paystackChargeRenewal(reference, customer, paidAt, PaymentFixtures.PRO_NGN, "NGN");
+    }
+
+    protected static String paystackChargeRenewal(String reference, String customer, Instant paidAt, long amount,
+            String currency) {
         return """
                 {"event":"charge.success","data":{"id":%d,"status":"success","reference":"%s","paid_at":"%s",
-                 "amount":100,"currency":"NGN","customer":{"customer_code":"%s"},
+                 "amount":%d,"currency":"%s","customer":{"customer_code":"%s"},
                  "plan":{"plan_code":"PLN_PLACEHOLDER_pro_ngn"},"metadata":null}}"""
-                .formatted(Math.abs(reference.hashCode()), reference, paidAt, customer);
+                .formatted(Math.abs(reference.hashCode()), reference, paidAt, amount, currency, customer);
     }
 
     protected static String paystackChargePack(UUID user, String pack, String reference, Instant paidAt) {
+        return paystackChargePack(user, pack, reference, paidAt, packPrice(pack, "NGN"), "NGN");
+    }
+
+    protected static String paystackChargePack(UUID user, String pack, String reference, Instant paidAt, long amount,
+            String currency) {
         return """
                 {"event":"charge.success","data":{"id":%d,"status":"success","reference":"%s","paid_at":"%s",
-                 "amount":100,"currency":"NGN","customer":{"customer_code":"CUS_pack"},"plan":{},
+                 "amount":%d,"currency":"%s","customer":{"customer_code":"CUS_pack"},"plan":{},
                  "metadata":{"jf_user":"%s","jf_kind":"pack","jf_item":"%s"}}}"""
-                .formatted(Math.abs(reference.hashCode()), reference, paidAt, user, pack);
+                .formatted(Math.abs(reference.hashCode()), reference, paidAt, amount, currency, user, pack);
     }
 
     protected static String paystackSubscriptionCreate(String code, String customer, Instant next) {

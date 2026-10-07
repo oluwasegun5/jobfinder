@@ -174,7 +174,7 @@ class BillingApiTests extends PaymentTestSupport {
         List<LoggedRequest> sent = providers().findAll(postRequestedFor(urlPathEqualTo("/v1/checkout/sessions")));
         String body = decoded(sent.get(sent.size() - 1));
         assertThat(body).contains("mode=payment", "line_items[0][price_data][currency]=usd",
-                "line_items[0][price_data][unit_amount]=100", "metadata[jf_kind]=pack",
+                "line_items[0][price_data][unit_amount]=" + com.jobfinder.core.PaymentFixtures.PACK_SMALL_USD, "metadata[jf_kind]=pack",
                 "metadata[jf_item]=pack_small", "payment_intent_data[metadata][jf_user]=" + account.id());
         assertThat(subscriptionRow(account.id())).isNull();
     }
@@ -191,7 +191,7 @@ class BillingApiTests extends PaymentTestSupport {
                 .withHeader("Authorization", equalTo("Bearer " + com.jobfinder.core.PaymentFixtures.PAYSTACK_KEY))
                 .withRequestBody(matchingJsonPath("$.plan", equalTo("PLN_PLACEHOLDER_pro_ngn")))
                 .withRequestBody(matchingJsonPath("$.currency", equalTo("NGN")))
-                .withRequestBody(matchingJsonPath("$.amount", equalTo("100")))
+                .withRequestBody(matchingJsonPath("$.amount", equalTo(Long.toString(com.jobfinder.core.PaymentFixtures.PRO_NGN))))
                 .withRequestBody(matchingJsonPath("$.metadata.jf_user", equalTo(account.id().toString())))
                 .withRequestBody(matchingJsonPath("$.callback_url", equalTo("http://localhost:3000/billing/return")))
                 .withRequestBody(matchingJsonPath("$.email")));

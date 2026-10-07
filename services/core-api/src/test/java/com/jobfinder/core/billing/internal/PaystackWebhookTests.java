@@ -265,7 +265,7 @@ class PaystackWebhookTests extends PaymentTestSupport {
         assertThat(lines(account.id(), "PLAN_GRANT")).isEqualTo(2);
 
         // The first payment again, as a new delivery (another body, same payment): no state change, no new grant.
-        paystack(firstPayment.replace("\"amount\":100", "\"amount\": 100")).andExpect(status().isOk());
+        paystack(firstPayment.replace("\"amount\":2500000", "\"amount\": 2500000")).andExpect(status().isOk());
         assertThat(periodEnd(subscriptionRow(account.id()))).isEqualTo(secondEnd);
         assertThat(subscriptionStatus(account.id())).isEqualTo("ACTIVE");
         assertThat(lines(account.id(), "PLAN_GRANT")).isEqualTo(2);
@@ -279,7 +279,7 @@ class PaystackWebhookTests extends PaymentTestSupport {
         paystack(paystackPaymentFailed(sub, cus, renewedAt.plusSeconds(60))).andExpect(status().isOk());
         assertThat(subscriptionStatus(account.id())).isEqualTo("PAST_DUE");
         // And the older payment replayed now does not undo it.
-        paystack(firstPayment.replace("\"amount\":100", "\"amount\":  100")).andExpect(status().isOk());
+        paystack(firstPayment.replace("\"amount\":2500000", "\"amount\":  2500000")).andExpect(status().isOk());
         assertThat(subscriptionStatus(account.id())).isEqualTo("PAST_DUE");
     }
 

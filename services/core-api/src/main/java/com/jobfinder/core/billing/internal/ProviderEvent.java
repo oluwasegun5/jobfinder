@@ -20,10 +20,13 @@ import java.util.UUID;
  * @param paymentRef      the provider's payment reference (top-ups are credited once per payment)
  * @param periodEnd       when the period this payment covers (or this subscription's current one) ends
  * @param cancelAtPeriodEnd for {@link Kind#SUBSCRIPTION_UPDATED}: whether the subscription will stop at period end
+ * @param amountMinor     for {@link Kind#PLAN_PAID} and {@link Kind#TOPUP_PAID}: what was actually paid, in minor units
+ *                        (cents, kobo), before tax; null when the event does not say
+ * @param currency        the ISO currency of {@code amountMinor}, as the provider wrote it (any case)
  */
 record ProviderEvent(Provider provider, String id, String type, Kind kind, Instant at, UUID userId, String planCode,
         String packId, String subscriptionRef, String customer, String paymentRef, Instant periodEnd,
-        Boolean cancelAtPeriodEnd) {
+        Boolean cancelAtPeriodEnd, Long amountMinor, String currency) {
 
     enum Kind {
         /** A subscription payment succeeded: the first one activates, later ones renew. */
@@ -44,6 +47,6 @@ record ProviderEvent(Provider provider, String id, String type, Kind kind, Insta
 
     static ProviderEvent ignored(Provider provider, String id, String type, Instant at) {
         return new ProviderEvent(provider, id, type, Kind.IGNORED, at, null, null, null, null, null, null, null,
-                null);
+                null, null, null);
     }
 }

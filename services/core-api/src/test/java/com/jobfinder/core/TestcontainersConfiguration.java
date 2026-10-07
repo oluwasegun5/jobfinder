@@ -255,6 +255,13 @@ public class TestcontainersConfiguration {
 			registry.add("app.billing.stripe.webhook-secret", () -> PaymentFixtures.STRIPE_WEBHOOK_SECRET);
 			registry.add("app.billing.paystack.api-base", () -> paymentsUrl);
 			registry.add("app.billing.paystack.secret-key", () -> PaymentFixtures.PAYSTACK_KEY);
+			// Realistic prices instead of the shipped placeholder of 100, so no test passes by matching it by chance.
+			registry.add("BILLING_PRICE_PRO_USD_MINOR", () -> PaymentFixtures.PRO_USD);
+			registry.add("BILLING_PRICE_PRO_NGN_MINOR", () -> PaymentFixtures.PRO_NGN);
+			registry.add("BILLING_PRICE_PACK_SMALL_USD_MINOR", () -> PaymentFixtures.PACK_SMALL_USD);
+			registry.add("BILLING_PRICE_PACK_SMALL_NGN_MINOR", () -> PaymentFixtures.PACK_SMALL_NGN);
+			registry.add("BILLING_PRICE_PACK_LARGE_USD_MINOR", () -> PaymentFixtures.PACK_LARGE_USD);
+			registry.add("BILLING_PRICE_PACK_LARGE_NGN_MINOR", () -> PaymentFixtures.PACK_LARGE_NGN);
 		};
 	}
 
