@@ -184,6 +184,7 @@ class MatchingPipelineTests extends MatchingTestSupport {
         UUID a = job("A", 5, "java");
         UUID b = job("B", 30, "java");
         stubScores(me.userId(), scores(a, 80, b, 60));
+        com.jobfinder.core.TestCredits.seed(jdbc, me.userId());
         ledger.record(new AiUsage("test:" + UUID.randomUUID(), me.userId(), "parse_resume", "test", "test-model", 1, 1,
                 new BigDecimal("1.00"), 1, "test/v1", "test", AiCallStatus.SUCCEEDED));
 
@@ -208,6 +209,7 @@ class MatchingPipelineTests extends MatchingTestSupport {
         UUID a = job("A", 5, "java");
         stubScores(me.userId(), scores(a, 80));
         rank(me.userId());
+        com.jobfinder.core.TestCredits.seed(jdbc, me.userId());
         ledger.record(new AiUsage("test:" + UUID.randomUUID(), me.userId(), "parse_resume", "test", "test-model", 1, 1,
                 new BigDecimal("1.00"), 1, "test/v1", "test", AiCallStatus.SUCCEEDED));
 
@@ -331,7 +333,7 @@ class MatchingPipelineTests extends MatchingTestSupport {
                 + "'match_scoring' and status = 'SUCCEEDED'", Integer.class, me.userId())).isEqualTo(1);
         assertThat(jdbc.queryForObject("select coalesce(sum(cost_micro_usd), 0) from ai_calls where user_id = ? "
                 + "and feature = 'match_scoring'", BigDecimal.class, me.userId())).isEqualByComparingTo("4000");
-        assertThat(jdbc.queryForObject("select count(*) from credit_ledger where user_id = ?", Integer.class,
+        assertThat(jdbc.queryForObject("select count(*) from credit_ledger where user_id = ? and reason = 'AI_USAGE'", Integer.class,
                 me.userId())).isEqualTo(1);
     }
 

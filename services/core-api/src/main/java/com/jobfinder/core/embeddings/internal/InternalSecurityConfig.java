@@ -3,6 +3,7 @@ package com.jobfinder.core.embeddings.internal;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.time.Duration;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.jobfinder.core.shared.SecurityHeaderDefaults;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,13 +38,21 @@ import jakarta.servlet.http.HttpServletResponse;
 class InternalSecurityConfig {
 
     static final String HEADER = "X-Service-Token";
+    static final int MIN_TOKEN_LENGTH = 32;
 
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
     SecurityFilterChain internalFilterChain(HttpSecurity http, @Value("${app.ai-service.token}") String token)
             throws Exception {
+        // ai-service refuses a token under 32 characters; so does the side that checks it (ASVS V2.10: service credentials
+        // are not guessable). Blank or short fails startup, so an empty header can never match an empty secret.
+        if (token == null || token.length() < MIN_TOKEN_LENGTH) {
+            throw new IllegalStateException(
+                    "app.ai-service.token (AI_SERVICE_TOKEN) must be at least " + MIN_TOKEN_LENGTH + " characters");
+        }
         // Built here, not as a bean: a Filter bean would also be registered on every servlet path.
         ServiceTokenFilter filter = new ServiceTokenFilter(token);
+        SecurityHeaderDefaults.apply(http, Duration.ZERO, false);
         return http
                 .securityMatcher("/internal/**")
                 .csrf(AbstractHttpConfigurer::disable)

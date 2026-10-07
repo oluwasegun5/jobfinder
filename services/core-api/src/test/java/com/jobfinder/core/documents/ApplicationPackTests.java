@@ -1,5 +1,6 @@
 package com.jobfinder.core.documents;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -70,6 +71,7 @@ class ApplicationPackTests extends WritingTestSupport {
     }
 
     private void exhaustTheCap(UUID userId) {
+        com.jobfinder.core.TestCredits.seed(jdbc, userId);
         ledger.record(new AiUsage("test:" + UUID.randomUUID(), userId, "parse_resume", "test", "m", 1, 1,
                 new BigDecimal("5.00"), 1, "p/v1", "test", AiCallStatus.SUCCEEDED));
     }
@@ -477,6 +479,7 @@ class ApplicationPackTests extends WritingTestSupport {
 
     // ------------------------------------------------------------------------------------------------- authz
 
+    @CoversEndpoints({"GET /application-packs/{id}", "POST /application-packs/{id}/retry", "GET /application-packs", "POST /jobs/{id}/application-pack"})
     @Test
     void aPackBelongsToItsOwnerAlone() throws Exception {
         Setup s = setup();

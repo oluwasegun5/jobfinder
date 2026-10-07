@@ -11,6 +11,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 import com.jobfinder.core.ingestion.SourceFetchException;
+import com.jobfinder.core.shared.SsrfGuard;
 
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
@@ -30,8 +31,10 @@ class AggregatorHttp {
     private final RestClient client;
     private final JsonMapper json;
     private final long maxBytes;
+    private final SsrfGuard guard;
 
-    AggregatorHttp(AggregatorProperties properties, JsonMapper json) {
+    AggregatorHttp(AggregatorProperties properties, JsonMapper json, SsrfGuard guard) {
+        this.guard = guard;
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1).connectTimeout(properties.connectTimeout()).build());
         factory.setReadTimeout(properties.readTimeout());
@@ -49,6 +52,14 @@ class AggregatorHttp {
      * body as JSON. {@code source} and {@code label} are for messages only.
      */
     JsonNode getJson(String source, String label, URI uri, Map<String, String> headers) {
+        try {
+            guard.check(uri);
+        } catch (SsrfGuard.BlockedException e) {
+            // Never the URI: it can carry the aggregator's key.
+            String message = source + " target for " + label + " is not allowed (" + e.getMessage() + ")";
+            throw e.unresolvable() ? SourceFetchException.transientFailure(message, null)
+                    : SourceFetchException.permanentFailure(message, null);
+        }
         byte[] body;
         try {
             body = client.get().uri(uri).headers(h -> headers.forEach(h::set)).exchange((request, response) -> {

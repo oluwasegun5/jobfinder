@@ -1,5 +1,6 @@
 package com.jobfinder.core.documents;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -304,6 +305,7 @@ class CoverLetterTests extends WritingTestSupport {
     void anExhaustedDailyCapBlocksWithTheTypedErrorBeforeAnyCall() throws Exception {
         Setup s = setup();
         stubLetter(s.candidate().userId(), letterOk(s.candidate(), UUID.randomUUID(), "0.003"));
+        com.jobfinder.core.TestCredits.seed(jdbc, s.candidate().userId());
         ledger.record(new AiUsage("test:" + UUID.randomUUID(), s.candidate().userId(), "parse_resume", "test", "m", 1,
                 1, new BigDecimal("5.00"), 1, "p/v1", "test", AiCallStatus.SUCCEEDED));
 
@@ -354,6 +356,7 @@ class CoverLetterTests extends WritingTestSupport {
         assertThat(documents(s.candidate().userId())).isEqualTo(1);
     }
 
+    @CoversEndpoints({"GET /documents/{id}", "PATCH /documents/{id}", "POST /documents/{id}/approve", "DELETE /documents/{id}"})
     @Test
     void anotherUsersLetterIsNotFoundForReadEditApproveAndDelete() throws Exception {
         Setup s = setup();
@@ -369,6 +372,7 @@ class CoverLetterTests extends WritingTestSupport {
         assertThat(statusOf(id)).isEqualTo("DRAFT");
     }
 
+    @CoversEndpoints({"POST /jobs/{id}/cover-letter"})
     @Test
     void anotherUsersJobIsStillThatUsersOwnToWriteFor() throws Exception {
         // Jobs are shared data (the feed); the letter is made from the caller's own resume and belongs to the caller.

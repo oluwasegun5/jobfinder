@@ -1,0 +1,101 @@
+# Production overlay (ADR 0037, ASVS 14.1): docker compose -f infra/docker-compose.yml -f infra/docker-compose.prod.yml \
+#   --env-file .env up -d
+#
+# What it changes against the development file:
+#  - only the web app publishes a port; Postgres, Redis, RabbitMQ, core-api and ai-service stay on the compose network
+#  - core-api runs with the prod profile (no Swagger, health only, no error detail)
+#  - containers drop every capability, cannot gain privileges, and (core-api, ai-service, web) have a read-only root
+#  - Mailpit and the S3 mock do not start: set the real SMTP and object-storage values below
+#  - restart policies, pid and memory limits (override the placeholders to fit the host)
+#
+# Not done here, recorded for P6.5: TLS termination in front of web, Redis authentication, managed Postgres and
+# RabbitMQ with network policy, image digests for the application images, log shipping, secret manager instead of .env.
+
+services:
+  postgres:
+    ports: !reset []
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: ${POSTGRES_MEM_LIMIT:-1g}
+
+  redis:
+    ports: !reset []
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: ${REDIS_MEM_LIMIT:-256m}
+
+  rabbitmq:
+    ports: !reset []
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: ${RABBITMQ_MEM_LIMIT:-512m}
+
+  # Development-only helpers: not started by `up` without `--profile dev-only`.
+  mailpit:
+    profiles: ["dev-only"]
+    ports: !reset []
+  object-storage:
+    profiles: ["dev-only"]
+    ports: !reset []
+  object-storage-init:
+    profiles: ["dev-only"]
+
+  core-api:
+    depends_on: !override
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      ai-service:
+        condition: service_started
+    ports: !reset []
+    restart: unless-stopped
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: ${CORE_API_PIDS_LIMIT:-512}
+    mem_limit: ${CORE_API_MEM_LIMIT:-1536m}
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      AUTH_COOKIE_SECURE: "true"
+      # Real services; the development values (Mailpit, S3 mock) are not defaults here.
+      MAIL_HOST: ${MAIL_HOST:?set MAIL_HOST to the SMTP server}
+      MAIL_PORT: ${MAIL_PORT:?set MAIL_PORT}
+      SPRING_MAIL_USERNAME: ${SMTP_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SMTP_PASSWORD:-}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: ${SMTP_AUTH:-true}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
+      OBJECT_STORAGE_ENDPOINT: ${OBJECT_STORAGE_ENDPOINT:?set OBJECT_STORAGE_ENDPOINT (the R2 or S3 endpoint)}
+      OBJECT_STORAGE_PUBLIC_ENDPOINT: ${OBJECT_STORAGE_PUBLIC_ENDPOINT:-}
+      OBJECT_STORAGE_PATH_STYLE: "false"
+      WEB_BASE_URL: ${WEB_BASE_URL:?set WEB_BASE_URL to the public https URL}
+      APP_SECURITY_CORS_ALLOWED_ORIGINS: ${WEB_BASE_URL}
+      # Where the hosted checkout sends the browser back to (the web route apps/web/src/app/(app)/billing/return);
+      # the application defaults point at localhost.
+      BILLING_RETURN_URL: ${WEB_BASE_URL}/billing/return
+      BILLING_CANCEL_URL: ${WEB_BASE_URL}/billing/return?canceled=1
+      UPLOAD_SCANNER_TYPE: ${UPLOAD_SCANNER_TYPE:-none}
+      UPLOAD_SCANNER_HOST: ${UPLOAD_SCANNER_HOST:-clamav}
+      UPLOAD_SCANNER_ON_ERROR: ${UPLOAD_SCANNER_ON_ERROR:-closed}
+
+  ai-service:
+    ports: !reset []
+    restart: unless-stopped
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: ${AI_SERVICE_PIDS_LIMIT:-256}
+    mem_limit: ${AI_SERVICE_MEM_LIMIT:-1g}
+
+  web:
+    restart: unless-stopped
+    read_only: true
+    tmpfs: ["/tmp", "/app/apps/web/.next/cache"]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: ${WEB_PIDS_LIMIT:-256}
+    mem_limit: ${WEB_MEM_LIMIT:-512m}

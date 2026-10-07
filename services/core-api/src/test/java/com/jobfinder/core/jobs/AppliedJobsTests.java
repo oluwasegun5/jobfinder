@@ -1,5 +1,6 @@
 package com.jobfinder.core.jobs;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -72,6 +73,7 @@ class AppliedJobsTests extends JobsTestSupport {
         getAs(me, "/jobs/" + job).andExpect(jsonPath("$.saved").value(false)).andExpect(jsonPath("$.applied").value(true));
     }
 
+    @CoversEndpoints({"PUT /jobs/{id}/applied", "DELETE /jobs/{id}/applied"})
     @Test
     void oneUsersApplicationIsInvisibleToAnotherAndNoRequestCanNameAnotherUser() throws Exception {
         UUID job = insert("Shared posting");

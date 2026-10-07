@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.stereotype.Component;
 
+import com.jobfinder.core.identity.RateLimits;
+
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.ConsumptionProbe;
@@ -25,7 +27,7 @@ import io.lettuce.core.RedisClient;
  * probe pass) before Redis is reachable.
  */
 @Component
-class RateLimiter implements DisposableBean {
+class RateLimiter implements RateLimits, DisposableBean {
 
     private static final Logger log = LoggerFactory.getLogger(RateLimiter.class);
 
@@ -45,13 +47,23 @@ class RateLimiter implements DisposableBean {
      */
     void check(RateLimitRule rule, String subject) {
         RateLimitProperties.Limit limit = properties.limitFor(rule);
+        consume(rule.name(), subject, limit.capacity(), limit.period());
+    }
+
+    /** For other modules' endpoints: the same bucket logic with the limit given by the caller. */
+    @Override
+    public void check(String name, String subject, int capacity, Duration period) {
+        consume("ext:" + name, subject, capacity, period);
+    }
+
+    private void consume(String bucketName, String subject, int capacityPerPeriod, Duration period) {
         BucketConfiguration configuration = BucketConfiguration.builder()
                 .addLimit(Bandwidth.builder()
-                        .capacity(limit.capacity())
-                        .refillGreedy(limit.capacity(), limit.period())
+                        .capacity(capacityPerPeriod)
+                        .refillGreedy(capacityPerPeriod, period)
                         .build())
                 .build();
-        byte[] key = ("rl:" + rule.name() + ":" + subject).getBytes(StandardCharsets.UTF_8);
+        byte[] key = ("rl:" + bucketName + ":" + subject).getBytes(StandardCharsets.UTF_8);
 
         ConsumptionProbe probe;
         try {

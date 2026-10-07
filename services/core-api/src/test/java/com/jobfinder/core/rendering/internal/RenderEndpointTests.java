@@ -1,5 +1,6 @@
 package com.jobfinder.core.rendering.internal;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.clearInvocations;
@@ -265,6 +266,7 @@ class RenderEndpointTests extends DocumentsTestSupport {
 
     // -------------------------------------------------------------------------------------- who may render what
 
+    @CoversEndpoints({"GET /documents/{id}/files", "GET /documents/{id}/files/{fileId}/download"})
     @Test
     void theFilesOfADocumentCanBeListedAndEachGetsAFreshLinkOnlyForItsOwner() throws Exception {
         Approved a = approvedDocument();
@@ -301,6 +303,7 @@ class RenderEndpointTests extends DocumentsTestSupport {
         mvc.perform(get("/documents/" + a.id() + "/files")).andExpect(status().isUnauthorized());
     }
 
+    @CoversEndpoints({"POST /documents/{id}/render"})
     @Test
     void anotherUserGets404ForSomeoneElsesDocumentAndNothingIsStored() throws Exception {
         Approved a = approvedDocument();
@@ -399,6 +402,7 @@ class RenderEndpointTests extends DocumentsTestSupport {
         assertThat(objectsUnder("renders/" + userIdOf(me) + "/")).isEqualTo(2);
     }
 
+    @CoversEndpoints({"POST /resumes/{id}/render"})
     @Test
     void aResumeWithoutContentCannotBeRenderedAndSomeoneElsesIsA404() throws Exception {
         Session me = newSession();

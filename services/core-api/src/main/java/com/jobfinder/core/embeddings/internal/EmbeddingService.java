@@ -17,6 +17,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.jobfinder.core.billing.AiCallStatus;
 import com.jobfinder.core.billing.AiUsage;
 import com.jobfinder.core.billing.AiUsageGate;
+import com.jobfinder.core.billing.GateStatus;
 import com.jobfinder.core.billing.AiUsageLedger;
 import com.jobfinder.core.embeddings.internal.EmbeddingDtos.InputItem;
 import com.jobfinder.core.embeddings.internal.EmbeddingDtos.InputsResponse;
@@ -97,7 +98,7 @@ class EmbeddingService {
             }
         } else {
             Map<UUID, ResumeVersionRow> rows = by(store.resumeVersions(ids, false), ResumeVersionRow::id);
-            Map<UUID, Boolean> capped = new java.util.HashMap<>();
+            Map<UUID, GateStatus> blocked = new java.util.HashMap<>();
             for (UUID id : ids) {
                 ResumeVersionRow row = rows.get(id);
                 if (row == null) {
@@ -109,8 +110,9 @@ class EmbeddingService {
                     String hash = EmbeddingTextBuilder.hash(text);
                     if (current(row.model(), row.inputHash(), hash)) {
                         skipped.add(new Skipped(id, "UP_TO_DATE"));
-                    } else if (capped.computeIfAbsent(row.userId(), owner -> gate.allowance(owner).exhausted())) {
-                        skipped.add(new Skipped(id, "AI_DAILY_CAP_REACHED"));
+                    } else if (blocked.computeIfAbsent(row.userId(), gate::status) != GateStatus.OK) {
+                        skipped.add(new Skipped(id, blocked.get(row.userId()) == GateStatus.INSUFFICIENT_CREDITS
+                                ? "INSUFFICIENT_CREDITS" : "AI_DAILY_CAP_REACHED"));
                     } else {
                         items.add(new InputItem(id, row.userId(), text, hash));
                     }

@@ -1,5 +1,6 @@
 package com.jobfinder.core.documents;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -282,6 +283,7 @@ class ReviewAndApproveTests extends DocumentsTestSupport {
 
     // --- authz ---
 
+    @CoversEndpoints({"GET /documents/{id}", "GET /documents"})
     @Test
     void anotherUserCannotReadChangeApproveOrDeleteMyDraft() throws Exception {
         Draft mine = faithfulDraft();

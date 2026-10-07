@@ -10,7 +10,9 @@ import org.springframework.amqp.ImmediateRequeueAmqpException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
+import com.jobfinder.core.billing.AiAllowanceException;
 import com.jobfinder.core.billing.AiDailyCapReachedException;
+import com.jobfinder.core.billing.InsufficientCreditsException;
 import com.jobfinder.core.billing.AiUsageGate;
 import com.jobfinder.core.profile.internal.AiServiceResumeParser.Parsed;
 import com.jobfinder.core.profile.internal.ResumeParseStore.Target;
@@ -102,6 +104,9 @@ class ResumeParseWorker {
                     target.resumeId());
         } catch (ImmediateRequeueAmqpException e) {
             throw e;
+        } catch (InsufficientCreditsException e) {
+            log.info("Parsing resume {} blocked: the user has no AI credits left", target.resumeId());
+            store.fail(target.resumeId(), ParseFailureReason.INSUFFICIENT_CREDITS);
         } catch (AiDailyCapReachedException e) {
             log.info("Parsing resume {} blocked: the daily AI cap is reached (resets at {})", target.resumeId(),
                     e.resetsAt());

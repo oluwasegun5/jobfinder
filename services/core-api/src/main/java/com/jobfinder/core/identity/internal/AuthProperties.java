@@ -42,6 +42,7 @@ record AuthProperties(
     record Jwt(
             @NotBlank @Size(min = 32, message = "must be at least 32 characters (set JWT_SECRET)") String secret,
             @DefaultValue("jobfinder-core-api") @NotBlank String issuer,
+            @DefaultValue("jobfinder-api") @NotBlank String audience,
             @DefaultValue("15m") Duration accessTokenTtl) {
     }
 

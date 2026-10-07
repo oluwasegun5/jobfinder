@@ -214,6 +214,9 @@ public abstract class WritingTestSupport extends DocumentsTestSupport {
     }
 
     protected int countRows(String table, UUID userId) {
-        return jdbc.queryForObject("select count(*) from " + table + " where user_id = ?", Integer.class, userId);
+        // The ledger also holds grants now; these tests count the lines AI usage wrote.
+        String usageOnly = table.equals("credit_ledger") ? " and reason = 'AI_USAGE'" : "";
+        return jdbc.queryForObject("select count(*) from " + table + " where user_id = ?" + usageOnly, Integer.class,
+                userId);
     }
 }

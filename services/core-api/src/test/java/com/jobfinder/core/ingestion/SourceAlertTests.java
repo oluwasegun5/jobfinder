@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.jayway.jsonpath.JsonPath;
-import com.jobfinder.core.TestcontainersConfiguration.MailpitContainer;
+import com.jobfinder.core.TestcontainersConfiguration.Mailpit;
 
 import io.micrometer.core.instrument.MeterRegistry;
 
@@ -33,7 +33,7 @@ class SourceAlertTests extends IngestionTestSupport {
     private static final HttpClient HTTP = HttpClient.newHttpClient();
 
     @Autowired
-    private MailpitContainer mailpit;
+    private Mailpit mailpit;
 
     @Autowired
     private MeterRegistry meters;

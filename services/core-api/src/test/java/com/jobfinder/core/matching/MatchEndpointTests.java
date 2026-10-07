@@ -1,5 +1,7 @@
 package com.jobfinder.core.matching;
 
+import com.jobfinder.core.CoversEndpoints;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -33,6 +35,23 @@ class MatchEndpointTests extends MatchingTestSupport {
 
         getAs(me, "/jobs/" + UUID.randomUUID() + "/match").andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("job_not_found"));
+    }
+
+    @CoversEndpoints({"GET /jobs/{id}/match"})
+    @Test
+    void theSameJobIsScoredForEachCallerAloneAndNeverFromAnotherUsersResume() throws Exception {
+        Session me = newSession();
+        Session other = newSession();
+        UUID mine = userIdOf(me);
+        UUID theirs = userIdOf(other);
+        seedFor(mine, 0, "Backend engineer", "java");
+        seedFor(theirs, 0, "Backend engineer", "java");
+        UUID id = job("A", 5, "java");
+        stubScores(mine, Map.of(id, 81));
+        stubScores(theirs, Map.of(id, 23));
+
+        getAs(me, "/jobs/" + id + "/match").andExpect(status().isOk()).andExpect(jsonPath("$.score").value(81));
+        getAs(other, "/jobs/" + id + "/match").andExpect(status().isOk()).andExpect(jsonPath("$.score").value(23));
     }
 
     @Test

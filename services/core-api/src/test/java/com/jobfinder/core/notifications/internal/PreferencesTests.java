@@ -1,5 +1,6 @@
 package com.jobfinder.core.notifications.internal;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -36,6 +37,7 @@ class PreferencesTests extends NotificationsTestSupport {
         assertThat(count("select count(*) from notification_preferences where user_id = ?", userIdOf(me))).isZero();
     }
 
+    @CoversEndpoints({"GET /notifications/preferences", "PUT /notifications/preferences"})
     @Test
     void settingsRoundTripAndBelongToTheirUserOnly() throws Exception {
         Session me = newSession();

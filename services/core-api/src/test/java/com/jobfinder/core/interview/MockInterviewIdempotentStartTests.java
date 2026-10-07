@@ -184,8 +184,9 @@ class MockInterviewIdempotentStartTests extends MockInterviewTestSupport {
         Session me = newSession();
         UUID user = userIdOf(me);
         UUID job = prepJob();
-        // A slow first question, so both requests are past the lookup before either inserts.
-        stubSlowTurn(user, opening(UUID.randomUUID(), "0.004"), 800);
+        // A slow first question, so both requests are past the lookup before either inserts. Each request is its own
+        // model call with its own call_id, as in production.
+        stubSlowOpeningPerCall(user, "0.004", 800);
 
         ExecutorService pool = Executors.newFixedThreadPool(2);
         try {
@@ -209,5 +210,7 @@ class MockInterviewIdempotentStartTests extends MockInterviewTestSupport {
         // The loser made its own model call before it lost the race (see the ADR addendum); it is not attributed to the
         // winner's session, which counts only its own call.
         assertThat(creditsConsumed(id)).isEqualByComparingTo("4");
+        assertThat(ledgerLines(user)).isEqualTo(2);
+        assertThat(ledgerCredits(user)).isEqualByComparingTo("8");
     }
 }

@@ -1,5 +1,6 @@
 package com.jobfinder.core.ingestion.internal.ats;
 
+import java.net.URI;
 import java.net.http.HttpClient;
 import java.util.regex.Pattern;
 
@@ -10,6 +11,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 import com.jobfinder.core.ingestion.SourceFetchException;
+import com.jobfinder.core.shared.SsrfGuard;
 
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
@@ -32,8 +34,10 @@ class AtsHttp {
     private final RestClient client;
     private final JsonMapper json;
     private final long maxBytes;
+    private final SsrfGuard guard;
 
-    AtsHttp(AtsProperties properties, JsonMapper json) {
+    AtsHttp(AtsProperties properties, JsonMapper json, SsrfGuard guard) {
+        this.guard = guard;
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1).connectTimeout(properties.connectTimeout()).build());
         factory.setReadTimeout(properties.readTimeout());
@@ -64,6 +68,7 @@ class AtsHttp {
 
     /** GET {@code url} and parse the body as JSON. {@code source} and {@code board} are for messages only. */
     JsonNode getJson(String source, String board, String url) {
+        requireAllowed(source, board, url);
         byte[] body;
         try {
             body = client.get().uri(url).exchange((request, response) -> {
@@ -91,6 +96,19 @@ class AtsHttp {
             return json.readTree(body);
         } catch (JacksonException e) {
             throw SourceFetchException.permanentFailure(source + " returned invalid JSON for " + board, e);
+        }
+    }
+
+    /** Every URL passes the SSRF guard first (ADR 0037); a refusal names the source and board, never the URL. */
+    private void requireAllowed(String source, String board, String url) {
+        try {
+            guard.check(URI.create(url));
+        } catch (SsrfGuard.BlockedException e) {
+            String message = source + " target for " + board + " is not allowed (" + e.getMessage() + ")";
+            throw e.unresolvable() ? SourceFetchException.transientFailure(message, null)
+                    : SourceFetchException.permanentFailure(message, null);
+        } catch (IllegalArgumentException e) {
+            throw SourceFetchException.permanentFailure(source + " target for " + board + " is not a valid URL", null);
         }
     }
 

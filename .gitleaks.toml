@@ -1,0 +1,20 @@
+# gitleaks configuration (ADR 0037): the default rules plus the triaged exceptions below.
+title = "JobFinder gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Build and test output: generated, git-ignored, never committed (their hashes and test JWTs look like keys)"
+paths = [
+  '''(^|/)\.next/''',
+  '''(^|/)target/''',
+  '''(^|/)node_modules/''',
+  '''(^|/)\.venv/''',
+  '''(^|/)test-results/''',
+  '''(^|/)playwright-report/''',
+]
+
+[[allowlists]]
+description = "extension/src/popup/popup.ts: a DOM id lookup for the password input (GitGuardian 'password' hit); no secret"
+paths = ['''extension/src/popup/popup\.ts$''']

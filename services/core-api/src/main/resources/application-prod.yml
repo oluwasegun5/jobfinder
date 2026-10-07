@@ -1,0 +1,35 @@
+# Production profile (SPRING_PROFILES_ACTIVE=prod). Only what must differ from the base file; secrets have no
+# defaults anywhere (startup fails without them). See docs/adr/0037-security-hardening.md.
+
+springdoc:
+  # The API description and the Swagger UI are a development and contract-generation aid, not a public surface.
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      # Up or down, nothing about which dependencies or why.
+      show-details: never
+      show-components: never
+
+server:
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+  # No overlong header blocks reaching the application.
+  max-http-request-header-size: 16KB
+
+app:
+  upload:
+    scanner:
+      # A scanner that cannot answer refuses the upload; set UPLOAD_SCANNER_ON_ERROR=open only knowingly.
+      on-error: ${UPLOAD_SCANNER_ON_ERROR:closed}

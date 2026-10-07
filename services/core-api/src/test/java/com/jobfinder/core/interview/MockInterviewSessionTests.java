@@ -688,6 +688,8 @@ class MockInterviewSessionTests extends MockInterviewTestSupport {
     void aSummaryTheCapBlocksAfterTheLastAnswerWaitsForComplete() throws Exception {
         Session me = newSession();
         UUID user = userIdOf(me);
+        // A 0.60 USD turn costs 600 credits: more than the free grant, so this user is topped up first.
+        com.jobfinder.core.TestCredits.seed(jdbc, user);
         stubTurn(user, opening(UUID.randomUUID(), "0.004"));
         String id = idOf(startWith(me, prepJob(), Map.of("maxTurns", 1)).andExpect(status().isCreated()));
         // The turn itself costs enough to reach the cap.

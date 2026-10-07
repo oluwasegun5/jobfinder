@@ -4,6 +4,7 @@ import { Download, FileText, Star, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
+import { InsufficientCreditsPrompt } from "@/components/billing/credits-prompt";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -44,6 +45,7 @@ function ResumeRow({ resume, onError }: { resume: Resume; onError: (message: str
   const id = resume.id ?? "";
   const failed = resume.parseStatus === "FAILED";
   const capped = failed && resume.parseError === "ai_daily_cap_reached";
+  const outOfCredits = failed && resume.parseError === "insufficient_credits";
   const canReparse = failed && REPARSABLE_ERRORS.includes(resume.parseError ?? "");
   // The reset time is only fetched when someone is looking at a CV the daily limit blocked.
   const allowance = useAllowance({ enabled: capped });
@@ -88,6 +90,7 @@ function ResumeRow({ resume, onError }: { resume: Resume; onError: (message: str
               )}
             </p>
           )}
+          {outOfCredits && <InsufficientCreditsPrompt />}
           <div className="flex flex-wrap gap-2">
             {canReparse && (
               <Button

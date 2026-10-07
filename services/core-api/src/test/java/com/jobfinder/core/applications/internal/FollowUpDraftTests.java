@@ -1,5 +1,6 @@
 package com.jobfinder.core.applications.internal;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -35,6 +36,7 @@ class FollowUpDraftTests extends ApplicationsTestSupport {
         return new Setup(me, candidate, manual(me, "Backend Engineer"));
     }
 
+    @CoversEndpoints({"POST /applications/{id}/follow-up-draft"})
     @Test
     void itRequiresTheOwnerOfTheApplication() throws Exception {
         Setup s = setup();
@@ -113,6 +115,7 @@ class FollowUpDraftTests extends ApplicationsTestSupport {
         Setup s = setup();
         UUID userId = s.candidate().userId();
         stubFollowUp(userId, followUpOk(UUID.randomUUID(), "0.004"));
+        com.jobfinder.core.TestCredits.seed(jdbc, userId);
         ledger.record(new AiUsage("test:" + UUID.randomUUID(), userId, "parse_resume", "test", "m", 1, 1,
                 new BigDecimal("5.00"), 1, "p/v1", "test", AiCallStatus.SUCCEEDED));
 

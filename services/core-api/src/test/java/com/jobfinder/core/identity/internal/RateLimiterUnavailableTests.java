@@ -14,7 +14,7 @@ class RateLimiterUnavailableTests {
 
     @Test
     void failsClosedWhenRedisCannotBeReached() {
-        RateLimiter limiter = new RateLimiter(new RateLimitProperties("redis://127.0.0.1:1", Map.of()));
+        RateLimiter limiter = new RateLimiter(new RateLimitProperties("redis://127.0.0.1:1", Map.of(), Map.of()));
 
         assertThatThrownBy(() -> limiter.check(RateLimitRule.LOGIN_IP, "10.9.9.9"))
                 .isInstanceOfSatisfying(ApiException.class, e -> {

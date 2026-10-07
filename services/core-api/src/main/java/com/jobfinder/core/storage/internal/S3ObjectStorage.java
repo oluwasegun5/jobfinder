@@ -25,6 +25,9 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 @Component
 class S3ObjectStorage implements ObjectStorage {
 
+    /** The longest a signed link may live (ASVS V12.5: files are served through short-lived signed URLs only). */
+    static final Duration MAX_LINK_TTL = Duration.ofMinutes(15);
+
     private final S3Client s3;
     private final S3Presigner presigner;
     private final String bucket;
@@ -38,7 +41,8 @@ class S3ObjectStorage implements ObjectStorage {
     @Override
     public void put(String key, byte[] content, String contentType) {
         s3.putObject(PutObjectRequest.builder().bucket(bucket).key(key).contentType(contentType)
-                .contentDisposition("attachment").build(), RequestBody.fromBytes(content));
+                .contentDisposition("attachment").cacheControl("private, no-store").build(),
+                RequestBody.fromBytes(content));
     }
 
     @Override
@@ -62,10 +66,27 @@ class S3ObjectStorage implements ObjectStorage {
 
     @Override
     public URI presignDownload(String key, String filename, Duration ttl) {
+        if (ttl.isNegative() || ttl.isZero() || ttl.compareTo(MAX_LINK_TTL) > 0) {
+            throw new IllegalArgumentException("A download link must live between a moment and " + MAX_LINK_TTL);
+        }
+        // The type is forced from what we stored, with an attachment disposition, whatever the object's own metadata says.
         GetObjectRequest get = GetObjectRequest.builder().bucket(bucket).key(key)
-                .responseContentDisposition(attachment(filename)).build();
+                .responseContentDisposition(attachment(filename)).responseContentType(contentTypeOf(key))
+                .responseCacheControl("private, no-store").build();
         return URI.create(presigner.presignGetObject(GetObjectPresignRequest.builder()
                 .signatureDuration(ttl).getObjectRequest(get).build()).url().toString());
+    }
+
+    /** The only types we store; anything else is served as opaque bytes. */
+    static String contentTypeOf(String key) {
+        String lower = key.toLowerCase(java.util.Locale.ROOT);
+        if (lower.endsWith(".pdf")) {
+            return "application/pdf";
+        }
+        if (lower.endsWith(".docx")) {
+            return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        }
+        return "application/octet-stream";
     }
 
     /**

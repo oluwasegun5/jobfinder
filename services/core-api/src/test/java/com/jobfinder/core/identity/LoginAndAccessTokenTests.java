@@ -1,5 +1,6 @@
 package com.jobfinder.core.identity;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -110,6 +111,7 @@ class LoginAndAccessTokenTests extends AuthTestSupport {
                 .andExpect(jsonPath("$.code").value("invalid_credentials"));
     }
 
+    @CoversEndpoints({"GET /auth/me"})
     @Test
     void meReturnsTheAuthenticatedUsersOwnRecordAndNooneElses() throws Exception {
         String emailA = registerVerifiedUser();
@@ -178,10 +180,42 @@ class LoginAndAccessTokenTests extends AuthTestSupport {
         getMe(header + "." + payload + ".").andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void tokensForAnotherAudienceOrWithNoneAreRejected() throws Exception {
+        String email = registerVerifiedUser();
+        String userId = jdbc.queryForObject("select id::text from users where email = ?", String.class, email);
+        Instant now = Instant.now();
+
+        getMe(encode(jwtEncoder, userId, "jobfinder-core-api", "someone-elses-api", now, now.plusSeconds(600)))
+                .andExpect(status().isUnauthorized());
+        getMe(encode(jwtEncoder, userId, "jobfinder-core-api", null, now, now.plusSeconds(600)))
+                .andExpect(status().isUnauthorized());
+        getMe(encode(jwtEncoder, userId, "jobfinder-core-api", "jobfinder-api", now, now.plusSeconds(600)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void issuedAccessTokensNameTheApiAsTheirAudience() throws Exception {
+        String email = registerVerifiedUser();
+        String token = login(email, PASSWORD, newIp()).accessToken();
+        String payload = new String(java.util.Base64.getUrlDecoder().decode(token.split("\\.")[1]),
+                StandardCharsets.UTF_8);
+        assertThat(payload).contains("\"aud\":\"jobfinder-api\"");
+    }
+
     private static String encode(JwtEncoder encoder, String subject, String issuer, Instant issuedAt,
             Instant expiresAt) {
-        JwtClaimsSet claims = JwtClaimsSet.builder().issuer(issuer).subject(subject)
-                .issuedAt(issuedAt).expiresAt(expiresAt).claim("role", "USER").build();
+        return encode(encoder, subject, issuer, "jobfinder-api", issuedAt, expiresAt);
+    }
+
+    private static String encode(JwtEncoder encoder, String subject, String issuer, String audience,
+            Instant issuedAt, Instant expiresAt) {
+        JwtClaimsSet.Builder builder = JwtClaimsSet.builder().issuer(issuer).subject(subject)
+                .issuedAt(issuedAt).expiresAt(expiresAt).claim("role", "USER");
+        if (audience != null) {
+            builder.audience(java.util.List.of(audience));
+        }
+        JwtClaimsSet claims = builder.build();
         return encoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))
                 .getTokenValue();
     }

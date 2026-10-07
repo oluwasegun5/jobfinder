@@ -36,7 +36,15 @@
 		<wiremock.version>3.13.2</wiremock.version>
 		<shedlock.version>7.10.1</shedlock.version>
 		<resilience4j.version>2.4.0</resilience4j.version>
-		<jsoup.version>1.22.1</jsoup.version>
+		<jsoup.version>1.23.2</jsoup.version>
+		<!-- Security overrides of the Spring Boot BOM (OSV scan, ADR 0037): each fixes advisories in the version Boot 4.1.1 pins.
+		     Remove one when Boot's own BOM reaches it. tomcat: GHSA-9xv2-5v5q-p794, -gcx9-497g-6cp6, -h3x4-894j-xpx5;
+		     jackson: GHSA-7hhh-6rmp-j9qf, -p6pp-m3f8-5c89, -cxp5-3px4-pw24, -q4xh-88c3-wmh7, -wv8q-qhhj-9h54;
+		     amqp-client: GHSA-68mj-5wr7-6fgg, -6g32-pxv4-2wfj, -93j5-89vc-pph4, -jh4v-gfqj-7rhx. -->
+		<tomcat.version>11.0.25</tomcat.version>
+		<jackson-2-bom.version>2.21.7</jackson-2-bom.version>
+		<jackson-bom.version>3.1.7</jackson-bom.version>
+		<rabbit-amqp-client.version>5.34.0</rabbit-amqp-client.version>
 		<pdfbox.version>3.0.7</pdfbox.version>
 		<poi.version>5.5.1</poi.version>
 		<!-- Tests tagged "perf" (SearchPerformanceTests) are left out of the everyday run; -Pperf runs only them. -->

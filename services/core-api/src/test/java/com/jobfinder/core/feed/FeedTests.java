@@ -1,5 +1,6 @@
 package com.jobfinder.core.feed;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -255,6 +256,7 @@ class FeedTests extends MatchingTestSupport {
 
     // --- authorization ---
 
+    @CoversEndpoints({"GET /feed"})
     @Test
     void oneUsersActionsNeverAffectAnotherUsersFeed() throws Exception {
         World a = hidingWorld();

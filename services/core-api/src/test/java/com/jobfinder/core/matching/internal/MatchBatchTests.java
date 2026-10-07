@@ -234,6 +234,7 @@ class MatchBatchTests extends MatchingTestSupport {
         UUID job = job("Job", 5, "java");
         Seeded me = onboarded("Me");
         stubScores(me.userId(), Map.of(job, 70));
+        com.jobfinder.core.TestCredits.seed(jdbc, me.userId());
         ledger.record(new AiUsage("test:" + UUID.randomUUID(), me.userId(), "parse_resume", "test", "test-model", 1, 1,
                 new BigDecimal("1.00"), 1, "test/v1", "test", AiCallStatus.SUCCEEDED));
         MatchBatchService run = with(fixed(me.userId()), pipeline, 10, 100);

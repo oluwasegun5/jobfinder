@@ -25,8 +25,9 @@ cookie, and ADR 0012 warns that concurrent refreshes with the same token trip re
   react-hook-form/zod are not added yet.
 - **E2E (Playwright)** runs against a production build of the web app on port 3100 (dev-mode recompiles reload
   the page mid-test) with the compose backend. Verification and reset links are read from Mailpit. Because
-  signup is rate limited to 5/h per IP, `global-setup` flushes the local Redis first
-  (`E2E_SKIP_RATE_LIMIT_RESET=1` to skip). Run with `npm run web:e2e` after `make up`.
+  signup is rate limited to 5/h per IP, `E2E_RESET_RATE_LIMIT=1` makes `global-setup` delete the rate-limit keys (`rl:*`)
+  of the compose project `E2E_COMPOSE_PROJECT` (default `jobfinder`); it is opt-in and never flushes Redis (see
+  `apps/web/e2e/README.md`). Run with `npm run web:e2e` after `make up`.
 
 ## Consequences
 - A reload briefly shows a loading state on protected pages while the silent refresh runs.

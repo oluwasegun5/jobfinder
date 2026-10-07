@@ -62,7 +62,8 @@ abstract class AtsTestSupport {
     }
 
     static AtsHttp http(AtsProperties properties) {
-        return new AtsHttp(properties, JSON);
+        return new AtsHttp(properties, JSON,
+                new com.jobfinder.core.shared.SsrfGuard(new com.jobfinder.core.shared.SsrfGuard.Policy(true, true)));
     }
 
     static FetchTarget target(String identifier) {

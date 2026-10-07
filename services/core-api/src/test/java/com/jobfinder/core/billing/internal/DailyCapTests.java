@@ -1,5 +1,7 @@
 package com.jobfinder.core.billing.internal;
 
+import com.jobfinder.core.CoversEndpoints;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -114,6 +116,7 @@ class DailyCapTests extends BillingTestSupport {
         assertThatCode(() -> caps.requireAllowance(user, "parse_resume")).doesNotThrowAnyException();
     }
 
+    @CoversEndpoints({"GET /billing/allowance"})
     @Test
     void theAllowanceEndpointShowsTheCallersOwnFigures() throws Exception {
         Session session = newSessionFor(newEmailUser());

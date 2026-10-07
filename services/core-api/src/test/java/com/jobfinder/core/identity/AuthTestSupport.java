@@ -28,7 +28,7 @@ import org.springframework.test.web.servlet.ResultActions;
 
 import com.jayway.jsonpath.JsonPath;
 import com.jobfinder.core.TestcontainersConfiguration;
-import com.jobfinder.core.TestcontainersConfiguration.MailpitContainer;
+import com.jobfinder.core.TestcontainersConfiguration.Mailpit;
 
 import jakarta.servlet.http.Cookie;
 
@@ -57,7 +57,7 @@ public abstract class AuthTestSupport {
     protected JdbcTemplate jdbc;
 
     @Autowired
-    private MailpitContainer mailpit;
+    private Mailpit mailpit;
 
     protected static String newIp() {
         int n = IP_COUNTER.incrementAndGet();

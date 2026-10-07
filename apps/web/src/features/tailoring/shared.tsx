@@ -3,6 +3,7 @@
 import { AlertTriangle, Check, Copy, OctagonAlert, ShieldCheck } from "lucide-react";
 import { useId, useRef, useState, type ReactNode } from "react";
 
+import { InsufficientCreditsPrompt } from "@/components/billing/credits-prompt";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +13,7 @@ import { approvalGate, explainFlag, isBlocking, type Draft, type Flag } from "./
 /** A failed action in words, with a retry when trying again can help. Announced to screen readers. */
 export function FailureNotice({ failure, onRetry, retrying }: { failure: Failure | undefined; onRetry?: () => void; retrying?: boolean }) {
   if (!failure) return null;
+  if (failure.kind === "credits") return <InsufficientCreditsPrompt message={failure.message} />;
   return (
     <div role="alert" className="flex flex-col gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
       <p>{failure.message}</p>

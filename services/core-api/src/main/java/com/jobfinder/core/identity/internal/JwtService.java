@@ -3,6 +3,7 @@ package com.jobfinder.core.identity.internal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -33,6 +34,7 @@ class JwtService {
         Instant now = clock.instant();
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(properties.issuer())
+                .audience(List.of(properties.audience()))
                 .subject(user.getId().toString())
                 .issuedAt(now)
                 .expiresAt(now.plus(properties.accessTokenTtl()))

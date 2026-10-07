@@ -14,7 +14,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import com.jobfinder.core.billing.AiDailyCapReachedException;
+import com.jobfinder.core.billing.AiAllowanceException;
+import com.jobfinder.core.billing.InsufficientCreditsException;
 import com.jobfinder.core.billing.AiUsageGate;
 import com.jobfinder.core.embeddings.ResumeEmbeddings;
 import com.jobfinder.core.embeddings.ResumeVector;
@@ -245,8 +246,9 @@ class MatchingPipeline implements MatchService {
             if (stopped == null) {
                 try {
                     gate.requireAllowance(userId, AiMatchClient.FEATURE);
-                } catch (AiDailyCapReachedException e) {
-                    stopped = FallbackReason.DAILY_CAP_REACHED;
+                } catch (AiAllowanceException e) {
+                    stopped = e instanceof InsufficientCreditsException ? FallbackReason.INSUFFICIENT_CREDITS
+                            : FallbackReason.DAILY_CAP_REACHED;
                     capped = true;
                 }
             }

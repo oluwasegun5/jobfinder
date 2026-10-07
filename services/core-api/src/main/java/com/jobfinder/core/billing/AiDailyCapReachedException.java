@@ -5,13 +5,11 @@ import java.time.Instant;
 
 import org.springframework.http.HttpStatus;
 
-import com.jobfinder.core.shared.ApiException;
-
 /**
  * The user has used up today's AI allowance. HTTP 429 with the stable code {@code ai_daily_cap_reached}, a
  * {@code resetsAt} member (ISO-8601 UTC) in the problem document and a {@code Retry-After} header.
  */
-public class AiDailyCapReachedException extends ApiException {
+public class AiDailyCapReachedException extends AiAllowanceException {
 
     public static final String CODE = "ai_daily_cap_reached";
 

@@ -327,8 +327,8 @@ class InterviewPrepTests extends InterviewTestSupport {
         assertThat(preps(candidate.userId())).isZero();
         assertThat(callStatus(billed)).isEqualTo("FAILED");
         assertThat(aiCalls(candidate.userId())).isEqualTo(1);
-        BigDecimal debited = jdbc.queryForObject("select coalesce(-sum(delta), 0) from credit_ledger where user_id = ?",
-                BigDecimal.class, candidate.userId());
+        BigDecimal debited = jdbc.queryForObject("select coalesce(-sum(delta), 0) from credit_ledger where user_id = ? "
+                + "and reason = 'AI_USAGE'", BigDecimal.class, candidate.userId());
         assertThat(debited).isEqualByComparingTo("3");
     }
 
@@ -468,6 +468,7 @@ class InterviewPrepTests extends InterviewTestSupport {
 
     /** $5 of AI today is far over the default cap of 500 credits ($0.50). */
     private void spendTheCap(UUID userId) {
+        com.jobfinder.core.TestCredits.seed(jdbc, userId);
         ledger.record(new AiUsage("test:" + UUID.randomUUID(), userId, "parse_resume", "test", "m", 1, 1,
                 new BigDecimal("5.00"), 1, "p/v1", "test", AiCallStatus.SUCCEEDED));
     }

@@ -1,5 +1,6 @@
 package com.jobfinder.core.notifications.internal;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -104,6 +105,7 @@ class UnsubscribeTests extends NotificationsTestSupport {
         assertThat(flag(oneSearch.id(), "digests_unsubscribed_at")).isFalse();
     }
 
+    @CoversEndpoints({"GET /notifications/unsubscribe/{token}", "POST /notifications/unsubscribe/{token}"})
     @Test
     void aTokenCannotReachAnotherUsersSearch() throws Exception {
         Account victim = withSettings();

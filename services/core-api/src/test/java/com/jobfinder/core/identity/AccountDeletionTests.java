@@ -1,5 +1,6 @@
 package com.jobfinder.core.identity;
 
+import com.jobfinder.core.CoversEndpoints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -66,6 +67,7 @@ class AccountDeletionTests extends AuthTestSupport {
         postWithCookie("/auth/refresh", session.refreshToken(), newIp()).andExpect(status().isUnauthorized());
     }
 
+    @CoversEndpoints({"DELETE /me"})
     @Test
     void deletionOnlyAffectsTheCaller() throws Exception {
         String victimEmail = registerVerifiedUser();

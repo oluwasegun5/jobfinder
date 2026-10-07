@@ -24,12 +24,21 @@ import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtClaimNames;
+import org.springframework.security.oauth2.jwt.JwtClaimValidator;
 import org.springframework.security.oauth2.jwt.JwtIssuerValidator;
 import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.config.Customizer;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
+import org.springframework.beans.factory.annotation.Qualifier;
+
+import com.jobfinder.core.shared.SecurityHeaderDefaults;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 
@@ -37,14 +46,15 @@ import com.nimbusds.jose.jwk.source.ImmutableSecret;
  * Stateless JWT resource server. Everything requires a valid access token except the auth
  * entry points and the operational/documentation endpoints listed below.
  *
- * <p>CSRF protection is off: API calls authenticate with a bearer header a foreign site
- * cannot attach, and the two cookie-authenticated endpoints (refresh, logout) are covered by
- * the refresh cookie's {@code SameSite=Strict} attribute.
+ * <p>Spring's session-based CSRF token is off: API calls authenticate with a bearer header a foreign site
+ * cannot attach. The two cookie-authenticated endpoints (refresh, logout) are covered by the refresh cookie's
+ * {@code SameSite=Strict} attribute and, as defence in depth, by {@link CrossSiteRequestFilter}
+ * (docs/adr/0037-security-hardening.md). CORS is an explicit origin allow-list ({@link WebSecurityProperties}).
  */
 @Configuration
 @EnableWebSecurity
 @EnableAsync
-@EnableConfigurationProperties({ AuthProperties.class, RateLimitProperties.class })
+@EnableConfigurationProperties({ AuthProperties.class, RateLimitProperties.class, WebSecurityProperties.class })
 class SecurityConfig {
 
     private static final String[] PUBLIC_AUTH_POSTS = {
@@ -57,12 +67,18 @@ class SecurityConfig {
 
     // The API docs and health are part of the local/CI contract flow. Gate the docs before production (ADR 0011).
     private static final String[] PUBLIC_OPERATIONAL = {
-            "/actuator/health", "/actuator/health/**", "/actuator/info",
+            "/actuator/health", "/actuator/health/**",
             "/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**" };
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http, ProblemDetailSecurityHandlers handlers) throws Exception {
+    SecurityFilterChain filterChain(HttpSecurity http, ProblemDetailSecurityHandlers handlers,
+            WebSecurityProperties web, AuthProperties authProperties,
+            @Qualifier("corsConfigurationSource") CorsConfigurationSource corsSource) throws Exception {
+        SecurityHeaderDefaults.apply(http, web.hsts().maxAge(), web.hsts().includeSubDomains());
         return http
+                .cors(cors -> cors.configurationSource(corsSource))
+                .addFilterAfter(new CrossSiteRequestFilter(web.effectiveCorsOrigins(authProperties.webBaseUrl()),
+                        web.extensionOrigins(), authProperties.refreshCookie().name()), CorsFilter.class)
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
@@ -81,6 +97,30 @@ class SecurityConfig {
                         .authenticationEntryPoint(handlers)
                         .accessDeniedHandler(handlers))
                 .build();
+    }
+
+    /**
+     * Exact-match origin allow-list; only the methods and headers the web client uses; no wildcard, and credentials
+     * only if switched on for the listed origins. {@code chrome-extension://} origins get no CORS configuration at
+     * all: the extension's service worker has host permissions, which exempt it from CORS, so it needs no
+     * {@code Access-Control-Allow-Origin} and must not be refused by the CORS filter either (ADR 0035, ADR 0037).
+     */
+    @Bean
+    CorsConfigurationSource corsConfigurationSource(WebSecurityProperties web, AuthProperties auth) {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(web.effectiveCorsOrigins(auth.webBaseUrl()));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+        configuration.setExposedHeaders(List.of("Retry-After"));
+        configuration.setAllowCredentials(web.cors().allowCredentials());
+        configuration.setMaxAge(web.cors().maxAge());
+        return request -> {
+            String origin = request.getHeader("Origin");
+            if (origin != null && origin.regionMatches(true, 0, "chrome-extension://", 0, 19)) {
+                return null;
+            }
+            return configuration;
+        };
     }
 
     @Bean
@@ -106,7 +146,9 @@ class SecurityConfig {
         // No clock-skew leeway: access tokens live 15 minutes and that is what we promise.
         decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
                 new JwtTimestampValidator(Duration.ZERO),
-                new JwtIssuerValidator(properties.jwt().issuer())));
+                new JwtIssuerValidator(properties.jwt().issuer()),
+                new JwtClaimValidator<List<String>>(JwtClaimNames.AUD,
+                        aud -> aud != null && aud.contains(properties.jwt().audience()))));
         return decoder;
     }
 

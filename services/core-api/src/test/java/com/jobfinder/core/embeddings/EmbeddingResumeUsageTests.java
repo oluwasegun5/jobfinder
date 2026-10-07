@@ -70,8 +70,8 @@ class EmbeddingResumeUsageTests extends ResumeParsingTestSupport {
     }
 
     private BigDecimal balance(UUID userId) {
-        return jdbc.queryForObject("select coalesce((select balance_after from credit_ledger where user_id = ? "
-                + "order by id desc limit 1), 0)", BigDecimal.class, userId);
+        return jdbc.queryForObject("select coalesce(sum(delta), 0) from credit_ledger where user_id = ? "
+                + "and reason = 'AI_USAGE'", BigDecimal.class, userId);
     }
 
     @Test
@@ -107,7 +107,7 @@ class EmbeddingResumeUsageTests extends ResumeParsingTestSupport {
         }
 
         assertThat(count("select count(*) from ai_calls where request_key = ?", "ai-service:" + callId)).isOne();
-        assertThat(count("select count(*) from credit_ledger where user_id = ?", parsed.userId())).isOne();
+        assertThat(count("select count(*) from credit_ledger where reason = 'AI_USAGE' and user_id = ?", parsed.userId())).isOne();
         assertThat(balance(parsed.userId())).isEqualByComparingTo("-2");
     }
 
