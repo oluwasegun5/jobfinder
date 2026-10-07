@@ -24,6 +24,8 @@ enum EndpointClass {
     SEARCH(120, Duration.ofMinutes(1), false),
     /** Rendering a PDF or DOCX. */
     EXPORT(20, Duration.ofMinutes(10), false),
+    /** Building the user's complete data export (a zip of everything stored about them): heavy, so a few an hour. */
+    DATA_EXPORT(3, Duration.ofHours(1), false),
     /** The Chrome extension's apply-context lookup. */
     EXTENSION(120, Duration.ofMinutes(1), false),
     /** Admin actions that start outbound fetches (manual source runs, new targets). */
