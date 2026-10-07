@@ -40,6 +40,7 @@ import com.jobfinder.core.profile.CandidateProfiles;
 import com.jobfinder.core.shared.ApiException;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 
 /**
  * The three matching stages (PLAN.md section 7, docs/adr/0026-matching-engine.md):
@@ -145,6 +146,21 @@ class MatchingPipeline implements MatchService {
 
     /** As {@link #rankedMatches}; the nightly batch also requires saved preferences (an onboarded user). */
     RankedMatches rank(UUID userId, boolean requirePreferences) {
+        Timer.Sample sample = Timer.start(meters);
+        try {
+            return doRank(userId, requirePreferences);
+        } finally {
+            sample.stop(latency("rank"));
+        }
+    }
+
+    /** PLAN.md section 11, match latency: the time to produce a user's ranked matches or one job's match. */
+    private Timer latency(String operation) {
+        return Timer.builder("matching.latency").tag("operation", operation).publishPercentileHistogram()
+                .register(meters);
+    }
+
+    private RankedMatches doRank(UUID userId, boolean requirePreferences) {
         Candidate candidate = candidate(userId);
         if (requirePreferences && !candidate.hasPreferences()) {
             throw new ApiException(HttpStatus.CONFLICT, "preferences_required", "Save your job preferences first.");
@@ -191,6 +207,15 @@ class MatchingPipeline implements MatchService {
 
     @Override
     public MatchResult matchJob(UUID userId, UUID jobId) {
+        Timer.Sample sample = Timer.start(meters);
+        try {
+            return doMatchJob(userId, jobId);
+        } finally {
+            sample.stop(latency("job"));
+        }
+    }
+
+    private MatchResult doMatchJob(UUID userId, UUID jobId) {
         Candidate candidate = candidate(userId);
         JobForMatching job = jobs.jobs(List.of(jobId)).stream().findFirst()
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "job_not_found", "Job not found."));

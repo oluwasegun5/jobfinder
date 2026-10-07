@@ -37,6 +37,8 @@ import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
+import io.micrometer.observation.ObservationRegistry;
+
 /**
  * Calls ai-service {@code POST /v1/interview-prep} (docs/adr/0033-interview-prep.md) and checks what comes back before
  * anything is stored.
@@ -94,14 +96,14 @@ class AiInterviewClient {
     private final AiUsageLedger ledger;
 
     AiInterviewClient(InterviewAiProperties ai, InterviewProperties properties, JsonMapper json,
-            AiUsageLedger ledger) {
+            AiUsageLedger ledger, ObservationRegistry observations) {
         this.properties = properties;
         this.json = json;
         this.ledger = ledger;
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1).connectTimeout(properties.connectTimeout()).build());
         factory.setReadTimeout(properties.readTimeout());
-        this.client = RestClient.builder().baseUrl(ai.baseUrl()).defaultHeader("X-Service-Token", ai.token())
+        this.client = RestClient.builder().observationRegistry(observations).baseUrl(ai.baseUrl()).defaultHeader("X-Service-Token", ai.token())
                 .requestFactory(factory).build();
     }
 

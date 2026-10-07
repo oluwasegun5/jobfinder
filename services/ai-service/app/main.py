@@ -1,9 +1,11 @@
 import logging
-from collections.abc import AsyncIterator
+import time
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request, Response
+from opentelemetry.sdk.trace.export import SpanExporter
 
 from app.api import (
     diagnostics,
@@ -15,6 +17,9 @@ from app.api import (
     tailor_resume,
     writing,
 )
+from app.api import (
+    metrics as metrics_api,
+)
 from app.api.errors import register_error_handlers
 from app.config import EmbeddingProviderName, Settings, get_settings
 from app.embeddings import EmbeddingProvider, build_embedding_provider
@@ -22,6 +27,10 @@ from app.embeddings.batching import BatchCollector
 from app.embeddings.core_client import CoreApiClient, EmbeddingKind
 from app.embeddings.worker import EmbeddingWorker
 from app.llm import LLMProvider, build_provider
+from app.observability.logs import configure_logging
+from app.observability.metrics import Metrics, ObservedProvider
+from app.observability.sentry import start_sentry
+from app.observability.tracing import setup_tracing
 from app.security import require_service_token
 from app.workers.consumer import (
     NOOP_QUEUE,
@@ -41,9 +50,11 @@ def create_app(
     provider: LLMProvider | None = None,
     embedding_provider: EmbeddingProvider | None = None,
     core_client: CoreApiClient | None = None,
+    span_exporter: SpanExporter | None = None,
 ) -> FastAPI:
     settings = settings or get_settings()
-    logging.basicConfig(level=settings.log_level)
+    configure_logging(settings)
+    start_sentry(settings)
     # Without a key the embed queues are left alone: their messages wait in the broker until the
     # key is set, instead of being rejected into the dead-letter queue one by one.
     embeddings_ready = (
@@ -121,11 +132,32 @@ def create_app(
         redoc_url=None,
     )
     app.state.settings = settings
-    app.state.llm_provider = provider or build_provider(settings)
+    metrics = Metrics()
+    app.state.metrics = metrics
+    app.state.llm_provider = ObservedProvider(provider or build_provider(settings), metrics)
     app.state.embedding_provider = embedding_provider or build_embedding_provider(settings)
     app.state.core_client = core_client or CoreApiClient(settings)
     register_error_handlers(app)
+
+    @app.middleware("http")
+    async def record_request_latency(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        started = time.perf_counter()
+        status_code = 500
+        try:
+            response = await call_next(request)
+            status_code = response.status_code
+            return response
+        finally:
+            route = request.scope.get("route")
+            template = getattr(route, "path", "unmatched")
+            metrics.http_duration.labels(request.method, template, str(status_code)).observe(
+                time.perf_counter() - started
+            )
+
     app.include_router(health.router)
+    app.include_router(metrics_api.router)
     app.include_router(diagnostics.router)
     app.include_router(parse_resume.router)
     app.include_router(score_matches.router)
@@ -133,4 +165,5 @@ def create_app(
     app.include_router(writing.router)
     app.include_router(interview.router)
     app.include_router(mock_interview.router)
+    setup_tracing(app, settings, span_exporter)
     return app

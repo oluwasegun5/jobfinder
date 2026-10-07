@@ -26,6 +26,8 @@ import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
+import io.micrometer.observation.ObservationRegistry;
+
 /**
  * Calls ai-service {@code POST /v1/score-matches} (docs/adr/0026-matching-engine.md) and turns the answer into one
  * {@link JobOutcome} per job asked about.
@@ -75,13 +77,15 @@ class AiMatchClient {
     private final AiUsageLedger ledger;
 
     AiMatchClient(MatchAiServiceProperties properties, MatchingProperties matching, JsonMapper json,
-            AiUsageLedger ledger) {
+            AiUsageLedger ledger, ObservationRegistry observations) {
         this.ledger = ledger;
         this.json = json;
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1).connectTimeout(matching.llm().connectTimeout()).build());
         factory.setReadTimeout(matching.llm().readTimeout());
         this.client = RestClient.builder().baseUrl(properties.baseUrl())
+                // The observation injects the trace context, so ai-service's spans join this request's trace (ADR 0039).
+                .observationRegistry(observations)
                 .defaultHeader("X-Service-Token", properties.token()).requestFactory(factory).build();
     }
 

@@ -41,6 +41,8 @@ import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
+import io.micrometer.observation.ObservationRegistry;
+
 /**
  * Calls ai-service {@code POST /v1/mock-interview/turn} and {@code /summary} (docs/adr/0034-mock-interview.md) and checks
  * what comes back before anything is stored or shown.
@@ -114,7 +116,7 @@ class AiMockInterviewClient {
     private final AiCredits credits;
 
     AiMockInterviewClient(InterviewAiProperties ai, MockInterviewProperties mock, InterviewProperties interview,
-            JsonMapper json, AiUsageLedger ledger, AiCredits credits) {
+            JsonMapper json, AiUsageLedger ledger, AiCredits credits, ObservationRegistry observations) {
         this.mock = mock;
         this.interview = interview;
         this.json = json;
@@ -123,7 +125,7 @@ class AiMockInterviewClient {
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1).connectTimeout(mock.connectTimeout()).build());
         factory.setReadTimeout(mock.readTimeout());
-        this.client = RestClient.builder().baseUrl(ai.baseUrl()).defaultHeader("X-Service-Token", ai.token())
+        this.client = RestClient.builder().observationRegistry(observations).baseUrl(ai.baseUrl()).defaultHeader("X-Service-Token", ai.token())
                 .requestFactory(factory).build();
     }
 

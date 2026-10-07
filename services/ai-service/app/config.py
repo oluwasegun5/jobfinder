@@ -3,6 +3,7 @@
 from decimal import Decimal
 from enum import StrEnum
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import BaseModel, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -147,6 +148,18 @@ class Settings(BaseSettings):
     core_api_mock_interview_read_timeout_seconds: float = Field(default=90.0, gt=0)
 
     log_level: str = "INFO"
+
+    # Observability (docs/adr/0039-observability.md). "json" is one object per line with trace ids,
+    # for the log shipper; "text" is for a terminal. Either way every line passes the PII redactor.
+    log_format: Literal["text", "json"] = "text"
+    # Spans are always created (log lines carry the trace id) but only exported when asked to.
+    otel_tracing_export: bool = False
+    otel_traces_endpoint: str = "http://tempo:4318/v1/traces"
+    tracing_sample_probability: float = Field(default=1.0, ge=0, le=1)
+    # Blank leaves Sentry off. Errors only, scrubbed (app/observability/sentry.py).
+    sentry_dsn: SecretStr | None = None
+    sentry_environment: str = "local"
+    sentry_release: str | None = None
 
     @model_validator(mode="after")
     def _deadlines_are_below_core_apis_read_timeouts(self) -> "Settings":

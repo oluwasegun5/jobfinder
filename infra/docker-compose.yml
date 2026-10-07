@@ -160,6 +160,14 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       # Source alerts (docs/adr/0024-source-dashboard-alerts.md): comma-separated admin emails; blank only logs them.
       INGESTION_ALERT_RECIPIENTS: ${INGESTION_ALERT_RECIPIENTS:-}
+      # Observability (docs/adr/0039-observability.md): JSON logs with trace ids; spans are exported only when
+      # OTEL_TRACING_EXPORT=true (make observability-up sets it and starts the collector); Sentry only with a DSN.
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ${CORE_API_LOG_FORMAT:-ecs}
+      OTEL_TRACING_EXPORT: ${OTEL_TRACING_EXPORT:-false}
+      OTEL_TRACES_ENDPOINT: ${OTEL_TRACES_ENDPOINT:-http://tempo:4318/v1/traces}
+      TRACING_SAMPLE_PROBABILITY: ${TRACING_SAMPLE_PROBABILITY:-1.0}
+      SENTRY_DSN: ${CORE_API_SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-local}
       SERVER_PORT: 8080
     ports:
       - "127.0.0.1:${CORE_API_PORT:-8080}:8080"
@@ -196,6 +204,13 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER:-jobfinder}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD in .env (see .env.example)}
+      # Observability (docs/adr/0039-observability.md), as for core-api.
+      LOG_FORMAT: ${AI_SERVICE_LOG_FORMAT:-json}
+      OTEL_TRACING_EXPORT: ${OTEL_TRACING_EXPORT:-false}
+      OTEL_TRACES_ENDPOINT: ${OTEL_TRACES_ENDPOINT:-http://tempo:4318/v1/traces}
+      TRACING_SAMPLE_PROBABILITY: ${TRACING_SAMPLE_PROBABILITY:-1.0}
+      SENTRY_DSN: ${AI_SERVICE_SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-local}
     # Internal only (PLAN.md §3): published on localhost for local debugging, never publicly.
     ports:
       - "127.0.0.1:${AI_SERVICE_PORT:-8000}:8000"
@@ -211,10 +226,75 @@ services:
     depends_on:
       core-api:
         condition: service_healthy
+    environment:
+      # Observability (docs/adr/0039-observability.md): the Next server joins the trace and starts it for browser
+      # calls. Spans are exported only when OTEL_TRACING_EXPORT=true; Sentry only with a DSN.
+      OTEL_SERVICE_NAME: web
+      OTEL_TRACING_EXPORT: ${OTEL_TRACING_EXPORT:-false}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://tempo:4318}
+      SENTRY_DSN: ${WEB_SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-local}
     ports:
       - "${WEB_PORT:-3000}:3000"
+
+  # --- Observability (docs/adr/0039-observability.md). Behind a profile so the default stack stays small:
+  # `make observability-up` (or `docker compose --profile observability up -d`). Everything binds to localhost.
+
+  tempo:
+    profiles: [observability]
+    image: grafana/tempo:2.8.2
+    # Local only: a fresh tmpfs is root-owned, and the image's own user (10001) cannot write to it.
+    user: "0"
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    volumes:
+      - ./observability/tempo.yml:/etc/tempo/tempo.yml:ro
+      # Traces are a development aid here: kept in memory, gone with the container.
+      - type: tmpfs
+        target: /var/tempo
+    ports:
+      - "127.0.0.1:${TEMPO_PORT:-3200}:3200"
+
+  prometheus:
+    profiles: [observability]
+    image: prom/prometheus:v3.15.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+      - --web.enable-lifecycle
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    # The scrape endpoints of core-api and ai-service answer only to the service token.
+    secrets:
+      - ai_service_token
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+
+  grafana:
+    profiles: [observability]
+    image: grafana/grafana:12.4.12
+    depends_on:
+      - prometheus
+      - tempo
+    environment:
+      # Local use only (bound to localhost): no login. Production dashboards are P6.5's concern.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3001}:3000"
+
+secrets:
+  ai_service_token:
+    environment: AI_SERVICE_TOKEN
 
 volumes:
   postgres_data:
   redis_data:
   rabbitmq_data:
+  prometheus_data:

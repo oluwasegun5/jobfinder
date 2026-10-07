@@ -24,6 +24,8 @@ import com.jobfinder.core.billing.AiUsageLedger;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
+import io.micrometer.observation.ObservationRegistry;
+
 /**
  * Calls ai-service {@code POST /v1/parse-resume}. Turns every outcome into either a
  * {@link Parsed} result or a {@link ParseFailure} that says whether a retry could help.
@@ -56,12 +58,15 @@ class AiServiceResumeParser {
     private final JsonMapper json;
     private final AiUsageLedger ledger;
 
-    AiServiceResumeParser(AiServiceProperties properties, JsonMapper json, AiUsageLedger ledger) {
+    AiServiceResumeParser(AiServiceProperties properties, JsonMapper json, AiUsageLedger ledger,
+            ObservationRegistry observations) {
         this.ledger = ledger;
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1).connectTimeout(properties.connectTimeout()).build());
         factory.setReadTimeout(properties.readTimeout());
         this.client = RestClient.builder()
+                // The observation injects the trace context, so ai-service's spans join this request's trace (ADR 0039).
+                .observationRegistry(observations)
                 .baseUrl(properties.baseUrl())
                 .defaultHeader("X-Service-Token", properties.token())
                 .requestFactory(factory)

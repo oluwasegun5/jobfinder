@@ -3,6 +3,7 @@ package com.jobfinder.core.billing.internal;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,6 +18,9 @@ import com.jobfinder.core.billing.AiUsage;
 import com.jobfinder.core.billing.AiUsageLedger;
 import com.jobfinder.core.billing.RecordOutcome;
 import com.jobfinder.core.billing.internal.AiCallStore.Inserted;
+
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 
 /**
  * Records usage and debits credits. Both writes happen in one transaction (a joined one when the caller has one):
@@ -34,11 +38,13 @@ class LedgerService implements AiUsageLedger, AiCredits {
     private final AiCallStore store;
     private final BillingProperties properties;
     private final Clock clock;
+    private final MeterRegistry meters;
 
-    LedgerService(AiCallStore store, BillingProperties properties, Clock clock) {
+    LedgerService(AiCallStore store, BillingProperties properties, Clock clock, MeterRegistry meters) {
         this.store = store;
         this.properties = properties;
         this.clock = clock;
+        this.meters = meters;
     }
 
     @Override
@@ -62,8 +68,22 @@ class LedgerService implements AiUsageLedger, AiCredits {
         BigDecimal credits = credits(costMicroUsd);
         if (owner != null && credits.signum() > 0) {
             store.debit(owner, id, credits, at);
+            meters.counter("credits.consumed", "feature", usage.feature()).increment(credits.doubleValue());
         }
+        measure(usage);
         return RecordOutcome.RECORDED;
+    }
+
+    /**
+     * PLAN.md section 11: AI cost per day and feature, and calls and their latency. Low-cardinality tags only (feature,
+     * model, status), never the user or the request key. Counted once per recorded call: a duplicate returns earlier.
+     */
+    private void measure(AiUsage usage) {
+        meters.counter("ai.calls", "feature", usage.feature(), "status", usage.status().name()).increment();
+        meters.counter("ai.cost.usd", "feature", usage.feature(), "model", usage.model())
+                .increment(usage.costUsd().doubleValue());
+        Timer.builder("ai.call.duration").tag("feature", usage.feature()).publishPercentileHistogram()
+                .register(meters).record(Duration.ofMillis(usage.latencyMs()));
     }
 
     @Override

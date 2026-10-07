@@ -1,6 +1,6 @@
 COMPOSE := docker compose -f infra/docker-compose.yml --env-file .env
 
-.PHONY: env up down logs test fmt lint contract embeddings-backfill search-perf match-eval
+.PHONY: env up down logs observability-up observability-down observability-check test fmt lint contract embeddings-backfill search-perf match-eval
 
 # Creates .env from .env.example with a fresh random value for every change-me-* placeholder (never overwrites).
 env:
@@ -17,6 +17,19 @@ up:
 
 down:
 	$(COMPOSE) down
+
+# The stack plus Tempo, Prometheus and Grafana, with span export on (docs/adr/0039-observability.md).
+# Grafana is on localhost:3001 (GRAFANA_PORT), Prometheus on localhost:9090 (PROMETHEUS_PORT).
+observability-up:
+	OTEL_TRACING_EXPORT=true $(COMPOSE) --profile observability up -d --wait
+
+observability-down:
+	$(COMPOSE) --profile observability down
+
+# Dashboards and scrape config are parsed and checked without Docker.
+observability-check:
+	python3 infra/observability/check.py
+	cd infra/observability && python3 -m unittest -q test_check
 
 logs:
 	$(COMPOSE) logs -f

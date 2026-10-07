@@ -12,12 +12,19 @@ management:
   endpoints:
     web:
       exposure:
-        include: health
+        # prometheus answers only to the service token (ADR 0039); nothing else is exposed.
+        include: health,prometheus
   endpoint:
     health:
       # Up or down, nothing about which dependencies or why.
       show-details: never
       show-components: never
+
+logging:
+  structured:
+    format:
+      # One JSON object per line, with the trace id, for the log shipper (ADR 0039).
+      console: ecs
 
 server:
   error:

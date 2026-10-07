@@ -32,8 +32,12 @@ spring:
     password: ${RABBITMQ_PASSWORD}
     # Uploads publish to the broker; fail fast (the resume is then marked FAILED) instead of hanging.
     connection-timeout: 3s
+    # The trace continues through the queue (upload, then the parse a consumer runs): ADR 0039.
+    template:
+      observation-enabled: true
     listener:
       simple:
+        observation-enabled: true
         # A parse takes seconds (LLM call): one message at a time per consumer.
         prefetch: 1
         concurrency: 2
@@ -407,10 +411,16 @@ app:
       # at least 5s below read-timeout (checked at startup), for the same reason as above.
       ai-deadline: ${MOCK_INTERVIEW_DEADLINE_SECONDS:75}s
       in-flight-timeout: 4m
+  observability:
+    sentry:
+      # Blank (the default) leaves Sentry off.
+      dsn: ${SENTRY_DSN:}
+      environment: ${SENTRY_ENVIRONMENT:local}
+      release: ${SENTRY_RELEASE:}
 
 springdoc:
   # The service-to-service endpoints (service token, not user tokens) are not part of the public API.
-  paths-to-exclude: /internal/**
+  paths-to-exclude: /internal/**, /actuator/prometheus
   # Include actuator endpoints (health) in /v3/api-docs so the web client is generated for them.
   show-actuator: true
 
@@ -422,8 +432,44 @@ management:
   endpoints:
     web:
       exposure:
-        include: health
+        # prometheus is not public: it sits behind the service token (InternalSecurityConfig, ADR 0039).
+        include: health,prometheus
   endpoint:
     health:
       probes:
         enabled: true
+  metrics:
+    distribution:
+      # Latency histograms, so Grafana can show p95 (HTTP, and the matching timer registered with its own histogram).
+      percentiles-histogram:
+        http.server.requests: true
+  observations:
+    enable:
+      # One span per security filter is noise in a trace; the request span already covers authentication.
+      spring.security: false
+  # Metrics are pulled by Prometheus; nothing is pushed over OTLP.
+  otlp:
+    metrics:
+      export:
+        enabled: false
+    tracing:
+      export:
+        # Spans are always created (trace ids in logs and the X-Trace-Id header need them) but only exported when a
+        # collector is there: set OTEL_TRACING_EXPORT=true (the observability compose profile does).
+        enabled: ${OTEL_TRACING_EXPORT:false}
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${OTEL_TRACES_ENDPOINT:http://tempo:4318/v1/traces}
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLE_PROBABILITY:1.0}
+
+# Structured JSON logs (docs/adr/0039-observability.md) are chosen per environment (LOGGING_STRUCTURED_FORMAT_CONSOLE=ecs
+# in compose and production); the plain console format stays the default for a local run. Whichever way, in JSON every
+# string passes the PII redactor.
+logging:
+  structured:
+    json:
+      customizer: com.jobfinder.core.observability.internal.RedactingLogMembers

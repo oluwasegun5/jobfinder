@@ -1,0 +1,28 @@
+# Local Prometheus (docs/adr/0039-observability.md). core-api and ai-service answer only to the service token, read
+# from the compose secret ai_service_token (the AI_SERVICE_TOKEN of .env).
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: core-api
+    metrics_path: /actuator/prometheus
+    http_headers:
+      X-Service-Token:
+        files: [/run/secrets/ai_service_token]
+    static_configs:
+      - targets: ["core-api:8080"]
+        labels: { service: core-api }
+
+  - job_name: ai-service
+    metrics_path: /metrics
+    http_headers:
+      X-Service-Token:
+        files: [/run/secrets/ai_service_token]
+    static_configs:
+      - targets: ["ai-service:8000"]
+        labels: { service: ai-service }
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
