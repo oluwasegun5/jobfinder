@@ -36,6 +36,8 @@ type AuthContextValue = AuthState & {
   /** Stores the tokens from a login / Google response and loads the user. */
   signIn: (tokens: AuthTokens) => Promise<void>;
   signOut: () => Promise<void>;
+  /** Re-reads the signed-in user (after something about the account changed, for example the AI consent). */
+  reloadUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -107,8 +109,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [router]);
 
-  const value = useMemo<AuthContextValue>(() => ({ ...state, signedOutByUser, signIn, signOut }),
-    [state, signedOutByUser, signIn, signOut],);
+  const value = useMemo<AuthContextValue>(
+    () => ({ ...state, signedOutByUser, signIn, signOut, reloadUser: loadUser }),
+    [state, signedOutByUser, signIn, signOut, loadUser],
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

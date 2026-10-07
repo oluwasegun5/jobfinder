@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LegalLinks } from "@/features/legal/legal-page";
 import { cn } from "@/lib/utils";
 
 const features: { title: string; description: string; icon: LucideIcon }[] = [
@@ -78,9 +79,10 @@ export default function LandingPage() {
       </main>
 
       <footer className="border-t">
-        <p className="mx-auto max-w-6xl px-4 py-6 text-sm text-muted-foreground sm:px-6">
-          © {new Date().getFullYear()} JobFinder
-        </p>
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 py-6 text-sm text-muted-foreground sm:flex-row sm:justify-between sm:px-6">
+          <p>© {new Date().getFullYear()} JobFinder</p>
+          <LegalLinks />
+        </div>
       </footer>
     </div>
   );
