@@ -443,6 +443,10 @@ management:
       # Latency histograms, so Grafana can show p95 (HTTP, and the matching timer registered with its own histogram).
       percentiles-histogram:
         http.server.requests: true
+  observations:
+    enable:
+      # One span per security filter is noise in a trace; the request span already covers authentication.
+      spring.security: false
   # Metrics are pulled by Prometheus; nothing is pushed over OTLP.
   otlp:
     metrics:
