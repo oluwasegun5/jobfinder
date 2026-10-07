@@ -251,6 +251,11 @@ class StripeProvider implements PaymentProvider {
                         null);
             }
             default -> {
+                if (type.equals("charge.refunded") || type.startsWith("charge.dispute.")) {
+                    return new ProviderEvent(Provider.STRIPE, id, type, Kind.REFUND_OR_DISPUTE, at,
+                            Jn.uuid(Jn.text(object, "metadata", META_USER)), null, null, null, null, null, null, null,
+                            null, null);
+                }
                 return ProviderEvent.ignored(Provider.STRIPE, id, type, at);
             }
         }

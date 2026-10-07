@@ -211,6 +211,11 @@ class PaystackProvider implements PaymentProvider {
                         code, customer, null, null, Boolean.TRUE, null, null);
             }
             default -> {
+                if (type.startsWith("refund.") || type.startsWith("charge.dispute.")) {
+                    return new ProviderEvent(Provider.PAYSTACK, id, type, Kind.REFUND_OR_DISPUTE, at,
+                            Jn.uuid(Jn.text(metadataOf(data), META_USER)), null, null, null, null, null, null, null,
+                            null, null);
+                }
                 return ProviderEvent.ignored(Provider.PAYSTACK, id, type, at);
             }
         }

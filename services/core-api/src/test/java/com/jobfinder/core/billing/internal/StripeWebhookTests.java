@@ -315,7 +315,7 @@ class StripeWebhookTests extends PaymentTestSupport {
         double before = ignoredCount();
         int events = webhookEvents("STRIPE");
 
-        stripe(stripeEvent(newEventId(), "charge.dispute.created", Instant.now(), "{\"id\":\"dp_1\"}"))
+        stripe(stripeEvent(newEventId(), "customer.created", Instant.now(), "{\"id\":\"cus_1\"}"))
                 .andExpect(status().isOk());
 
         assertThat(ignoredCount()).isEqualTo(before + 1);

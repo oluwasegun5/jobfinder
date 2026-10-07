@@ -195,3 +195,41 @@ is loaded on our pages.
   place, and Paystack's `charge.success` plan fields).
 - Open: refunds and disputes (no automatic ledger reversal), proration and plan changes between paid plans (not offered:
   cancel, then choose another), and tax/receipts (the provider's hosted pages handle them).
+
+---
+
+## Addendum (Phase 6 review): refunds, disputes and what a webhook may credit
+
+Added after the Phase 6 code review; it supersedes the "not handled" lines above and changes nothing else in this record.
+
+**Manual refund flow.** Refund and dispute events are still not reversed automatically, but they are no longer dropped:
+Stripe `charge.refunded` and `charge.dispute.*`, and Paystack `refund.*` and `charge.dispute.*`, are acknowledged, claimed
+in `webhook_events` like any handled event, and logged once at WARN with the event id, the type and the user when the event
+carries ours (never the payload). An admin then does three things: refunds the payment in the provider's dashboard, finds
+the user, and calls `POST /admin/billing/users/{userId}/adjustments` with `{ "idempotencyKey", "delta", "reason" }`.
+`delta` is a negative number of credits (the credits the refunded payment had granted); `idempotencyKey` is the admin's own,
+for example the provider's refund id, so a retried call writes once (a repeat answers 200 `applied: false`; the same key
+for another user or amount is 409 `idempotency_key_reused`); `reason` is kept on the line (`credit_ledger.note`, migration
+V33, nullable) and must not contain personal data. The call appends one `REFUND_ADJUSTMENT` line through
+`CreditLedgerStore.append`, the only ledger writer: one transaction, the user's advisory lock, `balance_after` and
+`topup_after` computed from the line before, and the append-only trigger untouched. The key is stored as `refund:<key>`, so
+it cannot collide with a grant or top-up key. The balance may go below zero (the credits were already spent); later grants
+pay it off. Only ADMIN reaches the endpoint (`/admin/**`), and the line is visible to the user in their own ledger.
+
+**What a webhook may credit.** `ProviderEvent` carries the amount paid, before tax and after discounts (Stripe
+`total_excluding_tax`, else `amount_paid`; for a checkout, `amount_total` less tax; Paystack `amount`), and its currency.
+A plan period or a top-up is credited only when both equal the catalog price of that item for that provider; a different
+amount, another currency, no amount, or a payment of 0 (a 100% coupon) is acknowledged and recorded but grants nothing and is
+logged at WARN with the event id and the expected and actual figures. The subscription state still follows the provider's
+word. A partial coupon therefore earns no credits until an admin decides what the user is owed.
+
+**Unmatchable events.** A payment event that names no user and matches no subscription is answered 503 (so the provider
+redelivers it) only while it is younger than `app.billing.webhooks.unmatched-event-max-age` (24 h, from the event's own
+timestamp); older, it is acknowledged, logged at WARN (id and type) and recorded as handled, so it is not retried for days.
+Webhook bodies over 1 MB are refused with 413 before the signature is checked, and `/webhooks/**` has a per-IP rate limit
+(`WEBHOOK` class, ADR 0037). Under the `prod` profile the application refuses to start when a provider has a key and any of
+its prices is still the shipped placeholder (100 minor units, or a plan id containing `PLACEHOLDER`).
+
+**Possible future hardening.** The credit pre-check on AI calls is not atomic with the debit, so concurrent calls can
+overshoot by a bounded amount (documented behaviour); reserving credits under the user's ledger lock before the call is a
+possible future hardening.

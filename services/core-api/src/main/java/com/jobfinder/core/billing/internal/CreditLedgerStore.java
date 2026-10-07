@@ -78,6 +78,12 @@ class CreditLedgerStore {
      */
     boolean append(UUID userId, BigDecimal delta, LedgerReason reason, UUID aiCallId, String idempotencyKey,
             Instant at) {
+        return append(userId, delta, reason, aiCallId, idempotencyKey, at, null);
+    }
+
+    /** As {@link #append(UUID, BigDecimal, LedgerReason, UUID, String, Instant)} with a note saying why (manual lines). */
+    boolean append(UUID userId, BigDecimal delta, LedgerReason reason, UUID aiCallId, String idempotencyKey,
+            Instant at, String note) {
         lock(userId);
         var statement = jdbc.sql("""
                 with prev as (
@@ -87,12 +93,12 @@ class CreditLedgerStore {
                                       order by id desc limit 1), 0) as topup),
                      next as (select balance + :delta as balance, topup from prev)
                 insert into credit_ledger (user_id, delta, reason, ai_call_id, idempotency_key, balance_after,
-                                           topup_after, created_at)
+                                           topup_after, created_at, note)
                 select :userId, :delta, cast(:reason as varchar), cast(:callId as uuid), cast(:key as varchar),
                        next.balance,
                        case when cast(:reason as varchar) = 'TOPUP' then next.topup + :delta
                             else least(next.topup, greatest(next.balance, 0)) end,
-                       :at
+                       :at, cast(:note as varchar)
                   from next
                  where exists (select 1 from users where id = :userId)
                 on conflict (idempotency_key) do nothing
@@ -105,6 +111,18 @@ class CreditLedgerStore {
                 : statement.param("callId", aiCallId.toString());
         statement = idempotencyKey == null ? statement.param("key", null, Types.VARCHAR)
                 : statement.param("key", idempotencyKey);
+        statement = note == null ? statement.param("note", null, Types.VARCHAR) : statement.param("note", note);
         return statement.update() == 1;
+    }
+
+    /** The user and delta already written under {@code idempotencyKey}, if any. */
+    java.util.Optional<KeyedLine> lineByKey(String idempotencyKey) {
+        return jdbc.sql("select user_id, delta from credit_ledger where idempotency_key = :key")
+                .param("key", idempotencyKey)
+                .query((rs, row) -> new KeyedLine(rs.getObject("user_id", UUID.class), rs.getBigDecimal("delta")))
+                .optional();
+    }
+
+    record KeyedLine(UUID userId, BigDecimal delta) {
     }
 }

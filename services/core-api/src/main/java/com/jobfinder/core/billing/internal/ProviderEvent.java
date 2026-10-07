@@ -41,6 +41,11 @@ record ProviderEvent(Provider provider, String id, String type, Kind kind, Insta
         SUBSCRIPTION_ENDED,
         /** A one-off credit pack was paid. */
         TOPUP_PAID,
+        /**
+         * A refund or a dispute at the provider. Nothing is reversed automatically: it is logged at WARN once (it is
+         * claimed like any event) so an admin can take the credits back with the manual adjustment endpoint.
+         */
+        REFUND_OR_DISPUTE,
         /** Nothing billing acts on. */
         IGNORED
     }

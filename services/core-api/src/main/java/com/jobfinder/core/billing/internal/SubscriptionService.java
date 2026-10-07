@@ -66,6 +66,8 @@ class SubscriptionService {
             case SUBSCRIPTION_UPDATED -> updated(event, now);
             case SUBSCRIPTION_ENDED -> ended(event, now);
             case TOPUP_PAID -> topup(event, now);
+            case REFUND_OR_DISPUTE -> log.warn("Refund or dispute needs a manual look: provider={} id={} type={} user={}",
+                    event.provider().slug(), event.id(), event.type(), event.userId());
             case IGNORED -> {
             }
         }
