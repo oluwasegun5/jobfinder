@@ -18,3 +18,12 @@ paths = [
 [[allowlists]]
 description = "extension/src/popup/popup.ts: a DOM id lookup for the password input (GitGuardian 'password' hit); no secret"
 paths = ['''extension/src/popup/popup\.ts$''']
+
+[[allowlists]]
+description = "Synthetic secret-shaped fixtures in the PII-redaction tests (ADR 0039): made-up JWTs and obviously fake Stripe keys fed to the redactor to assert they are masked; no real credential"
+targetRules = ["jwt", "stripe-access-token"]
+paths = [
+  '''apps/web/src/lib/observability/redact\.test\.ts$''',
+  '''services/ai-service/tests/test_observability\.py$''',
+  '''services/core-api/src/test/java/com/jobfinder/core/observability/PiiRedactorTests\.java$''',
+]

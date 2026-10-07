@@ -120,7 +120,7 @@ reads (the body is the status and its groups, nothing more). The OpenAPI descrip
   (`SecretsConfigTests` fails on one). `POSTGRES_PASSWORD`, `RABBITMQ_PASSWORD` and the object-storage keys are now
   required like `JWT_SECRET` and `AI_SERVICE_TOKEN`; `.env.example` holds `change-me-*` placeholders and `make env`
   writes a `.env` with generated values. Running core-api from an IDE needs those variables set.
-- gitleaks (`.gitleaks.toml`, default rules, the build-output paths and the `popup.ts` DOM-id false positive allowed)
+- gitleaks (`.gitleaks.toml`, default rules, the build-output paths and the `popup.ts` DOM-id false positive allowed, plus the `jwt` and `stripe-access-token` rules for the three PII-redaction test files, whose synthetic fixtures exist to be masked)
   runs over the working tree and full history in CI.
 - Dependencies: `.github/workflows/security.yml` runs gitleaks, `npm audit --omit=dev --audit-level=high` (blocking),
   `npm audit` for development tooling (informational: it reports advisories with no fixed version that never reach a
