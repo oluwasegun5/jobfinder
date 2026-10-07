@@ -13,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
@@ -68,6 +69,9 @@ class InformationExposureTests {
 
     @Nested
     @ActiveProfiles("prod")
+    // The test context has provider keys and realistic prices (TestcontainersConfiguration); production also refuses
+    // placeholder provider plan ids (BillingPriceGuard), so this profile gets real-looking ones.
+    @TestPropertySource(properties = { "STRIPE_PRICE_PRO_USD=price_1RealProUsd", "PAYSTACK_PLAN_PRO_NGN=PLN_realpro" })
     class Production extends Base {
 
         @Test
