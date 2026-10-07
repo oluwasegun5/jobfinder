@@ -1,0 +1,90 @@
+name: ssh-deploy
+description: >-
+  Copies infra/ to the server over SSH, runs infra/deploy/deploy.sh for an image tag (preflight, pre-deploy backup,
+  pull, up, smoke test, automatic rollback on failure) and then smoke-tests the public URL from the runner.
+
+inputs:
+  tag:
+    description: Image tag to deploy
+    required: true
+  host:
+    description: Server host name or address
+    required: true
+  user:
+    description: SSH user on the server
+    required: true
+  key:
+    description: Private key for that user (an environment secret)
+    required: true
+  known-hosts:
+    description: Pinned host key line(s) for the server (an environment secret); the host is never trusted on first use
+    required: true
+  site-address:
+    description: Public host name of the deployed site, for the external smoke test
+    required: true
+  smoke-user-email:
+    description: Verified smoke-test account (optional)
+    required: false
+    default: ""
+  smoke-user-password:
+    description: Password of the smoke-test account (optional)
+    required: false
+    default: ""
+  remote-dir:
+    description: Directory on the server that holds the env file and infra/
+    required: false
+    default: /opt/jobfinder
+
+runs:
+  using: composite
+  steps:
+    - name: Check the inputs
+      shell: bash
+      env:
+        TAG: ${{ inputs.tag }}
+        HOST: ${{ inputs.host }}
+        USER_NAME: ${{ inputs.user }}
+        KEY: ${{ inputs.key }}
+        KNOWN_HOSTS: ${{ inputs.known-hosts }}
+        SITE: ${{ inputs.site-address }}
+      run: |
+        [[ "$TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]] || { echo "::error::invalid image tag"; exit 1; }
+        [ "$TAG" != "latest" ] || { echo "::error::deploy a specific tag, not latest"; exit 1; }
+        for v in HOST USER_NAME KEY KNOWN_HOSTS SITE; do
+          [ -n "${!v}" ] || { echo "::error::$v is empty: configure the environment's secrets and variables (docs/launch-checklist.md)"; exit 1; }
+        done
+
+    - name: Prepare SSH
+      shell: bash
+      env:
+        KEY: ${{ inputs.key }}
+        KNOWN_HOSTS: ${{ inputs.known-hosts }}
+      run: |
+        install -d -m 700 ~/.ssh
+        printf '%s\n' "$KEY" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+        chmod 644 ~/.ssh/known_hosts
+
+    - name: Copy infra/ and deploy
+      shell: bash
+      env:
+        TAG: ${{ inputs.tag }}
+        HOST: ${{ inputs.host }}
+        USER_NAME: ${{ inputs.user }}
+        REMOTE_DIR: ${{ inputs.remote-dir }}
+      run: |
+        ssh_opts=(-i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts")
+        rsync -az --delete -e "ssh ${ssh_opts[*]}" infra/ "$USER_NAME@$HOST:$REMOTE_DIR/infra/"
+        ssh "${ssh_opts[@]}" "$USER_NAME@$HOST" "cd '$REMOTE_DIR' && ENV_FILE='$REMOTE_DIR/.env' STATE_DIR='$REMOTE_DIR/.deploy-state' infra/deploy/deploy.sh '$TAG'"
+
+    - name: Smoke test from outside
+      shell: bash
+      env:
+        SITE: ${{ inputs.site-address }}
+        SMOKE_USER_EMAIL: ${{ inputs.smoke-user-email }}
+        SMOKE_USER_PASSWORD: ${{ inputs.smoke-user-password }}
+      run: |
+        export SMOKE_BASE_URL="https://$SITE"
+        if [ -n "$SMOKE_USER_EMAIL" ]; then export SMOKE_REQUIRE_AUTHED=1; fi
+        infra/deploy/smoke.sh
