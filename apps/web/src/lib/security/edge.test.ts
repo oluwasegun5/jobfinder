@@ -13,7 +13,10 @@ describe("isBlockedCorePath", () => {
     "/api/core/./internal/x",
     "/api/core/jobs/../internal/x",
     "/api/core/internal;a=b/x",
-    "/api/core/actuator/health",
+    "/api/core/actuator",
+    "/api/core/actuator/env",
+    "/api/core/actuator/health/liveness",
+    "/api/core/actuator/health/../env",
     "/api/core/%zz",
   ])("blocks %s", (path) => {
     expect(isBlockedCorePath(path)).toBe(true);
@@ -21,6 +24,8 @@ describe("isBlockedCorePath", () => {
 
   it.each([
     "/api/core/jobs",
+    "/api/core/actuator/health",
+    "/api/core/%61ctuator/health",
     "/api/core/auth/login",
     "/api/core/internalish",
     "/api/core/jobs/internal",

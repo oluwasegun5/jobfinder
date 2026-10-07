@@ -1,10 +1,18 @@
 import { expect, test } from "@playwright/test";
 
 test("the proxy never forwards service-to-service paths to core-api", async ({ request }) => {
-  for (const path of ["/api/core/internal/embeddings", "/api/core/%69nternal/x", "/api/core/actuator/health"]) {
+  for (const path of ["/api/core/internal/embeddings", "/api/core/%69nternal/x", "/api/core/actuator/env"]) {
     const response = await request.get(path);
     expect(response.status(), path).toBe(404);
   }
+});
+
+test("the status badge can still read core-api health, and only the status comes back", async ({ request }) => {
+  const response = await request.get("/api/core/actuator/health");
+  expect(response.status()).toBe(200);
+  const body = await response.json();
+  expect(Object.keys(body).sort()).toEqual(["groups", "status"]);
+  expect(body.status).toBe("UP");
 });
 
 test("pages carry a nonce-based CSP and run without a single violation", async ({ page }) => {
