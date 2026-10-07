@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { activeTraceparent } from "@/lib/observability/active-span";
+import { traceparentToForward } from "@/lib/observability/trace-context";
 import {
   contentSecurityPolicy,
   isBlockedCorePath,
@@ -20,7 +22,15 @@ export function proxy(request: NextRequest) {
       headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
     });
   }
-  if (pathname.startsWith("/api/")) return NextResponse.next();
+  if (pathname.startsWith("/api/")) {
+    // The call to core-api carries the trace, so a browser request is one trace from here to ai-service (ADR 0039).
+    const forwarded = new Headers(request.headers);
+    forwarded.set(
+      "traceparent",
+      traceparentToForward(request.headers.get("traceparent"), activeTraceparent()),
+    );
+    return NextResponse.next({ request: { headers: forwarded } });
+  }
 
   const nonce = btoa(crypto.randomUUID());
   const csp = contentSecurityPolicy(nonce, process.env.NODE_ENV === "development");
