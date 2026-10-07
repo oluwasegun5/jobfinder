@@ -26,12 +26,15 @@ export function isBlockedCorePath(pathname: string): boolean {
     }
   }
   const segments: string[] = [];
-  for (const part of decoded.replace(/\\/g, "/").split("/")) {
+  for (const raw of decoded.replace(/\\/g, "/").split("/")) {
+    // Path parameters (";a=b") are dropped from each segment BEFORE dot segments are resolved: a servlet container
+    // strips them first, so "..;/" is ".." to it and must be to us too.
+    const part = raw.split(";")[0].toLowerCase();
     if (part === "" || part === ".") continue;
     if (part === "..") {
       segments.pop();
     } else {
-      segments.push(part.toLowerCase().split(";")[0]);
+      segments.push(part);
     }
   }
   if (segments[0] !== "api" || segments[1] !== "core") return false;

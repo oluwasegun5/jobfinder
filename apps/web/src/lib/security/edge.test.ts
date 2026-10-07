@@ -18,6 +18,16 @@ describe("isBlockedCorePath", () => {
     "/api/core/actuator/health/liveness",
     "/api/core/actuator/health/../env",
     "/api/core/%zz",
+    // Path parameters on a dot segment: a servlet container reads "..;" as "..".
+    "/api/core/foo/..;/actuator/env",
+    "/api/core/foo/..;/internal/x",
+    "/api/core/foo/..;a=b/internal/x",
+    "/api/core/foo/%2e%2e;/internal/x",
+    "/api/core/foo/..%3b/actuator/env",
+    "/api/core/foo/..%3B/internal/x",
+    "/api/core/foo/..%253b/internal/x",
+    "/api/core/a/b/..;/..;/internal/x",
+    "/api/core/foo/..;/actuator/health/../env",
   ])("blocks %s", (path) => {
     expect(isBlockedCorePath(path)).toBe(true);
   });
@@ -29,6 +39,10 @@ describe("isBlockedCorePath", () => {
     "/api/core/auth/login",
     "/api/core/internalish",
     "/api/core/jobs/internal",
+    "/api/core/foo/..;/jobs",
+    "/api/core/jobs;jsessionid=1",
+    "/api/core/actuator;x=y/health",
+    "/api/core/foo/.;/internal/x",
     "/internal/anything",
     "/dashboard",
   ])("lets %s through", (path) => {
