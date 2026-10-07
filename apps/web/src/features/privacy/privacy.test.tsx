@@ -143,7 +143,7 @@ describe("PrivacySettings", () => {
   it("downloads the export as a zip", async () => {
     const api = fakeApi({
       "GET /me/consent": () => json(on),
-      "GET /me/export": () => new Response(new Blob(["PK"]), { status: 200, headers: { "Content-Type": "application/zip" } }),
+      "GET /me/export": () => new Response(new Uint8Array([0x50, 0x4b]), { status: 200, headers: { "Content-Type": "application/zip" } }),
     });
     hoisted.client = api.client;
     const user = userEvent.setup();
