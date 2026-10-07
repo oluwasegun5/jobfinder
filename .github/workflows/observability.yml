@@ -1,0 +1,32 @@
+name: observability
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/observability/**"
+      - "infra/docker-compose.yml"
+      - ".github/workflows/observability.yml"
+  pull_request:
+    paths:
+      - "infra/observability/**"
+      - "infra/docker-compose.yml"
+      - ".github/workflows/observability.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - name: Dashboards, scrape config and compose profile
+        run: |
+          python3 infra/observability/check.py
+          cd infra/observability && python3 -m unittest -q test_check
