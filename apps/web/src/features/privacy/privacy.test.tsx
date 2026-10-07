@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { configure, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -7,6 +7,9 @@ import { renderWithQueryClient } from "@/test/render";
 
 import { ConsentGate } from "./consent-gate";
 import { PrivacySettings } from "./privacy-settings";
+
+// A CI runner can be slow to resolve the stubbed fetch; the default 1 s is too tight there.
+configure({ asyncUtilTimeout: 5000 });
 
 const hoisted = vi.hoisted(() => ({
   client: undefined as unknown,
