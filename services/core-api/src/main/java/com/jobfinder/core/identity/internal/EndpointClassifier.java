@@ -72,8 +72,11 @@ final class EndpointClassifier {
         if (pattern == null) {
             return EndpointClass.API_WRITE;
         }
+        if (pattern.startsWith("/webhooks/")) {
+            return EndpointClass.WEBHOOK;
+        }
         if (pattern.startsWith("/auth/") && !pattern.equals("/auth/me") || pattern.startsWith("/internal/")
-                || pattern.startsWith("/webhooks/") || pattern.startsWith("/actuator")) {
+                || pattern.startsWith("/actuator")) {
             return EndpointClass.EXEMPT;
         }
         EndpointClass explicit = BY_KEY.get(method.toUpperCase(java.util.Locale.ROOT) + " " + pattern);

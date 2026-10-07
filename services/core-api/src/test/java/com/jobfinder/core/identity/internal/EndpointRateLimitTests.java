@@ -35,7 +35,8 @@ import com.jobfinder.core.shared.ApiException;
 @TestPropertySource(properties = {
         "app.rate-limit.endpoints.AI.capacity=3", "app.rate-limit.endpoints.AI.period=1h",
         "app.rate-limit.endpoints.SEARCH.capacity=2", "app.rate-limit.endpoints.SEARCH.period=1h",
-        "app.rate-limit.endpoints.PUBLIC_LINK.capacity=2", "app.rate-limit.endpoints.PUBLIC_LINK.period=1h" })
+        "app.rate-limit.endpoints.PUBLIC_LINK.capacity=2", "app.rate-limit.endpoints.PUBLIC_LINK.period=1h",
+        "app.rate-limit.endpoints.WEBHOOK.capacity=3", "app.rate-limit.endpoints.WEBHOOK.period=1h" })
 class EndpointRateLimitTests extends AuthTestSupport {
 
     @Autowired
@@ -89,6 +90,28 @@ class EndpointRateLimitTests extends AuthTestSupport {
         }
         unsubscribe(ip).andExpect(status().isTooManyRequests());
         unsubscribe(newIp()).andExpect(r -> assertThat(r.getResponse().getStatus()).isNotEqualTo(429));
+    }
+
+    @Test
+    void webhooksAreLimitedPerClientIpBeforeTheBodyIsReadOrASignatureChecked() throws Exception {
+        String ip = newIp();
+        for (String path : new String[] { "/webhooks/stripe", "/webhooks/paystack", "/webhooks/stripe" }) {
+            // Unsigned: a bad signature (400) is what an unthrottled call gets.
+            webhook(path, ip).andExpect(status().isBadRequest());
+        }
+        MockHttpServletResponse blocked = webhook("/webhooks/stripe", ip).andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value("rate_limited")).andReturn().getResponse();
+        assertThat(Long.parseLong(blocked.getHeader("Retry-After"))).isPositive();
+        // Another address has its own budget, and the limit is the class's, not the path's.
+        webhook("/webhooks/paystack", ip).andExpect(status().isTooManyRequests());
+        webhook("/webhooks/stripe", newIp()).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void webhookPathsBelongToTheWebhookClassAndNoLongerToTheExemptOne() {
+        assertThat(EndpointClassifier.classify("POST", "/webhooks/stripe")).isEqualTo(EndpointClass.WEBHOOK);
+        assertThat(EndpointClassifier.classify("POST", "/webhooks/paystack")).isEqualTo(EndpointClass.WEBHOOK);
+        assertThat(EndpointClass.WEBHOOK.failOpen()).isFalse();
     }
 
     @Test
@@ -146,6 +169,14 @@ class EndpointRateLimitTests extends AuthTestSupport {
 
     private ResultActions matchFor(String token) throws Exception {
         return mvc.perform(get("/jobs/{id}/match", UUID.randomUUID()).header("Authorization", "Bearer " + token));
+    }
+
+    private ResultActions webhook(String path, String ip) throws Exception {
+        return mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post(path)
+                .contentType("application/json").content("{}").with(request -> {
+                    request.setRemoteAddr(ip);
+                    return request;
+                }));
     }
 
     private ResultActions unsubscribe(String ip) throws Exception {

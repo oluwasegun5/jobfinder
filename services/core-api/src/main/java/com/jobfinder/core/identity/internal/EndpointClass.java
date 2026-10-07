@@ -30,14 +30,20 @@ enum EndpointClass {
     ADMIN_ACTION(20, Duration.ofMinutes(1), false),
     /** Signed-link endpoints that need no sign-in (email unsubscribe): per IP. */
     PUBLIC_LINK(30, Duration.ofHours(1), false),
+    /**
+     * Provider webhooks ({@code /webhooks/**}): signature authenticated, so the limit is per client IP and generous
+     * (a provider redelivering after an outage sends bursts); it exists so unauthenticated traffic cannot make us
+     * read bodies and compute signatures without bound. A refusal is a 429, which the provider retries.
+     */
+    WEBHOOK(300, Duration.ofMinutes(1), false),
     /** Every other authenticated read. */
     API_READ(600, Duration.ofMinutes(1), true),
     /** Every other authenticated write. */
     API_WRITE(120, Duration.ofMinutes(1), true),
     /**
      * Not limited here, with the reason: {@code /auth/**} has its own per-IP and per-account rules
-     * ({@link RateLimitRule}); checkout and cancel are limited in the billing service; webhooks are signature
-     * authenticated and sent by the provider; {@code /internal/**} carries the service token; the actuator is health only.
+     * ({@link RateLimitRule}); checkout and cancel are limited in the billing service; webhooks have their own
+     * per-IP class ({@link #WEBHOOK}); {@code /internal/**} carries the service token; the actuator is health only.
      */
     EXEMPT(0, Duration.ZERO, true);
 

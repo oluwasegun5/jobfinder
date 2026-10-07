@@ -60,9 +60,10 @@ the client IP otherwise. Defaults (capacity per period; overridable under `app.r
 | EXTENSION | 120 / 1 min | apply-context | closed |
 | ADMIN_ACTION | 20 / 1 min | manual source runs, new targets | closed |
 | PUBLIC_LINK | 30 / 1 h per IP | email unsubscribe | closed |
+| WEBHOOK | 300 / 1 min per IP | `POST /webhooks/stripe`, `/webhooks/paystack` (signature authenticated; the body is also capped at 1 MB, 413 above it, before the signature is checked) | closed |
 | API_READ | 600 / 1 min | every other read | open |
 | API_WRITE | 120 / 1 min | every other write | open |
-| EXEMPT | none | `/auth/**` (own per-IP and per-account rules, `RateLimitRule`), checkout and cancel (limited in billing), webhooks, `/internal/**`, actuator | n/a |
+| EXEMPT | none | `/auth/**` (own per-IP and per-account rules, `RateLimitRule`), checkout and cancel (limited in billing), `/internal/**`, actuator | n/a |
 
 Brute force on login and password reset keeps its per-IP and per-account rules and its identical responses for known
 and unknown addresses. The test suite relaxes the ceilings through `src/test/resources/application.properties`
