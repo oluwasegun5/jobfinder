@@ -37,6 +37,7 @@
 		<shedlock.version>7.10.1</shedlock.version>
 		<resilience4j.version>2.4.0</resilience4j.version>
 		<jsoup.version>1.23.2</jsoup.version>
+		<sentry.version>8.59.0</sentry.version>
 		<!-- Security overrides of the Spring Boot BOM (OSV scan, ADR 0037): each fixes advisories in the version Boot 4.1.1 pins.
 		     Remove one when Boot's own BOM reaches it. tomcat: GHSA-9xv2-5v5q-p794, -gcx9-497g-6cp6, -h3x4-894j-xpx5;
 		     jackson: GHSA-7hhh-6rmp-j9qf, -p6pp-m3f8-5c89, -cxp5-3px4-pw24, -q4xh-88c3-wmh7, -wv8q-qhhj-9h54;
@@ -55,6 +56,20 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<!-- Observability (ADR 0039): traces over OTLP and the Prometheus scrape endpoint. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-opentelemetry</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.sentry</groupId>
+			<artifactId>sentry</artifactId>
+			<version>${sentry.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -183,6 +198,11 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-opentelemetry-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

@@ -14,6 +14,8 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import com.jobfinder.core.observability.ErrorReporting;
+
 /**
  * Converts every exception into an RFC 7807 {@link ProblemDetail} response. Extending
  * {@link ResponseEntityExceptionHandler} keeps Spring MVC's standard mappings (validation
@@ -65,6 +67,7 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(Exception.class)
     ProblemDetail handleUnexpected(Exception ex) {
         log.error("Unhandled exception", ex);
+        ErrorReporting.capture(ex);
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         problem.setTitle("Internal Server Error");
         problem.setDetail("An unexpected error occurred.");
