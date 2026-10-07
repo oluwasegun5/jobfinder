@@ -2,6 +2,7 @@ package com.jobfinder.core.billing.internal;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,6 +56,50 @@ record BillingProperties(@DefaultValue("500") BigDecimal dailyCapCredits,
 
     boolean capEnabled() {
         return dailyCapCredits.signum() > 0;
+    }
+
+    /** The amount-minor the shipped catalogue uses as a stand-in; no real price may equal it in production. */
+    static final long PLACEHOLDER_AMOUNT_MINOR = 100;
+
+    /**
+     * Whether {@code provider} has a key set (the secret key; Stripe's webhook secret alone does not count), that is,
+     * whether real money could move through it.
+     */
+    boolean providerKeySet(Provider provider) {
+        String key = switch (provider) {
+            case STRIPE -> stripe.secretKey();
+            case PAYSTACK -> paystack.secretKey();
+        };
+        return key != null && !key.isBlank();
+    }
+
+    /**
+     * What is still a placeholder in the prices of every provider that has a key: an amount of
+     * {@link #PLACEHOLDER_AMOUNT_MINOR} or a provider plan id containing {@code PLACEHOLDER}. Empty when the catalogue
+     * is fit to take real payments. {@link BillingPriceGuard} refuses to start the prod profile on a non-empty list.
+     */
+    List<String> placeholderPrices() {
+        List<String> problems = new ArrayList<>();
+        plans.forEach((code, plan) -> plan.prices()
+                .forEach((currency, price) -> check(problems, "plan " + code + " " + currency, price)));
+        for (Pack pack : packs) {
+            pack.prices().forEach((currency, price) -> check(problems, "pack " + pack.id() + " " + currency, price));
+        }
+        return problems;
+    }
+
+    private void check(List<String> problems, String what, Price price) {
+        if (!providerKeySet(price.provider())) {
+            return;
+        }
+        if (price.amountMinor() == PLACEHOLDER_AMOUNT_MINOR) {
+            problems.add(what + " (" + price.provider().slug() + "): amount-minor is the placeholder "
+                    + PLACEHOLDER_AMOUNT_MINOR);
+        }
+        if (price.providerPlanId() != null
+                && price.providerPlanId().toUpperCase(java.util.Locale.ROOT).contains("PLACEHOLDER")) {
+            problems.add(what + " (" + price.provider().slug() + "): provider-plan-id is a placeholder");
+        }
     }
 
     Optional<PlanConfig> plan(String code) {

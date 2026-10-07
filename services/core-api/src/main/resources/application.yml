@@ -170,7 +170,9 @@ app:
     micro-usd-per-credit: ${AI_MICRO_USD_PER_CREDIT:1000}
     # Plans, credits and payments (docs/adr/0036-plans-credits-and-payments.md). Every amount, price, provider plan id,
     # key and secret is configuration. THE VALUES BELOW ARE PLACEHOLDERS: a price of 100 minor units and ids that start
-    # with PLACEHOLDER are obviously fake on purpose; set the real ones per environment. Secrets have no default:
+    # with PLACEHOLDER are obviously fake on purpose; set the real ones per environment (BILLING_PRICE_*_MINOR,
+    # STRIPE_PRICE_PRO_USD, PAYSTACK_PLAN_PRO_NGN). Under the prod profile the application refuses to start when a
+    # provider has a key and any of its prices is still a placeholder (BillingPriceGuard). Secrets have no default:
     # a provider without its keys is simply not offered.
     # Unused plan credits expire when the next grant arrives, except up to this many (0: no rollover). Top-ups never expire.
     rollover-cap-credits: ${BILLING_ROLLOVER_CAP_CREDITS:0}
@@ -195,25 +197,25 @@ app:
         prices:
           USD:
             provider: STRIPE
-            amount-minor: 100
+            amount-minor: ${BILLING_PRICE_PRO_USD_MINOR:100}
             provider-plan-id: ${STRIPE_PRICE_PRO_USD:price_PLACEHOLDER_pro_usd}
           NGN:
             provider: PAYSTACK
-            amount-minor: 100
+            amount-minor: ${BILLING_PRICE_PRO_NGN_MINOR:100}
             provider-plan-id: ${PAYSTACK_PLAN_PRO_NGN:PLN_PLACEHOLDER_pro_ngn}
     packs:
       - id: pack_small
         name: Small credit pack
         credits: 2000
         prices:
-          USD: { provider: STRIPE, amount-minor: 100 }
-          NGN: { provider: PAYSTACK, amount-minor: 100 }
+          USD: { provider: STRIPE, amount-minor: "${BILLING_PRICE_PACK_SMALL_USD_MINOR:100}" }
+          NGN: { provider: PAYSTACK, amount-minor: "${BILLING_PRICE_PACK_SMALL_NGN_MINOR:100}" }
       - id: pack_large
         name: Large credit pack
         credits: 10000
         prices:
-          USD: { provider: STRIPE, amount-minor: 100 }
-          NGN: { provider: PAYSTACK, amount-minor: 100 }
+          USD: { provider: STRIPE, amount-minor: "${BILLING_PRICE_PACK_LARGE_USD_MINOR:100}" }
+          NGN: { provider: PAYSTACK, amount-minor: "${BILLING_PRICE_PACK_LARGE_NGN_MINOR:100}" }
     stripe:
       api-base: https://api.stripe.com
       secret-key: ${STRIPE_SECRET_KEY:}
