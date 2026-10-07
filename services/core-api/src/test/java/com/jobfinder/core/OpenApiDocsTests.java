@@ -174,4 +174,16 @@ class OpenApiDocsTests {
 		assertThat(body).contains("\"ApplicationListResponse\"").contains("\"ListResponse\"");
 	}
 
+
+	@Test
+	void apiDocsDescribeTheComplianceEndpointsAndTheConsentError() throws Exception {
+		String body = mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(status().isOk())
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+
+		assertThat(body).contains("\"/me/export\"", "\"/me/consent\"", "\"/me/consent/ai\"", "ConsentResponse",
+				"aiProcessingConsent", "ai_consent_required");
+	}
 }

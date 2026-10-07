@@ -89,4 +89,21 @@ class MatchEndpointTests extends MatchingTestSupport {
                 .andExpect(jsonPath("$.llmScore").doesNotExist())
                 .andExpect(jsonPath("$.score").isNumber());
     }
+
+    @Test
+    void withoutAiConsentNoModelIsCalledAndTheAnswerIsTheStageTwoScoreFlagged() throws Exception {
+        Session me = newSession();
+        UUID user = userIdOf(me);
+        seedFor(user, 0, "Backend engineer", "java");
+        UUID id = job("A", 5, "java");
+        stubScores(user, Map.of(id, 81));
+        jdbc.update("update users set ai_consent_version = null, ai_consent_at = null where id = ?", user);
+
+        getAs(me, "/jobs/" + id + "/match").andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("NOT_LLM_SCORED"))
+                .andExpect(jsonPath("$.reason").value("CONSENT_REQUIRED"))
+                .andExpect(jsonPath("$.llmScore").doesNotExist())
+                .andExpect(jsonPath("$.score").isNumber());
+        org.assertj.core.api.Assertions.assertThat(scoreRequestCount(user)).isZero();
+    }
 }

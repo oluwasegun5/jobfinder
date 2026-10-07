@@ -37,11 +37,19 @@ class AiEndpointResponses implements OpenApiCustomizer {
         }
         openApi.getComponents().addSchemas(PROBLEM, problemSchema());
         openApi.getPaths().forEach((path, item) -> item.readOperationsMap().forEach((method, operation) -> {
-            if (EndpointClassifier.classify(method.name(), path) != EndpointClass.AI) {
+            EndpointClass endpointClass = EndpointClassifier.classify(method.name(), path);
+            boolean cvUpload = method.name().equals("POST") && path.equals("/resumes");
+            if (endpointClass != EndpointClass.AI && !cvUpload) {
                 return;
             }
             if (operation.getResponses() == null) {
                 operation.setResponses(new io.swagger.v3.oas.models.responses.ApiResponses());
+            }
+            operation.getResponses().putIfAbsent("403", problem(
+                    "The user has not agreed to AI processing of their data, or withdrew it (code ai_consent_required)."
+                            + " They give it again with PUT /me/consent/ai."));
+            if (cvUpload) {
+                return;
             }
             if (!(method.name().equals("GET") && path.equals("/jobs/{id}/match"))) {
                 operation.getResponses().putIfAbsent("402", problem(
