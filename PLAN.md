@@ -381,10 +381,10 @@ Scraper worker for approved local sources, recruiter side, voice mock interviews
 - After each phase, update this file's "Status" section.
 
 ## Status
-- [ ] Phase 0
-- [ ] Phase 1
-- [ ] Phase 2
-- [ ] Phase 3
-- [ ] Phase 4
-- [ ] Phase 5
+- [x] Phase 0
+- [x] Phase 1
+- [x] Phase 2
+- [x] Phase 3
+- [x] Phase 4
+- [x] Phase 5
 - [ ] Phase 6
