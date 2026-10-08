@@ -1,0 +1,72 @@
+name: deploy-checks
+
+# Checks of the deployment artifacts that need no server and no credentials (ADR 0041): the production compose stack
+# renders and is hardened, the scripts are valid and tested, the proxy configuration validates, and a backup restores
+# to identical data (plain and encrypted) in a throw-away Postgres.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/**"
+      - "docs/runbooks/**"
+      - "docs/launch-checklist.md"
+      - "apps/web/src/features/legal/placeholders.ts"
+      - "docs/compliance/**"
+      - ".github/workflows/deploy-checks.yml"
+      - ".github/workflows/deploy.yml"
+      - ".github/actions/ssh-deploy/**"
+  pull_request:
+    paths:
+      - "infra/**"
+      - "docs/runbooks/**"
+      - "docs/launch-checklist.md"
+      - "apps/web/src/features/legal/placeholders.ts"
+      - "docs/compliance/**"
+      - ".github/workflows/deploy-checks.yml"
+      - ".github/workflows/deploy.yml"
+      - ".github/actions/ssh-deploy/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Compose stack, scripts and policy consistency
+        run: |
+          shellcheck --version
+          cd infra/deploy/test
+          python3 -m unittest -v test_prod_compose test_scripts
+      - name: Caddyfile validates
+        run: |
+          docker run --rm -e SITE_ADDRESS=app.example.test -v "$PWD/infra/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            "$(grep -o 'caddy:[0-9.]*-alpine@sha256:[0-9a-f]*' infra/docker-compose.prod.yml | head -n 1)" \
+            caddy validate --config /etc/caddy/Caddyfile
+      - name: Workflows are valid YAML
+        run: |
+          python3 - <<'PY'
+          import glob, sys
+          try:
+              import yaml
+          except ImportError:
+              sys.exit(0)
+          for f in glob.glob(".github/workflows/*.yml") + glob.glob(".github/actions/*/action.yml"):
+              yaml.safe_load(open(f))
+              print("ok", f)
+          PY
+
+  backup-roundtrip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Backup and restore round trip (plain, encrypted, damaged, wrong key, live swap)
+        run: infra/deploy/test/roundtrip-ci.sh

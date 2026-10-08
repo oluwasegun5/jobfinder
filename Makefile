@@ -1,6 +1,6 @@
 COMPOSE := docker compose -f infra/docker-compose.yml --env-file .env
 
-.PHONY: env up down logs observability-up observability-down observability-check test fmt lint contract embeddings-backfill search-perf match-eval
+.PHONY: env up down logs observability-up observability-down observability-check test fmt lint contract embeddings-backfill search-perf match-eval deploy-check
 
 # Creates .env from .env.example with a fresh random value for every change-me-* placeholder (never overwrites).
 env:
@@ -69,3 +69,7 @@ match-eval:
 # services/core-api/target/search-perf.txt.
 search-perf:
 	cd services/core-api && ./mvnw -B -ntp test -Pperf -Dtest=SearchPerformanceTests
+
+# Static checks for the production deployment files (no Docker daemon needed except compose config).
+deploy-check:
+	python3 -m unittest discover -s infra/deploy/test -v

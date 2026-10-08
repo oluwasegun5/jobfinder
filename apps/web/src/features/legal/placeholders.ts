@@ -13,15 +13,18 @@ export const PLACEHOLDERS = {
   minimumAge: "[MINIMUM AGE, e.g. 18]",
   hostingProvider: "[HOSTING PROVIDER]",
   emailProvider: "[EMAIL DELIVERY PROVIDER]",
-  backupRetention: "[BACKUP RETENTION PERIOD]",
   transferMechanism: "[TRANSFER MECHANISM, e.g. standard contractual clauses]",
   refundPolicy: "[REFUND POLICY]",
 } as const;
 
 export type PlaceholderKey = keyof typeof PLACEHOLDERS;
 
-/** The retention periods the code enforces (app.retention.* in core-api, docs/compliance/data-inventory.md). */
+/**
+ * The retention periods the code and the deployment enforce (app.retention.* in core-api, BACKUP_RETENTION_DAYS in the
+ * backup sidecar, docs/compliance/data-inventory.md). A deployment test fails if `backups` and the deployed default differ.
+ */
 export const RETENTION_DAYS = {
+  backups: 30,
   unverifiedAccounts: 30,
   expiredTokens: 7,
   emailLog: 365,

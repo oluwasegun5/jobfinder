@@ -1,7 +1,9 @@
 # syntax=docker/dockerfile:1
+# Base images are pinned by tag AND digest (ADR 0041). Bump both together; a scheduled workflow (base-images.yml)
+# reports when a newer digest exists for the tag.
 # Built from the repo root so the npm workspace (apps/web + packages/api-contract) resolves.
 
-FROM node:24-alpine AS build
+FROM node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS build
 WORKDIR /repo
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -18,7 +20,7 @@ ARG CORE_API_URL=http://core-api:8080
 ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID=
 RUN CORE_API_URL=$CORE_API_URL NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID npm run build -w web
 
-FROM node:24-alpine
+FROM node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
@@ -29,6 +31,10 @@ ENV NODE_ENV=production \
 COPY --from=build --chown=node:node /repo/apps/web/.next/standalone ./
 COPY --from=build --chown=node:node /repo/apps/web/.next/static ./apps/web/.next/static
 COPY --from=build --chown=node:node /repo/apps/web/public ./apps/web/public
+# The runtime only runs `node server.js`. The base image's bundled npm, corepack and yarn are never used here and
+# carry their own dependency CVEs (the image scan blocks on HIGH), so they are removed.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /opt/yarn-* \
+    /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
 USER node
 
 EXPOSE 3000

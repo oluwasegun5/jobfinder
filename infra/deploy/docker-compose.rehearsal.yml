@@ -1,0 +1,35 @@
+# Local rehearsal of the production stack (ADR 0041). NEVER used for a real deployment.
+#
+#   infra/deploy/rehearsal.sh up        starts docker-compose.yml + docker-compose.prod.yml + this file
+#
+# The production overlay needs an SMTP server, an S3-compatible store and a public name with a certificate. This file
+# supplies throw-away stand-ins on the private networks (Mailpit, the S3 mock), disables ClamAV (about 2 GB, and its
+# signature download needs the internet) and the job-source scheduler (it would call public APIs), and publishes Mailpit's
+# API on localhost so the smoke test can read the verification email. Everything else is the production configuration,
+# which is the point: read-only roots, dropped capabilities, networks, Caddy with its own local CA, Redis password.
+
+services:
+  mailpit:
+    profiles: !reset []
+    networks: [app]
+    ports:
+      - "127.0.0.1:${MAILPIT_UI_PORT:-18025}:8025"
+  object-storage:
+    profiles: !reset []
+    networks: [app, offsite]
+    ports: !reset []
+  object-storage-init:
+    profiles: !reset []
+    networks: [app, offsite]
+
+  clamav:
+    profiles: ["rehearsal-clamav"]
+
+  core-api:
+    depends_on:
+      mailpit:
+        condition: service_healthy
+      object-storage-init:
+        condition: service_completed_successfully
+    environment:
+      APP_INGESTION_SCHEDULER_ENABLED: "false"

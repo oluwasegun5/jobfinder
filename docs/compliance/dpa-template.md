@@ -25,8 +25,11 @@ Persons authorised to process the data are bound by confidentiality. [Describe a
 ## 4. Security
 Measures as described in `docs/security-review.md` (OWASP ASVS L2 review) and ADR 0037, including: per-user access
 control on every request, hashed credentials, private object storage with short-lived links, scrubbed logs, upload checks.
-[Add encryption in transit and at rest of the production environment, backup, incident process. Do not claim
-certifications the company does not hold.]
+Public traffic is served over TLS with automatically renewed certificates. Database backups are taken daily, encrypted
+with a passphrase before they leave the server and kept for 30 days (`docs/runbooks/backup-restore.md`). The incident
+process is `docs/runbooks/incident.md`.
+[Add the encryption at rest of the production environment as the hosting provider offers it (disk or volume encryption,
+object storage encryption): confirm with the provider, do not assume. Do not claim certifications the company does not hold.]
 
 ## 5. Subprocessors
 The Controller gives general authorisation for the subprocessors on `/subprocessors`. The Processor informs the Controller
@@ -42,7 +45,7 @@ carry out impact assessments and prior consultations, and meet breach duties.
 
 ## 8. Deletion and return
 On termination, at the Controller's choice, the Processor returns (export) and deletes the data within [30] days, and
-backups within [BACKUP RETENTION PERIOD]. Records of AI calls (feature, model, token counts, cost) are kept without any
+backups within 30 days (the backup retention period, ADR 0041). Records of AI calls (feature, model, token counts, cost) are kept without any
 link to a person.
 
 ## 9. Personal data breach

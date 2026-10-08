@@ -70,6 +70,18 @@ describe("legal templates", () => {
     expect(text).toContain(`${RETENTION_DAYS.renderedFiles} days`);
   });
 
+  it("states the backup retention period as a fact, not a placeholder", () => {
+    const { container } = render(<PrivacyPolicy />);
+    const text = container.textContent ?? "";
+
+    expect(RETENTION_DAYS.backups).toBeGreaterThan(0);
+    expect(text).toContain(`backups are kept for ${RETENTION_DAYS.backups} days`);
+    expect(text).toContain(`Database backups: ${RETENTION_DAYS.backups} days`);
+    expect(text).not.toMatch(/BACKUP RETENTION/i);
+    expect(Object.keys(PLACEHOLDERS)).not.toContain("backupRetention");
+    expect(container.querySelector('[data-placeholder="backupRetention"]')).toBeNull();
+  });
+
   it("names the subprocessors and the user rights", () => {
     const sub = render(<Subprocessors />);
     for (const name of ["Anthropic", "Google", "Stripe", "Paystack", "Sentry"]) expect(sub.container.textContent).toContain(name);

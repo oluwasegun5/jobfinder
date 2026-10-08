@@ -47,7 +47,8 @@ the factual base of the privacy policy template (`apps/web/src/features/legal`).
 | Webhook delivery ids | 180 days |
 | Email send log | 365 days |
 | Cached rendered files | 90 days |
-| Backups | [BACKUP RETENTION PERIOD] (set in P6.5) |
+| Database backups | 30 days (`BACKUP_RETENTION_DAYS`, ADR 0041); a deleted account leaves them at the latest 30 days later |
+| Object storage (CV and rendered files) | no backups of their own; the bucket's versioning and lifecycle settings decide, see `docs/runbooks/backup-restore.md` |
 
 ## Recipients (subprocessors actually integrated)
 

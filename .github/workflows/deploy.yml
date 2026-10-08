@@ -1,0 +1,220 @@
+name: deploy
+
+# Build, scan, publish and deploy (ADR 0041, docs/runbooks/deploy.md).
+#
+#   pull request       build and scan the four images; nothing is published
+#   push to main       publish sha-<commit> and deploy it to STAGING (when the staging environment is configured)
+#   push of a v* tag   promote the already-tested sha-<commit> images to the tag (or build them if they do not exist),
+#                      then deploy to PRODUCTION, which waits for a reviewer to approve the `production` environment
+#   workflow_dispatch  re-run a deployment of an existing tag to staging or production (rollbacks to an older release)
+#
+# Secrets live only in the GitHub environments `staging` and `production` (Settings > Environments), never in the
+# repository: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY, DEPLOY_KNOWN_HOSTS (output of `ssh-keyscan -t ed25519 host`,
+# checked against the host once by a person), optionally SMOKE_USER_EMAIL and SMOKE_USER_PASSWORD. Environment variables:
+# SITE_ADDRESS (public host name), STAGING_DEPLOY_ENABLED=true on `staging`. The images are pulled by the server from
+# GHCR with a read-only token that was put on the server by hand (docs/runbooks/deploy.md), not by this workflow.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+  pull_request:
+    paths:
+      - "infra/docker/**"
+      - "infra/docker-compose*.yml"
+      - "infra/deploy/**"
+      - "services/**"
+      - "apps/web/**"
+      - "packages/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Where to deploy"
+        required: true
+        type: choice
+        options: [staging, production]
+      tag:
+        description: "Image tag that already exists in the registry (for example v1.2.0 or sha-1a2b3c4)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # core-api, ai-service, web and backup; the compose file refers to <registry>/<name>:<tag>.
+  IMAGE_NAMES: "core-api ai-service web backup"
+
+jobs:
+  images:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      registry: ${{ steps.meta.outputs.registry }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: core-api
+            context: services/core-api
+            file: infra/docker/core-api.Dockerfile
+          - name: ai-service
+            context: services/ai-service
+            file: infra/docker/ai-service.Dockerfile
+          - name: web
+            context: .
+            file: infra/docker/web.Dockerfile
+          - name: backup
+            context: infra/deploy/backup
+            file: infra/docker/backup.Dockerfile
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Names and tags
+        id: meta
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          registry="ghcr.io/${OWNER,,}/jobfinder"
+          sha_tag="sha-${GITHUB_SHA::7}"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then tag="${GITHUB_REF_NAME}"; else tag="$sha_tag"; fi
+          {
+            echo "registry=$registry"
+            echo "sha_tag=$sha_tag"
+            echo "tag=$tag"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # A release tag ships the bytes that were built, scanned and run on staging for the same commit.
+      - name: Promote the tested image to the release tag
+        id: promote
+        if: startsWith(github.ref, 'refs/tags/v')
+        continue-on-error: true
+        run: |
+          src="${{ steps.meta.outputs.registry }}/${{ matrix.name }}:${{ steps.meta.outputs.sha_tag }}"
+          docker buildx imagetools inspect "$src" > /dev/null
+          docker buildx imagetools create --tag "${{ steps.meta.outputs.registry }}/${{ matrix.name }}:${{ steps.meta.outputs.tag }}" "$src"
+
+      - name: Build (loaded locally for the scan)
+        if: steps.promote.outcome != 'success'
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          load: true
+          tags: scan/${{ matrix.name }}:ci
+          build-args: |
+            ${{ matrix.name == 'web' && format('NEXT_PUBLIC_GOOGLE_CLIENT_ID={0}', vars.GOOGLE_CLIENT_ID) || '' }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,scope=${{ matrix.name }},mode=max
+
+      # HIGH and CRITICAL findings with a fix available stop the pipeline (SEC-R8, docs/security-review.md).
+      - name: Vulnerability scan (Trivy)
+        if: steps.promote.outcome != 'success'
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.68.1 image --quiet --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
+            "scan/${{ matrix.name }}:ci"
+
+      - name: Publish
+        if: github.event_name != 'pull_request' && steps.promote.outcome != 'success'
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.registry }}/${{ matrix.name }}:${{ steps.meta.outputs.sha_tag }}
+            ${{ steps.meta.outputs.registry }}/${{ matrix.name }}:${{ steps.meta.outputs.tag }}
+          build-args: |
+            ${{ matrix.name == 'web' && format('NEXT_PUBLIC_GOOGLE_CLIENT_ID={0}', vars.GOOGLE_CLIENT_ID) || '' }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          provenance: true
+          sbom: true
+
+  deploy-staging:
+    needs: images
+    if: >-
+      github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.STAGING_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: staging
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/ssh-deploy
+        with:
+          tag: ${{ needs.images.outputs.tag }}
+          host: ${{ secrets.DEPLOY_HOST }}
+          user: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          known-hosts: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          site-address: ${{ vars.SITE_ADDRESS }}
+          smoke-user-email: ${{ secrets.SMOKE_USER_EMAIL }}
+          smoke-user-password: ${{ secrets.SMOKE_USER_PASSWORD }}
+
+  # The `production` environment must have required reviewers (Settings > Environments): that is the manual approval.
+  deploy-production:
+    needs: images
+    if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/ssh-deploy
+        with:
+          tag: ${{ needs.images.outputs.tag }}
+          host: ${{ secrets.DEPLOY_HOST }}
+          user: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          known-hosts: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          site-address: ${{ vars.SITE_ADDRESS }}
+          smoke-user-email: ${{ secrets.SMOKE_USER_EMAIL }}
+          smoke-user-password: ${{ secrets.SMOKE_USER_PASSWORD }}
+
+  # A deployment of an existing tag, either environment (this is also how a release is rolled back from GitHub).
+  deploy-manual:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ inputs.environment }}
+    concurrency:
+      group: deploy-${{ inputs.environment }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/ssh-deploy
+        with:
+          tag: ${{ inputs.tag }}
+          host: ${{ secrets.DEPLOY_HOST }}
+          user: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          known-hosts: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          site-address: ${{ vars.SITE_ADDRESS }}
+          smoke-user-email: ${{ secrets.SMOKE_USER_EMAIL }}
+          smoke-user-password: ${{ secrets.SMOKE_USER_PASSWORD }}

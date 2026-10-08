@@ -1,0 +1,70 @@
+# Edge proxy (ADR 0041): terminates TLS with automatic certificates and forwards everything to the web container, which
+# serves the pages and proxies /api/core/* to core-api (ADR 0011). Nothing else is reachable from outside.
+#
+# SITE_ADDRESS   the public host name (production: app.example.com). Caddy obtains and renews the certificate for it
+#                itself, so ports 80 and 443 must reach this container and the name must resolve to the host.
+# CADDY_TLS      empty in production. "tls internal" in the local rehearsal (a throw-away local CA, no public ACME).
+# CADDY_GLOBAL   optional extra global option lines; compose sets "email <ACME_EMAIL>" when ACME_EMAIL is given, so the
+#                certificate authority has a contact address for expiry notices.
+{
+	{$CADDY_GLOBAL:}
+	# No admin API socket is needed inside the container.
+	admin off
+	# Never try to install a CA into the container's trust store (only matters for the local rehearsal's CA).
+	skip_install_trust
+	servers {
+		# Protocol options stay at Caddy's secure defaults (TLS 1.2+, modern ciphers, HTTP/2 and HTTP/3).
+		timeouts {
+			read_header 10s
+			idle 2m
+		}
+	}
+}
+
+{$SITE_ADDRESS} {
+	{$CADDY_TLS:}
+
+	encode zstd gzip
+
+	# CV uploads are limited to 5 MB by the application; this is the outer bound for any request body.
+	request_body {
+		max_size 12MB
+	}
+
+	header {
+		-Server
+		# The application sets the full header set (CSP with nonces, HSTS, framing, referrer, permissions); the proxy
+		# only adds what it alone can know.
+		X-Content-Type-Options nosniff
+	}
+
+	# Access log: JSON on stdout for the log shipper. Credentials are redacted by Caddy by default; the client address
+	# is truncated to the network and query strings are dropped, because verification and reset links carry tokens.
+	log {
+		output stdout
+		format filter {
+			wrap json
+			request>remote_ip ip_mask 24 64
+			request>client_ip ip_mask 24 64
+			request>uri query {
+				delete token
+				delete code
+				delete t
+			}
+		}
+	}
+
+	reverse_proxy web:3000 {
+		# Active check so a restarting web container produces a clean 502 and recovery, not hanging requests.
+		health_uri /
+		health_interval 5s
+		health_timeout 3s
+		# While the web container restarts during a deploy, requests wait for it instead of failing at once.
+		lb_try_duration 20s
+		lb_try_interval 250ms
+		transport http {
+			dial_timeout 5s
+			response_header_timeout 60s
+		}
+	}
+}
