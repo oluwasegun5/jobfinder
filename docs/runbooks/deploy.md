@@ -5,6 +5,9 @@ choices: `docs/adr/0041-production-deployment.md`. Everything the owner has to p
 
 ## One-time server setup
 
+Running on Oracle Cloud's Always Free Ampere A1 (arm64) VMs? The steps below still apply; read `docs/runbooks/oci-always-free.md` first
+for the account, network and firewall specifics, the arm64 images and the smaller staging limits (`infra/deploy/env.staging-small.example`).
+
 1. A Linux VM with Docker Engine and the Compose plugin (v2.24 or newer: the overlay uses `!reset` and `!override`), 4 vCPU
    and 8 GB RAM is comfortable (limits: core-api 1.5 GB, ClamAV 2 GB, Postgres 1 GB, the rest under 1.5 GB in total; lower the
    `*_MEM_LIMIT` variables only after watching real usage). Disk: allow for the database, the backup volume (30 days of
@@ -61,6 +64,11 @@ State (`current_tag`, `previous_tag`, `history`) is in `/opt/jobfinder/.deploy-s
 - The smoke test result is the evidence; keep the workflow run.
 - If the release changes the privacy-relevant behaviour (new data, new subprocessor), update the legal pages and
   `docs/compliance/` in the same release.
+
+## Multi-arch images
+
+Every image tag the workflow publishes is an index with `linux/amd64` and `linux/arm64`, so the same tag deploys to an x86 or an Arm host.
+`infra/deploy/check-multiarch.sh` fails the checks when a pinned third-party image is not multi-arch. Details: ADR 0041, addendum 1.
 
 ## Staging before production, and a dry run on a laptop
 

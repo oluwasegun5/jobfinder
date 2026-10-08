@@ -12,6 +12,16 @@ Nothing here has been deployed. The P6.5 work was rehearsed only on a throwaway 
 
 ## 2. Accounts and infrastructure (OWNER)
 - [ ] Server (one VM; size for Postgres, Java, Python, Next.js, ClamAV, about 8 GB RAM minimum) and a deploy user with Docker.
+- [ ] If the host is Oracle Cloud Always Free Ampere A1 (arm64): follow `docs/runbooks/oci-always-free.md`. Items below are OWNER decisions; no value is invented here.
+  - [ ] Always Free A1 is 2 OCPU / 12 GB in total (Oracle's Always Free page, read 2026-10-08: https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm); the option that stays free is one production VM of 2 OCPU / 12 GB and no staging VM on OCI (runbook option A). A production 3 OCPU / 16 GB plus staging 1 OCPU / 8 GB is more and is billed on Pay As You Go. Verify the limits in the console (Limits, Quotas and Usage), then choose option A, B or C of the runbook, section 0.
+  - [ ] Choose the home region (cannot be treated as changeable) after testing latency from Nigeria; availability domains per region matter for "out of host capacity".
+  - [ ] Verification card (a USD virtual card is a tip, not a guarantee); decide on upgrading the production tenancy to Pay As You Go; set a budget alert.
+  - [ ] Read Oracle's current terms before opening any second account; use it only for the offsite backup bucket, or pick another provider for backups.
+  - [ ] Decide how GitHub reaches the VM over SSH (open port 22 with key-only auth, manual deploys, or a self-hosted runner): a `/32` rule for your own address blocks the workflow.
+  - [ ] VCN, NSG/security list rules for 80, 443 (TCP and UDP) and 22; the VM's own firewall (`/etc/iptables/rules.v4` on Ubuntu, firewalld on Oracle Linux); reserved public IP; swap; unattended upgrades.
+  - [ ] Second tenancy: private bucket, IAM user and policy limited to that bucket, Customer Secret Key, lifecycle rule (31 days), `BACKUP_S3_ENDPOINT`, `BACKUP_S3_REGION`, `BACKUP_S3_ADDRESSING_STYLE=path`, `BACKUP_S3_ACCESS_KEY`, `BACKUP_S3_SECRET_KEY`; then one manual backup and a restore drill from that bucket.
+  - [ ] First CI run of the multi-arch `deploy` workflow succeeds (arm64 runners available to this repository); the staging pull on the VM reports `arm64` for every image.
+  - [ ] Staging VM at 8 GB: append `infra/deploy/env.staging-small.example` to its `.env`; confirm with `docker stats` after a day.
 - [ ] Domain and DNS: A/AAAA record to the server; ports 80 and 443 open (Caddy obtains certificates). Set `SITE_ADDRESS`, `WEB_BASE_URL`, ACME email.
 - [ ] Container registry (GHCR default): `IMAGE_REGISTRY`, pull credentials on the server.
 - [ ] Object storage for offsite backups: bucket, scoped key, `BACKUP_S3_*`, apply `infra/deploy/bucket-lifecycle.json`.
@@ -54,4 +64,5 @@ Nothing here has been deployed. The P6.5 work was rehearsed only on a throwaway 
 - `management.otlp.tracing.export.enabled` in `application.yml` has no effect on Spring Boot 4.1 (worked around in the overlay).
 - No target concurrency in PLAN; AI load not tested with a real provider.
 - On-call roster and paging tool undecided (`docs/runbooks/on-call.md`).
-- Dependabot/image digest refresh is a weekly manual workflow (`base-images.yml`).
+- Dependabot/image digest refresh is a weekly manual workflow (`base-images.yml`); it now also reports whether the new digest is multi-arch (amd64 + arm64) and fails when a pinned digest is not.
+- Oracle may reclaim idle Always Free instances (7 days under 20% CPU, network and, on A1, memory); the docs do not say whether Pay As You Go is exempt. Monitor and keep offsite backups current.
