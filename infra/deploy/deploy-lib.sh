@@ -11,7 +11,7 @@ COMPOSE_EXTRA_FILES="${COMPOSE_EXTRA_FILES:-}"
 # false: images are already on the host (rehearsal builds them locally).
 DEPLOY_PULL="${DEPLOY_PULL:-true}"
 PREFLIGHT_MODE="${PREFLIGHT_MODE:-production}"
-APP_IMAGES="core-api ai-service web backup"
+export APP_IMAGES="core-api ai-service web backup"
 
 log() { printf '%s deploy: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"; }
 die() { log "ERROR: $*"; exit 1; }
@@ -43,8 +43,8 @@ bring_up() { # tag
 # Waits until the public URL answers 200 (the proxy needs a moment to see a restarted web container). Readiness only:
 # the certificate is verified by the smoke test itself.
 wait_for_edge() { # base url
-  local i code
-  for i in $(seq 1 "${DEPLOY_EDGE_WAIT_SECONDS:-90}"); do
+  local code
+  for _ in $(seq 1 "${DEPLOY_EDGE_WAIT_SECONDS:-90}"); do
     code="$(curl --silent --insecure --max-time 5 --output /dev/null --write-out '%{http_code}' "$1/" 2>/dev/null || true)"
     [ "$code" = "200" ] && return 0
     sleep 1

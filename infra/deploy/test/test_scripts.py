@@ -233,6 +233,14 @@ class ScriptHygiene(unittest.TestCase):
         for s in self.scripts:
             self.assertTrue(os.access(s, os.X_OK), f"{s.name} is not executable")
 
+    def test_roundtrip_waits_for_the_real_server_over_tcp(self):
+        # The image's init server answers pg_isready on the unix socket before the real server is up.
+        text = (DEPLOY / "test" / "roundtrip-ci.sh").read_text()
+        checks = [line for line in text.splitlines() if "pg_isready" in line]
+        self.assertTrue(checks)
+        for line in checks:
+            self.assertIn("-h 127.0.0.1", line)
+
     def test_bash_syntax(self):
         for s in self.scripts:
             result = subprocess.run([BASH, "-n", str(s)], capture_output=True, text=True)

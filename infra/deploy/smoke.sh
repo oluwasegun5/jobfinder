@@ -106,7 +106,6 @@ check "signup without consent is refused with 400 (got $code)" test "$code" = "4
 
 authed=""
 token=""
-created_user=""
 if [ -n "${SMOKE_USER_EMAIL:-}" ] && [ -n "${SMOKE_USER_PASSWORD:-}" ]; then
   authed="existing"
   email="$SMOKE_USER_EMAIL"; password="$SMOKE_USER_PASSWORD"
@@ -118,7 +117,6 @@ elif [ -n "${SMOKE_MAIL_API:-}" ]; then
 fi
 
 if [ "$authed" = "fresh" ]; then
-  created_user="$email"
   vtoken=""
   for _ in $(seq 1 30); do
     curl --silent --max-time 10 -G --data-urlencode "query=to:$email" "$SMOKE_MAIL_API/api/v1/search" -o "$work/mails.json" 2>/dev/null || true

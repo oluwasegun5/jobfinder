@@ -20,7 +20,9 @@ valid_tag "$tag" || die "'$tag' is not a valid image tag"
 [ "$COMPOSE_PROJECT" != "" ] || die "COMPOSE_PROJECT is empty"
 
 log "deploying $tag to project $COMPOSE_PROJECT"
-"$REPO_ROOT/infra/deploy/preflight.sh" "$ENV_FILE" $([ "$PREFLIGHT_MODE" = "rehearsal" ] && echo --rehearsal) || die "preflight failed; nothing was changed"
+preflight_args=("$ENV_FILE")
+[ "$PREFLIGHT_MODE" = "rehearsal" ] && preflight_args+=(--rehearsal)
+"$REPO_ROOT/infra/deploy/preflight.sh" "${preflight_args[@]}" || die "preflight failed; nothing was changed"
 dc config --quiet || die "the compose files do not validate with this env file; nothing was changed"
 
 previous="$(read_state current_tag)"

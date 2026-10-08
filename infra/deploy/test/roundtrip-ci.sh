@@ -27,10 +27,10 @@ pg_image="$(grep -o 'pgvector/pgvector:pg16@sha256:[0-9a-f]*' "$repo/infra/docke
 docker network create "$net" >/dev/null
 docker run -d --name "$pg" --network "$net" -e POSTGRES_USER=jobfinder -e POSTGRES_DB=jobfinder -e POSTGRES_PASSWORD="$password" "$pg_image" >/dev/null
 for _ in $(seq 1 60); do
-  docker exec "$pg" pg_isready -U jobfinder -d jobfinder >/dev/null 2>&1 && break
+  docker exec "$pg" pg_isready -h 127.0.0.1 -U jobfinder -d jobfinder >/dev/null 2>&1 && break
   sleep 1
 done
-docker exec "$pg" pg_isready -U jobfinder -d jobfinder >/dev/null
+docker exec "$pg" pg_isready -h 127.0.0.1 -U jobfinder -d jobfinder >/dev/null
 
 # A small schema that looks like the application's: relations, text with unicode, jsonb, timestamps, a vector column.
 docker exec -i "$pg" psql -U jobfinder -d jobfinder -v ON_ERROR_STOP=1 -q <<'SQL'
