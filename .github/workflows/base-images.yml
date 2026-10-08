@@ -4,6 +4,9 @@ name: base-images
 # (ADR 0041). A digest never moves by itself, so security fixes in the base layers arrive only when a person bumps it.
 # This weekly job lists every pinned image whose tag now points at a different digest. It does not fail the build (the
 # deploy workflow's Trivy scan is what blocks a vulnerable image); it makes the drift visible in the run summary.
+# Production runs on linux/amd64 and linux/arm64 hosts (ADR 0041 addendum), so every pinned digest must be a multi-arch
+# index that includes both: the job fails when a pinned digest is not (infra/deploy/check-multiarch.sh), and it says
+# whether the digest a tag moved to is multi-arch too, so a bump never silently drops a platform.
 
 on:
   schedule:
@@ -30,9 +33,13 @@ jobs:
               echo "::warning::could not resolve $tag_ref"
             elif [ "$current" != "$pinned" ]; then
               echo "::warning::$tag_ref moved: pinned $pinned, now $current"
-              echo "- \`$tag_ref\` moved to \`$current\` (pinned \`$pinned\`)" >> "$GITHUB_STEP_SUMMARY"
+              if infra/deploy/check-multiarch.sh --ref "${tag_ref}@${current}" > /dev/null; then arch="multi-arch (amd64, arm64)"; else arch="NOT multi-arch: do not bump to it"; fi
+              echo "- \`$tag_ref\` moved to \`$current\` (pinned \`$pinned\`), $arch" >> "$GITHUB_STEP_SUMMARY"
               drift=1
             fi
           done < pinned.txt
           [ "$drift" -eq 0 ] && echo "All pinned images are current." >> "$GITHUB_STEP_SUMMARY"
           exit 0
+
+      - name: Pinned digests are multi-arch (linux/amd64 and linux/arm64)
+        run: infra/deploy/check-multiarch.sh
