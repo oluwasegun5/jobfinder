@@ -31,6 +31,10 @@ ENV NODE_ENV=production \
 COPY --from=build --chown=node:node /repo/apps/web/.next/standalone ./
 COPY --from=build --chown=node:node /repo/apps/web/.next/static ./apps/web/.next/static
 COPY --from=build --chown=node:node /repo/apps/web/public ./apps/web/public
+# The runtime only runs `node server.js`. The base image's bundled npm, corepack and yarn are never used here and
+# carry their own dependency CVEs (the image scan blocks on HIGH), so they are removed.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /opt/yarn-* \
+    /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
 USER node
 
 EXPOSE 3000

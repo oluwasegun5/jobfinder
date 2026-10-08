@@ -142,6 +142,12 @@ class ProductionFilesStatic(unittest.TestCase):
             self.assertTrue(users, f"{dockerfile.name} never sets USER")
             self.assertNotIn(users[-1], {"root", "0"}, dockerfile.name)
 
+    def test_web_runtime_image_ships_without_the_bundled_package_managers(self):
+        text = (INFRA / "docker" / "web.Dockerfile").read_text()
+        runtime = text.split("AS build", 1)[1].split("\nFROM ", 1)[1]
+        self.assertRegex(runtime, r"rm -rf [^\n]*/usr/local/lib/node_modules/npm")
+        self.assertLess(runtime.index("rm -rf"), runtime.index("USER node"))
+
     def test_backup_retention_matches_the_privacy_policy_constant(self):
         placeholders = (REPO / "apps/web/src/features/legal/placeholders.ts").read_text()
         policy_days = re.search(r"backups:\s*(\d+)", placeholders)
