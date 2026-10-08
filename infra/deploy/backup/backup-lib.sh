@@ -36,10 +36,31 @@ backup_files() { # prints the paths of finished backups, newest name last
   find "$BACKUP_DIR" -maxdepth 1 -type f -name 'jobfinder-*.dump*' ! -name '*.sha256' ! -name '*.partial*' 2>/dev/null | sort
 }
 
-aws_s3() { # aws s3 against the configured S3-compatible endpoint (R2, S3, ...)
-  AWS_ACCESS_KEY_ID="${BACKUP_S3_ACCESS_KEY:?BACKUP_S3_ACCESS_KEY is required with BACKUP_S3_URI}" \
-  AWS_SECRET_ACCESS_KEY="${BACKUP_S3_SECRET_KEY:?BACKUP_S3_SECRET_KEY is required with BACKUP_S3_URI}" \
-  AWS_DEFAULT_REGION="${BACKUP_S3_REGION:-auto}" \
-  AWS_EC2_METADATA_DISABLED=true \
-    aws ${BACKUP_S3_ENDPOINT:+--endpoint-url "$BACKUP_S3_ENDPOINT"} "$@"
+# Addressing style of the S3 endpoint: BACKUP_S3_ADDRESSING_STYLE=path|virtual|auto. Empty keeps the client default (the AWS
+# CLI already uses path-style for most custom endpoints). Oracle Cloud Object Storage (S3 compatibility API) is documented
+# with a path-style endpoint, https://<namespace>.compat.objectstorage.<region>.oci.customer-oci.com, so set "path" there
+# (docs/runbooks/oci-always-free.md). The setting goes into a throw-away copy of the image's AWS config for each call: the
+# image's own config file (read-only root) is never edited.
+aws_s3() { # aws s3 against the configured S3-compatible endpoint (R2, S3, OCI, ...)
+  local style="${BACKUP_S3_ADDRESSING_STYLE:-}" cfg="" rc=0
+  case "$style" in
+    '' | path | virtual | auto) ;;
+    *) die "BACKUP_S3_ADDRESSING_STYLE must be path, virtual or auto, got '$style'" ;;
+  esac
+  if [ -n "$style" ]; then
+    cfg="$(mktemp "${TMPDIR:-/tmp}/aws-config.XXXXXX")"
+    { [ -z "${AWS_CONFIG_FILE:-}" ] || [ ! -r "$AWS_CONFIG_FILE" ] || cat "$AWS_CONFIG_FILE"
+      printf '\n[default]\ns3 =\n    addressing_style = %s\n' "$style"; } > "$cfg"
+  fi
+  local extra=()
+  [ -z "$cfg" ] || extra=(AWS_CONFIG_FILE="$cfg")
+  env \
+    AWS_ACCESS_KEY_ID="${BACKUP_S3_ACCESS_KEY:?BACKUP_S3_ACCESS_KEY is required with BACKUP_S3_URI}" \
+    AWS_SECRET_ACCESS_KEY="${BACKUP_S3_SECRET_KEY:?BACKUP_S3_SECRET_KEY is required with BACKUP_S3_URI}" \
+    AWS_DEFAULT_REGION="${BACKUP_S3_REGION:-auto}" \
+    AWS_EC2_METADATA_DISABLED=true \
+    ${extra[@]+"${extra[@]}"} \
+    aws ${BACKUP_S3_ENDPOINT:+--endpoint-url "$BACKUP_S3_ENDPOINT"} "$@" || rc=$?
+  [ -z "$cfg" ] || rm -f "$cfg"
+  return "$rc"
 }

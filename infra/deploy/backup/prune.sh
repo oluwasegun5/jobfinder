@@ -22,8 +22,13 @@ if [ -n "${BACKUP_S3_URI:-}" ] && [ "${BACKUP_S3_PRUNE:-true}" = "true" ]; then
   prefix=""
   [ "$rest" = "$bucket" ] || prefix="${rest#*/}/"
   cutoff="$(date -u -d "now - $minutes minutes" +%Y-%m-%dT%H:%M:%S)"
-  keys="$(aws_s3 s3api list-objects-v2 --bucket "$bucket" --prefix "${prefix}jobfinder-" \
-    --query "Contents[?LastModified<='${cutoff}'].Key" --output text 2>/dev/null || true)"
+  # ListObjectsV2 first; some S3-compatible stores only document the original ListObjects (Oracle's compatibility API
+  # page lists ListObjects), so fall back to it when V2 is refused. Both return the same keys.
+  list_old_keys() { # api
+    aws_s3 s3api "$1" --bucket "$bucket" --prefix "${prefix}jobfinder-" \
+      --query "Contents[?LastModified<='${cutoff}'].Key" --output text 2>/dev/null
+  }
+  keys="$(list_old_keys list-objects-v2 || list_old_keys list-objects || true)"
   count=0
   for key in $keys; do
     [ "$key" = "None" ] && continue

@@ -103,6 +103,10 @@ if [ -n "$days" ]; then
 fi
 if [ -n "$(val BACKUP_S3_URI)" ]; then
   need BACKUP_S3_ENDPOINT; need BACKUP_S3_ACCESS_KEY; need BACKUP_S3_SECRET_KEY
+  case "$(val BACKUP_S3_ADDRESSING_STYLE)" in
+    '' | path | virtual | auto) ;;
+    *) err "BACKUP_S3_ADDRESSING_STYLE must be path, virtual or auto" ;;
+  esac
   [ -n "$(val BACKUP_PASSPHRASE_HOST_FILE)" ] || err "BACKUP_S3_URI is set: off-host backups must be encrypted (BACKUP_PASSPHRASE_HOST_FILE and BACKUP_PASSPHRASE_FILE)"
 elif ! $rehearsal; then
   warn "BACKUP_S3_URI is not set: backups stay on this host's disk only (lost with the host)"

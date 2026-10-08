@@ -62,6 +62,8 @@ make_env() {
     echo "BACKUP_RETENTION_DAYS=30"
     echo "BACKUP_S3_URI=s3://jobfinder/backups"; echo "BACKUP_S3_ENDPOINT=http://object-storage:9090"
     echo "BACKUP_S3_REGION=us-east-1"
+    # The off-host copy uses the path-style setting recommended for Oracle Cloud Object Storage, so the rehearsal runs that code path.
+    echo "BACKUP_S3_ADDRESSING_STYLE=path"
   } > "$ENV_FILE"
   # The off-host copy reuses the mock store's (random) credentials; it also gets an encryption passphrase file.
   ak="$(grep '^OBJECT_STORAGE_ACCESS_KEY=' "$ENV_FILE" | cut -d= -f2-)"; sk="$(grep '^OBJECT_STORAGE_SECRET_KEY=' "$ENV_FILE" | cut -d= -f2-)"
