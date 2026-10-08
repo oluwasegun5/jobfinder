@@ -2,10 +2,14 @@ name: deploy
 
 # Build, scan, publish and deploy (ADR 0041, docs/runbooks/deploy.md).
 #
-#   pull request       build and scan the four images; nothing is published
-#   push to main       publish sha-<commit> and deploy it to STAGING (when the staging environment is configured)
+#   pull request       build and scan the four images for linux/amd64 and linux/arm64; nothing is published
+#   push to main       publish sha-<commit> (one multi-arch index per image: amd64 + arm64) and deploy it to STAGING (when
+#                      the staging environment is configured)
 #   push of a v* tag   promote the already-tested sha-<commit> images to the tag (or build them if they do not exist),
 #                      then deploy to PRODUCTION, which waits for a reviewer to approve the `production` environment
+#
+# The images run on amd64 and on arm64 hosts (Oracle Cloud Ampere A1, docs/runbooks/oci-always-free.md): each platform is
+# built natively (ubuntu-latest / ubuntu-24.04-arm), scanned, and pushed by digest; the `manifest` job publishes the index.
 #   workflow_dispatch  re-run a deployment of an existing tag to staging or production (rollbacks to an older release)
 #
 # Secrets live only in the GitHub environments `staging` and `production` (Settings > Environments), never in the
@@ -51,35 +55,20 @@ env:
   IMAGE_NAMES: "core-api ai-service web backup"
 
 jobs:
-  images:
+  # Names, tags and (for a release tag) whether the tested sha-<commit> images already exist and only need re-tagging.
+  meta:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 10
     permissions:
       contents: read
-      packages: write
+      packages: read
     outputs:
       tag: ${{ steps.meta.outputs.tag }}
+      sha_tag: ${{ steps.meta.outputs.sha_tag }}
       registry: ${{ steps.meta.outputs.registry }}
-    strategy:
-      fail-fast: true
-      matrix:
-        include:
-          - name: core-api
-            context: services/core-api
-            file: infra/docker/core-api.Dockerfile
-          - name: ai-service
-            context: services/ai-service
-            file: infra/docker/ai-service.Dockerfile
-          - name: web
-            context: .
-            file: infra/docker/web.Dockerfile
-          - name: backup
-            context: infra/deploy/backup
-            file: infra/docker/backup.Dockerfile
+      promote: ${{ steps.promote.outputs.promote }}
     steps:
-      - uses: actions/checkout@v5
-
       - name: Names and tags
         id: meta
         env:
@@ -104,55 +93,190 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # A release tag ships the bytes that were built, scanned and run on staging for the same commit.
-      - name: Promote the tested image to the release tag
+      # A release tag ships the bytes that were built, scanned and run on staging for the same commit: when the multi-arch
+      # sha-<commit> index of all four images exists, nothing is rebuilt and the release tag is only added to it.
+      - name: Do the tested images for this commit exist?
         id: promote
-        if: startsWith(github.ref, 'refs/tags/v')
-        continue-on-error: true
+        env:
+          REGISTRY: ${{ steps.meta.outputs.registry }}
+          SHA_TAG: ${{ steps.meta.outputs.sha_tag }}
         run: |
-          src="${{ steps.meta.outputs.registry }}/${{ matrix.name }}:${{ steps.meta.outputs.sha_tag }}"
-          docker buildx imagetools inspect "$src" > /dev/null
-          docker buildx imagetools create --tag "${{ steps.meta.outputs.registry }}/${{ matrix.name }}:${{ steps.meta.outputs.tag }}" "$src"
+          promote=false
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            promote=true
+            for name in $IMAGE_NAMES; do
+              docker buildx imagetools inspect "$REGISTRY/$name:$SHA_TAG" > /dev/null 2>&1 || promote=false
+            done
+          fi
+          echo "promote=$promote" >> "$GITHUB_OUTPUT"
 
-      - name: Build (loaded locally for the scan)
-        if: steps.promote.outcome != 'success'
+  # One build per image and per platform, each on a runner of its own architecture (no emulation: Maven, npm, uv and the
+  # Next.js build run natively, which under QEMU would take several times longer). `ubuntu-24.04-arm` runners are free for
+  # public repositories; for a private repository use `ubuntu-latest` with docker/setup-qemu-action for the arm64 leg and
+  # expect a much longer build (docs/runbooks/oci-always-free.md). Each platform image is scanned, then pushed by digest only
+  # (no tag); the `manifest` job below joins the two digests into one index per tag.
+  images:
+    needs: meta
+    if: needs.meta.outputs.promote != 'true'
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: true
+      matrix:
+        name: [core-api, ai-service, web, backup]
+        arch: [amd64, arm64]
+        include:
+          - name: core-api
+            context: services/core-api
+            file: infra/docker/core-api.Dockerfile
+          - name: ai-service
+            context: services/ai-service
+            file: infra/docker/ai-service.Dockerfile
+          - name: web
+            context: .
+            file: infra/docker/web.Dockerfile
+          - name: backup
+            context: infra/deploy/backup
+            file: infra/docker/backup.Dockerfile
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build ${{ matrix.platform }} (loaded locally for the scan)
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.file }}
+          platforms: ${{ matrix.platform }}
           load: true
           tags: scan/${{ matrix.name }}:ci
           build-args: |
             ${{ matrix.name == 'web' && format('NEXT_PUBLIC_GOOGLE_CLIENT_ID={0}', vars.GOOGLE_CLIENT_ID) || '' }}
-          cache-from: type=gha,scope=${{ matrix.name }}
-          cache-to: type=gha,scope=${{ matrix.name }},mode=max
+          cache-from: type=gha,scope=${{ matrix.name }}-${{ matrix.arch }}
+          cache-to: type=gha,scope=${{ matrix.name }}-${{ matrix.arch }},mode=max
 
-      # HIGH and CRITICAL findings with a fix available stop the pipeline (SEC-R8, docs/security-review.md).
-      - name: Vulnerability scan (Trivy)
-        if: steps.promote.outcome != 'success'
+      # HIGH and CRITICAL findings with a fix available stop the pipeline (SEC-R8, docs/security-review.md). Every platform
+      # image is scanned: the OS packages of the arm64 variant of a base image are not the amd64 ones.
+      - name: Vulnerability scan (Trivy, ${{ matrix.platform }})
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
             aquasec/trivy:0.68.1 image --quiet --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
             "scan/${{ matrix.name }}:ci"
 
-      - name: Publish
-        if: github.event_name != 'pull_request' && steps.promote.outcome != 'success'
+      - name: Publish ${{ matrix.platform }} by digest
+        id: push
+        if: github.event_name != 'pull_request'
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.file }}
-          push: true
-          tags: |
-            ${{ steps.meta.outputs.registry }}/${{ matrix.name }}:${{ steps.meta.outputs.sha_tag }}
-            ${{ steps.meta.outputs.registry }}/${{ matrix.name }}:${{ steps.meta.outputs.tag }}
+          platforms: ${{ matrix.platform }}
+          outputs: type=image,name=${{ needs.meta.outputs.registry }}/${{ matrix.name }},push-by-digest=true,name-canonical=true,push=true
           build-args: |
             ${{ matrix.name == 'web' && format('NEXT_PUBLIC_GOOGLE_CLIENT_ID={0}', vars.GOOGLE_CLIENT_ID) || '' }}
-          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-from: type=gha,scope=${{ matrix.name }}-${{ matrix.arch }}
           provenance: true
           sbom: true
 
+      - name: Export the digest
+        if: github.event_name != 'pull_request'
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          mkdir -p /tmp/digests
+          touch "/tmp/digests/${DIGEST#sha256:}"
+
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
+        with:
+          name: digests-${{ matrix.name }}-${{ matrix.arch }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  # One manifest list (index) per tag with both platforms: sha-<commit>, and the release tag on a v* push. A tag that
+  # does not contain linux/amd64 and linux/arm64 fails the pipeline here (infra/deploy/check-multiarch.sh).
+  manifest:
+    needs: [meta, images]
+    if: >-
+      always() && !cancelled() && github.event_name == 'push' && needs.meta.result == 'success'
+      && (needs.images.result == 'success' || needs.images.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: true
+      matrix:
+        name: [core-api, ai-service, web, backup]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download the platform digests
+        if: needs.meta.outputs.promote != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: digests-${{ matrix.name }}-*
+          path: /tmp/digests
+          merge-multiple: true
+
+      - name: Create the manifest lists
+        env:
+          IMAGE: ${{ needs.meta.outputs.registry }}/${{ matrix.name }}
+          SHA_TAG: ${{ needs.meta.outputs.sha_tag }}
+          TAG: ${{ needs.meta.outputs.tag }}
+          PROMOTE: ${{ needs.meta.outputs.promote }}
+        run: |
+          if [ "$PROMOTE" = "true" ]; then
+            docker buildx imagetools create --tag "$IMAGE:$TAG" "$IMAGE:$SHA_TAG"
+          else
+            sources=()
+            for f in /tmp/digests/*; do sources+=("$IMAGE@sha256:$(basename "$f")"); done
+            [ "${#sources[@]}" -eq 2 ] || { echo "expected 2 platform digests, found ${#sources[@]}" >&2; exit 1; }
+            tags=(--tag "$IMAGE:$SHA_TAG")
+            [ "$TAG" = "$SHA_TAG" ] || tags+=(--tag "$IMAGE:$TAG")
+            docker buildx imagetools create "${tags[@]}" "${sources[@]}"
+          fi
+
+      - name: The published tags are multi-arch (linux/amd64 and linux/arm64)
+        env:
+          IMAGE: ${{ needs.meta.outputs.registry }}/${{ matrix.name }}
+          SHA_TAG: ${{ needs.meta.outputs.sha_tag }}
+          TAG: ${{ needs.meta.outputs.tag }}
+        run: |
+          infra/deploy/check-multiarch.sh --ref "$IMAGE:$SHA_TAG"
+          [ "$TAG" = "$SHA_TAG" ] || infra/deploy/check-multiarch.sh --ref "$IMAGE:$TAG"
+
   deploy-staging:
-    needs: images
+    needs: [meta, manifest]
     if: >-
       github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.STAGING_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
@@ -165,7 +289,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/ssh-deploy
         with:
-          tag: ${{ needs.images.outputs.tag }}
+          tag: ${{ needs.meta.outputs.tag }}
           host: ${{ secrets.DEPLOY_HOST }}
           user: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
@@ -176,7 +300,7 @@ jobs:
 
   # The `production` environment must have required reviewers (Settings > Environments): that is the manual approval.
   deploy-production:
-    needs: images
+    needs: [meta, manifest]
     if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -188,7 +312,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/ssh-deploy
         with:
-          tag: ${{ needs.images.outputs.tag }}
+          tag: ${{ needs.meta.outputs.tag }}
           host: ${{ secrets.DEPLOY_HOST }}
           user: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
