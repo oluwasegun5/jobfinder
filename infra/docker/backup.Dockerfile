@@ -4,9 +4,12 @@
 FROM pgvector/pgvector:pg16@sha256:ccc6e83d6e35e931dc7c5def2022729d5a6c370318d099181995567ff1fb4d6b
 
 # awscli only for the optional off-host copy (any S3-compatible store: R2, S3, ...).
+# apt-get upgrade picks up fixed OS packages published after the pinned base image; gosu (only used by the base image's
+# entrypoint, which is cleared below) is a Go binary with its own unfixed stdlib CVEs, so it is removed.
 RUN apt-get update \
+ && apt-get -y --no-install-recommends upgrade \
  && apt-get install -y --no-install-recommends awscli ca-certificates \
- && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/* /usr/local/bin/gosu
 
 COPY . /usr/local/bin/
 RUN mkdir -p /usr/local/lib/awscli-plugins /usr/local/etc \

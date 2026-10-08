@@ -148,6 +148,12 @@ class ProductionFilesStatic(unittest.TestCase):
         self.assertRegex(runtime, r"rm -rf [^\n]*/usr/local/lib/node_modules/npm")
         self.assertLess(runtime.index("rm -rf"), runtime.index("USER node"))
 
+    def test_backup_image_upgrades_os_packages_and_drops_the_unused_gosu(self):
+        text = (INFRA / "docker" / "backup.Dockerfile").read_text()
+        self.assertRegex(text, r"apt-get -y --no-install-recommends upgrade")
+        self.assertRegex(text, r"rm -rf [^\n]*/usr/local/bin/gosu")
+        self.assertIn("ENTRYPOINT []", text)
+
     def test_backup_retention_matches_the_privacy_policy_constant(self):
         placeholders = (REPO / "apps/web/src/features/legal/placeholders.ts").read_text()
         policy_days = re.search(r"backups:\s*(\d+)", placeholders)
