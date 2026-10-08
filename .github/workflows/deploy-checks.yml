@@ -44,7 +44,11 @@ jobs:
         run: |
           shellcheck --version
           cd infra/deploy/test
-          python3 -m unittest -v test_prod_compose test_scripts
+          python3 -m unittest -v test_prod_compose test_scripts test_multiarch test_s3_endpoint test_oci_sizing
+      # Reads the registries (manifests only; nothing is pulled): every pinned image must offer linux/amd64 and linux/arm64,
+      # because production runs on amd64 and on Oracle Ampere A1 (arm64) hosts.
+      - name: Pinned images are multi-arch (amd64 and arm64)
+        run: infra/deploy/check-multiarch.sh
       - name: Caddyfile validates
         run: |
           docker run --rm -e SITE_ADDRESS=app.example.test -v "$PWD/infra/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" \
