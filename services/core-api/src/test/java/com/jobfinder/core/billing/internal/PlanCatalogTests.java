@@ -20,7 +20,8 @@ class PlanCatalogTests {
         Map<String, Price> prices = Map.of("USD", new Price(Provider.STRIPE, 100, "price_x"), "NGN",
                 new Price(Provider.PAYSTACK, 100, "PLN_x"));
         return new BillingProperties(new BigDecimal("500"), 1000, BigDecimal.ZERO, Duration.ofDays(3),
-                new BillingProperties.Jobs(false, "0 10 0 * * *", "0 0 * * * *", "UTC", 10, Duration.ofMinutes(5)),
+                new BillingProperties.Jobs(false, false, "0 10 0 * * *", "0 0 * * * *", "0 20 * * * *", "UTC", 10,
+                        Duration.ofMinutes(5)),
                 new BillingProperties.Checkout("http://r", "http://c"), new BillingProperties.Limits(10, 10),
                 Map.of("pro", new PlanConfig(null, prices)),
                 List.of(new Pack("p", "P", BigDecimal.TEN, prices)),

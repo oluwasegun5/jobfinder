@@ -38,7 +38,8 @@ class ProfileDataExporter implements UserDataExporter {
         bundle.json("preferences",
                 UserDataJson.rows(jdbc, "select t.* from preferences t where t.user_id = :userId", userId));
         bundle.json("resumes", UserDataJson.rows(jdbc,
-                "select t.* from resumes t where t.user_id = :userId order by t.created_at, t.id", userId, "file_key"));
+                "select t.* from resumes t where t.user_id = :userId order by t.created_at, t.id", userId, "file_key",
+                "content_sha256"));
         bundle.json("resume-versions", UserDataJson.rows(jdbc, """
                 select v.* from resume_versions v join resumes r on r.id = v.resume_id
                  where r.user_id = :userId order by r.created_at, r.id, v.version_number

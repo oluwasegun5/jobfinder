@@ -11,5 +11,9 @@ enum LedgerReason {
     /** A purchased credit pack (positive, never expires). */
     TOPUP,
     /** A manual correction, for example after a refund (either sign). */
-    REFUND_ADJUSTMENT
+    REFUND_ADJUSTMENT,
+    /** One tranche of the one-time trial, released at a milestone (positive; docs/adr/0042). */
+    TRIAL_GRANT,
+    /** Trial credits left unspent when the trial's validity ends (negative). */
+    TRIAL_EXPIRY
 }

@@ -33,16 +33,34 @@ class BillingJobs {
     private final RemoteCancellations remote;
     private final BillingProperties properties;
 
+    private final TrialService trials;
+
     BillingJobs(CreditGrants grants, SubscriptionService subscriptions, RemoteCancellations remote,
-            BillingProperties properties) {
+            BillingProperties properties, TrialService trials) {
         this.grants = grants;
         this.subscriptions = subscriptions;
         this.remote = remote;
         this.properties = properties;
+        this.trials = trials;
+    }
+
+    /**
+     * Ends every trial whose validity is over, expiring the unspent trial credits (docs/adr/0042). Idempotent per user.
+     * The gate also ends a user's trial lazily, so this job only decides how soon an idle user's balance is corrected.
+     *
+     * @return how many trials were ended
+     */
+    int expireTrials(Instant now) {
+        int ended = trials.expireDue(now, properties.jobs().batchSize());
+        log.info("Trial expiry job: ended {} trials", ended);
+        return ended;
     }
 
     /** Grants this month's free credits to every user missing them. @return how many users were granted */
     int grantFree(Instant now) {
+        if (!properties.jobs().freeGrantEnabled()) {
+            return 0;
+        }
         String period = CreditGrants.period(now);
         int granted = 0;
         UUID after = null;

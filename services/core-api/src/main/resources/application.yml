@@ -186,8 +186,38 @@ app:
     grace-period: ${BILLING_GRACE_PERIOD:3d}
     jobs:
       enabled: ${BILLING_JOBS_ENABLED:true}
+      # The monthly Free grant is replaced by the one-time trial (docs/adr/0042). Off: neither the job nor the lazy grant
+      # gives monthly credits. The code path stays switchable until it is removed in a later release.
+      free-grant-enabled: ${BILLING_FREE_GRANT_ENABLED:false}
       free-grant-cron: "0 10 0 * * *"
       expiry-cron: "0 0 * * * *"
+      trial-expiry-cron: "0 20 * * * *"
+    # The staged one-time trial and its duplicate-account gate (docs/adr/0042-trial-credit-abuse-gate.md). Amounts are
+    # credits (1 credit = $0.001). The gate's peppers are the TRIAL_PEPPER_V<n> environment variables (see
+    # app.trial-identity); the prod profile refuses to start without the current one.
+    trial:
+      enabled: ${BILLING_TRIAL_ENABLED:true}
+      tranches:
+        m1: ${BILLING_TRIAL_M1:30}     # email verified or Google sign-in
+        m2: ${BILLING_TRIAL_M2:70}     # CV parsed
+        m3: ${BILLING_TRIAL_M3:100}    # profile and preferences complete
+        m4: ${BILLING_TRIAL_M4:100}    # first matches viewed, on a later UTC day than M1
+      validity: ${BILLING_TRIAL_VALIDITY:30d}
+      daily-cap-credits: ${BILLING_TRIAL_DAILY_CAP_CREDITS:150}
+      hourly-ceiling: ${BILLING_TRIAL_HOURLY_CEILING:200}
+      # Shadow mode (rollout step 2): the risk score is computed and logged, and anything that is not a hard match is
+      # granted. Turn on only after tuning the weights from shadow data (rollout step 3).
+      score-enforced: ${BILLING_TRIAL_SCORE_ENFORCED:false}
+      claim-retention: 365d
+      disposable:
+        # The weekly download of disposable-email-domains (CC0). Off by default: the pinned copy in the jar is used.
+        refresh-enabled: ${BILLING_TRIAL_DISPOSABLE_REFRESH:false}
+        refresh-cron: "0 30 3 * * MON"
+        max-change: 0.2
+        allow: []
+        deny: []
+      seed:
+        enabled: true
     checkout:
       return-url: ${BILLING_RETURN_URL:http://localhost:3000/billing/return}
       cancel-url: ${BILLING_CANCEL_URL:http://localhost:3000/billing/return?canceled=1}
@@ -232,6 +262,12 @@ app:
     paystack:
       api-base: https://api.paystack.co
       secret-key: ${PAYSTACK_SECRET_KEY:}
+
+  trial-identity:
+    # The pepper version new trial claims are written with (docs/adr/0042, section 3). The peppers themselves are the
+    # environment variables TRIAL_PEPPER_V1, TRIAL_PEPPER_V2, ... (at least 32 random bytes each, never in the repo or the
+    # database); every one present is used for lookups. Rotate by adding the next version and moving this to it.
+    current-key-version: ${TRIAL_PEPPER_CURRENT_VERSION:1}
 
   matching:
     # The matching engine (docs/adr/0026-matching-engine.md). The prompt version is part of the score cache key and is

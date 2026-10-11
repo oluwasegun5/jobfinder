@@ -45,8 +45,13 @@ class DailyCapService implements AiUsageGate {
     private final Clock clock;
     private final AiConsent consent;
 
+    private final TrialService trials;
+    private final TrialProperties trialProperties;
+
     DailyCapService(AiCallStore store, CreditLedgerStore ledger, CreditGrants grants, BillingProperties properties,
-            Clock clock, AiConsent consent) {
+            Clock clock, AiConsent consent, TrialService trials, TrialProperties trialProperties) {
+        this.trials = trials;
+        this.trialProperties = trialProperties;
         this.consent = consent;
         this.store = store;
         this.ledger = ledger;
@@ -66,6 +71,7 @@ class DailyCapService implements AiUsageGate {
             throw new AiConsentRequiredException();
         }
         grants.grantFreeIfDue(userId, now);
+        trials.expireIfDue(userId, now);
         BigDecimal balance = ledger.balance(userId);
         if (balance.signum() <= 0) {
             log.info("AI credits exhausted: user={} feature={} balance={}", userId, feature, balance);
@@ -86,6 +92,7 @@ class DailyCapService implements AiUsageGate {
             return GateStatus.CONSENT_REQUIRED;
         }
         grants.grantFreeIfDue(userId, now);
+        trials.expireIfDue(userId, now);
         if (ledger.balance(userId).signum() <= 0) {
             return GateStatus.INSUFFICIENT_CREDITS;
         }
@@ -105,6 +112,9 @@ class DailyCapService implements AiUsageGate {
             return new Allowance(null, used, null, resetsAt);
         }
         BigDecimal cap = properties.dailyCapCredits();
+        if (trialProperties.dailyCapCredits().signum() > 0 && trials.running(userId, now)) {
+            cap = trialProperties.dailyCapCredits().min(cap); // the trial's lower cap (docs/adr/0042)
+        }
         return new Allowance(cap, used, cap.subtract(used).max(BigDecimal.ZERO), resetsAt);
     }
 }

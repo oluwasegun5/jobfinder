@@ -1,5 +1,7 @@
 package com.jobfinder.core.profile.internal;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -10,7 +12,13 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.jobfinder.core.activation.DigestSet;
+import com.jobfinder.core.activation.IdentityDigester;
+import com.jobfinder.core.activation.ResumeParsed;
 import com.jobfinder.core.profile.ResumeVersionChanged;
+
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * The only writer of parse results. Every write is a guarded, single-purpose update, so the
@@ -39,8 +47,13 @@ class ResumeParseStore {
     private final TransactionTemplate tx;
     private final ApplicationEventPublisher events;
 
+    private final IdentityDigester digester;
+    private final JsonMapper json;
+
     ResumeParseStore(JdbcClient jdbc, PlatformTransactionManager transactionManager,
-            ApplicationEventPublisher events) {
+            ApplicationEventPublisher events, IdentityDigester digester, JsonMapper json) {
+        this.digester = digester;
+        this.json = json;
         this.jdbc = jdbc;
         this.events = events;
         this.tx = new TransactionTemplate(transactionManager);
@@ -89,11 +102,38 @@ class ResumeParseStore {
                 return false;
             }
             // The version now has content: let the embeddings pipeline know once this commits.
-            jdbc.sql("select id from resume_versions where resume_id = :id and version_number = :versionNumber")
-                    .param("id", resumeId).param("versionNumber", versionNumber).query(java.util.UUID.class)
-                    .optional().ifPresent(versionId -> events.publishEvent(new ResumeVersionChanged(versionId)));
+            Optional<UUID> versionId = jdbc.sql(
+                    "select id from resume_versions where resume_id = :id and version_number = :versionNumber")
+                    .param("id", resumeId).param("versionNumber", versionNumber).query(UUID.class).optional();
+            versionId.ifPresent(v -> events.publishEvent(new ResumeVersionChanged(v)));
+            publishResumeParsed(resumeId, versionId.orElse(null), structuredJson);
             return true;
         }));
+    }
+
+    /**
+     * Milestone M2 for the trial (docs/adr/0042): the digests of the file (its SHA-256 from the upload) and of the
+     * contact email and phone numbers the parser found. Computed here, so no raw value leaves this module.
+     */
+    private void publishResumeParsed(UUID resumeId, UUID versionId, String structuredJson) {
+        record Owner(UUID userId, byte[] sha256) {
+        }
+        Owner owner = jdbc.sql("select user_id, content_sha256 from resumes where id = :id").param("id", resumeId)
+                .query((rs, n) -> new Owner(rs.getObject("user_id", UUID.class), rs.getBytes("content_sha256")))
+                .single();
+        String email = null;
+        String phone = null;
+        try {
+            JsonNode contact = json.readTree(structuredJson).path("contact");
+            email = contact.path("email").isString() ? contact.path("email").asString() : null;
+            phone = contact.path("phone").isString() ? contact.path("phone").asString() : null;
+        } catch (RuntimeException e) {
+            // Stored content is already validated; an unreadable contact only means no CV signals.
+        }
+        List<DigestSet> emails = email == null ? List.of() : digester.email(email).map(List::of).orElse(List.of());
+        List<DigestSet> phones = phone == null ? List.of() : digester.phones(phone);
+        DigestSet file = owner.sha256() == null || owner.sha256().length != 32 ? null : digester.file(owner.sha256());
+        events.publishEvent(new ResumeParsed(owner.userId(), versionId, file, emails, phones, Instant.now()));
     }
 
     /**

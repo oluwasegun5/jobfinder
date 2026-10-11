@@ -25,6 +25,7 @@ import com.jobfinder.core.feed.internal.FeedbackAdjuster.Prepared;
 import com.jobfinder.core.jobs.JobCard;
 import com.jobfinder.core.jobs.JobFeatures;
 import com.jobfinder.core.jobs.JobFeedbackSource;
+import com.jobfinder.core.jobs.JobViews;
 import com.jobfinder.core.matching.MatchResult;
 import com.jobfinder.core.matching.MatchService;
 import com.jobfinder.core.matching.MatchStatus;
@@ -64,8 +65,11 @@ class FeedService implements FeedMatches {
     private final JsonMapper json;
     private final Clock clock;
 
+    private final JobViews views;
+
     FeedService(CandidateProfiles profiles, MatchService matches, JobFeedbackSource jobs, FeedProperties properties,
-            JsonMapper json, Clock clock) {
+            JsonMapper json, Clock clock, JobViews views) {
+        this.views = views;
         this.profiles = profiles;
         this.matches = matches;
         this.jobs = jobs;
@@ -116,6 +120,9 @@ class FeedService implements FeedMatches {
                 items.add(item(card, e));
             }
         }
+        if (first && !items.isEmpty()) {
+            recordViewed(userId, page);
+        }
         String next = null;
         if (more) {
             Entry last = page.get(page.size() - 1);
@@ -123,6 +130,18 @@ class FeedService implements FeedMatches {
                     last.stage2Millis(), last.match().jobId()).encode(json);
         }
         return new FeedPage(items, next, null);
+    }
+
+    /**
+     * The jobs the first page showed are VIEWED (the activation milestone "first matches viewed", docs/adr/0042). Best
+     * effort: the feed is served even if this cannot be written.
+     */
+    private void recordViewed(UUID userId, List<Entry> page) {
+        try {
+            views.recordFeedView(userId, page.stream().map(e -> e.match().jobId()).toList(), clock.instant());
+        } catch (RuntimeException e) {
+            log.warn("Recording the feed view failed: user={}", userId, e);
+        }
     }
 
     /**

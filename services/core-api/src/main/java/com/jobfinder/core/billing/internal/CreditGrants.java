@@ -75,6 +75,9 @@ class CreditGrants {
      */
     @Transactional
     public boolean grantFreeIfDue(UUID userId, Instant now) {
+        if (!properties.jobs().freeGrantEnabled()) {
+            return false; // replaced by the one-time trial (docs/adr/0042); kept switchable until it is removed
+        }
         String key = freeKey(userId, period(now));
         if (ledger.keyExists(key) || subscriptions.live(userId).isPresent()) {
             return false;

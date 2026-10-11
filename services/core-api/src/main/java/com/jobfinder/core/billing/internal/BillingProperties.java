@@ -132,10 +132,16 @@ record BillingProperties(@DefaultValue("500") BigDecimal dailyCapCredits,
         }
     }
 
-    /** The scheduled jobs. Both are safe to run as often as you like; the cron only sets how soon a miss is fixed. */
+    /**
+     * The scheduled jobs. All are safe to run as often as you like; the cron only sets how soon a miss is fixed.
+     * {@code freeGrantEnabled} (default false since the one-time trial, docs/adr/0042) switches the monthly Free grant
+     * on, both the job and the lazy grant; the code path stays until it is removed in a later release.
+     */
     record Jobs(@DefaultValue("true") boolean enabled,
+            @DefaultValue("false") boolean freeGrantEnabled,
             @DefaultValue("0 10 0 * * *") String freeGrantCron,
             @DefaultValue("0 0 * * * *") String expiryCron,
+            @DefaultValue("0 20 * * * *") String trialExpiryCron,
             @DefaultValue("UTC") String zone,
             @DefaultValue("500") int batchSize,
             @DefaultValue("10m") Duration lockAtMostFor) {

@@ -67,9 +67,13 @@ class BillingService {
     record PlanSummary(String code, String name, BigDecimal monthlyCredits) {
     }
 
+    /**
+     * {@code trial}: the one-time trial (docs/adr/0042): state PENDING, GRANTED, HOLD or DENIED, the credits unlocked so
+     * far, what is left of them, when they expire and the milestones reached. Null for an account from before the trial.
+     */
     record Me(PlanSummary plan, String status, SubscriptionView subscription, BigDecimal balance,
             BigDecimal grantedThisPeriod, BigDecimal usedThisPeriod, Instant periodStart, Instant periodEnd,
-            AllowanceView allowance) {
+            AllowanceView allowance, TrialService.TrialView trial) {
     }
 
     record AllowanceView(BigDecimal dailyCap, BigDecimal used, BigDecimal remaining, Instant resetsAt) {
@@ -99,11 +103,13 @@ class BillingService {
     private final TransactionTemplate tx;
     private final MeterRegistry meters;
     private final Clock clock;
+    private final TrialService trials;
 
     BillingService(PlanCatalog plans, SubscriptionStore subscriptions, CreditLedgerStore ledger, CreditGrants grants,
             DailyCapService caps, AiCallStore calls, BillingProperties properties, List<PaymentProvider> providers,
             MailRecipients mail, RateLimits rateLimits, JdbcClient jdbc, TransactionTemplate tx,
-            MeterRegistry meters, Clock clock) {
+            MeterRegistry meters, Clock clock, TrialService trials) {
+        this.trials = trials;
         this.plans = plans;
         this.subscriptions = subscriptions;
         this.ledger = ledger;
@@ -150,6 +156,7 @@ class BillingService {
     Me me(UUID userId) {
         Instant now = Instant.now(clock);
         grants.grantFreeIfDue(userId, now);
+        trials.expireIfDue(userId, now);
         Optional<Subscription> live = subscriptions.live(userId);
         Plan plan = live.flatMap(s -> plans.byId(s.planId())).orElseGet(plans::free);
         Instant periodStart;
@@ -175,7 +182,7 @@ class BillingService {
         return new Me(new PlanSummary(plan.code(), plan.name(), plan.monthlyCredits()), status, view,
                 ledger.balance(userId), granted, used, periodStart, periodEnd,
                 new AllowanceView(allowance.dailyCap(), allowance.used(), allowance.remaining(),
-                        allowance.resetsAt()));
+                        allowance.resetsAt()), trials.view(userId, now));
     }
 
     private SubscriptionView view(Subscription s) {
