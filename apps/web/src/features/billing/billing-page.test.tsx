@@ -17,6 +17,15 @@ vi.mock("@/lib/api", () => ({
 const catalogue = {
   plans: [
     { code: "free", name: "Free", monthlyCredits: 300, prices: [] },
+    {
+      code: "starter",
+      name: "Starter",
+      monthlyCredits: 2500,
+      prices: [
+        { provider: "STRIPE", currency: "USD", amountMinor: 500 },
+        { provider: "PAYSTACK", currency: "NGN", amountMinor: 450000 },
+      ],
+    },
     { code: "pro", name: "Pro", monthlyCredits: 6000, prices: [{ provider: "STRIPE", currency: "USD", amountMinor: 900 }] },
   ],
   packs: [{ id: "small", name: "Small pack", credits: 1000, prices: [{ provider: "PAYSTACK", currency: "NGN", amountMinor: 500000 }] }],
@@ -39,7 +48,7 @@ const ledger = {
   ],
 };
 
-function setup(me: unknown, routes: Parameters<typeof fakeApi>[0] = {}) {
+function setup(me: unknown, routes: Parameters<typeof fakeApi>[0] = {}, naira = false) {
   const api = fakeApi({
     "GET /billing/plans": () => json(catalogue),
     "GET /billing/me": () => json(me),
@@ -47,7 +56,7 @@ function setup(me: unknown, routes: Parameters<typeof fakeApi>[0] = {}) {
     ...routes,
   });
   hoisted.client = api.client;
-  renderWithQueryClient(<BillingPage />);
+  renderWithQueryClient(<BillingPage naira={naira} />);
   return api;
 }
 
@@ -59,12 +68,12 @@ describe("formatting", () => {
   it("shows credits without noise and prices in their own currency", () => {
     expect(formatCredits("1234.50")).toBe("1,234.5");
     expect(formatCredits(undefined)).toBe("0");
-    expect(formatPrice({ provider: "STRIPE", currency: "USD", amountMinor: 900 })).toMatch(/9\.00/);
+    expect(formatPrice({ provider: "STRIPE", currency: "USD", amountMinor: 900 })).toBe("$9");
   });
 });
 
 describe("BillingPage", () => {
-  it("shows the plan, the balance and the history, and offers the upgrade and the pack", async () => {
+  it("shows the plan, the balance and the history, and offers every paid plan from the API in dollars", async () => {
     setup(free);
 
     expect(await screen.findByText("Your plan: Free")).toBeInTheDocument();
@@ -72,8 +81,34 @@ describe("BillingPage", () => {
     const history = await screen.findByLabelText("Credit history");
     expect(within(history).getByText("Plan credits")).toBeInTheDocument();
     expect(within(history).getByText("AI usage")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Upgrade for .*9\.00 a month with Stripe/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Buy for .* with Paystack/ })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "USD" })).toBeChecked();
+    expect(screen.getByRole("button", { name: "Upgrade to Starter for $5 a month with Stripe" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Upgrade to Pro for $9 a month with Stripe" })).toBeInTheDocument();
+    // The only pack is priced in naira: not offered in dollars, but one switch away.
+    expect(screen.queryByRole("button", { name: /Buy/ })).not.toBeInTheDocument();
+  });
+
+  it("offers naira through Paystack first to a Nigerian browser, and says what has no naira price", async () => {
+    setup(free, {}, true);
+
+    expect(await screen.findByRole("radio", { name: "NGN" })).toBeChecked();
+    expect(screen.getByText(/Paid through Paystack/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Upgrade to Starter for ₦4,500 a month with Paystack" })).toBeInTheDocument();
+    expect(screen.getByText("Not available in NGN")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Buy Small pack for ₦5,000 with Paystack" })).toBeInTheDocument();
+  });
+
+  it("starts a Paystack checkout for a naira plan after switching currency", async () => {
+    const user = userEvent.setup();
+    const assign = vi.fn();
+    Object.defineProperty(window, "location", { value: { ...window.location, assign }, writable: true });
+    const api = setup(free, { "POST /billing/checkout": () => json({ url: "https://checkout.example/naira" }) });
+
+    await user.click(await screen.findByRole("radio", { name: "NGN" }));
+    await user.click(screen.getByRole("button", { name: /Upgrade to Starter/ }));
+
+    await waitFor(() => expect(assign).toHaveBeenCalledWith("https://checkout.example/naira"));
+    expect(api.callsTo("POST", "/billing/checkout")[0].body).toEqual({ plan: "starter", provider: "PAYSTACK" });
   });
 
   it("asks the API for a checkout and sends nothing but the choice", async () => {
@@ -82,7 +117,7 @@ describe("BillingPage", () => {
     Object.defineProperty(window, "location", { value: { ...window.location, assign }, writable: true });
     const api = setup(free, { "POST /billing/checkout": () => json({ url: "https://checkout.example/session" }) });
 
-    await user.click(await screen.findByRole("button", { name: /Upgrade for/ }));
+    await user.click(await screen.findByRole("button", { name: /Upgrade to Pro/ }));
 
     await waitFor(() => expect(assign).toHaveBeenCalledWith("https://checkout.example/session"));
     expect(api.callsTo("POST", "/billing/checkout")[0].body).toEqual({ plan: "pro", provider: "STRIPE" });
@@ -92,7 +127,7 @@ describe("BillingPage", () => {
     const user = userEvent.setup();
     setup(free, { "POST /billing/checkout": () => json({ status: 409, code: "already_subscribed", detail: "x" }, 409) });
 
-    await user.click(await screen.findByRole("button", { name: /Upgrade for/ }));
+    await user.click(await screen.findByRole("button", { name: /Upgrade to Pro/ }));
 
     expect(await screen.findByText("You already have a paid plan.")).toBeInTheDocument();
   });

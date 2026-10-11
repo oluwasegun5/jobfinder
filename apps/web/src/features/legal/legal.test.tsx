@@ -92,6 +92,14 @@ describe("legal templates", () => {
     expect(policy.container.textContent).toMatch(/GDPR/);
   });
 
+  it("states that the free trial is once per person and points to the pricing page", () => {
+    const { container } = render(<TermsOfService />);
+
+    expect(container.textContent).toContain("One free trial per person.");
+    expect(container.textContent).not.toMatch(/monthly amount/i);
+    expect(container.querySelector('a[href="/pricing"]')).not.toBeNull();
+  });
+
   it("links to every legal page from the footer navigation", () => {
     render(<LegalLinks />);
 

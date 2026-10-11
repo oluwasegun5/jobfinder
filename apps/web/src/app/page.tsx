@@ -35,6 +35,9 @@ export default function LandingPage() {
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
         <span className="text-lg font-semibold tracking-tight">JobFinder</span>
         <nav aria-label="Account" className="flex items-center gap-2">
+          <Link href="/pricing" className={buttonVariants({ variant: "ghost" })}>
+            Pricing
+          </Link>
           <Link href="/login" className={buttonVariants({ variant: "ghost" })}>
             Sign in
           </Link>
@@ -81,6 +84,9 @@ export default function LandingPage() {
       <footer className="border-t">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 py-6 text-sm text-muted-foreground sm:flex-row sm:justify-between sm:px-6">
           <p>© {new Date().getFullYear()} JobFinder</p>
+          <Link href="/pricing" className="underline-offset-4 hover:underline">
+            Pricing
+          </Link>
           <LegalLinks />
         </div>
       </footer>
