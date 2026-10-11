@@ -206,6 +206,16 @@ class Preflight(unittest.TestCase):
         ok["BILLING_PRICE_PACK_LARGE_USD_MINOR"] = "100"
         self.assertEqual(self.check(ok).returncode, 1, "the placeholder price 100 must be refused")
 
+    def test_starter_is_optional_but_a_half_pair_is_flagged(self):
+        # Blank Starter values are fine (Starter is simply not offered); half a pair is warned about; 100 is refused.
+        self.assertEqual(self.check(self.good()).returncode, 0)
+        half = self.check(self.good(BILLING_PRICE_STARTER_NGN_MINOR="450000"))
+        self.assertEqual(half.returncode, 0, half.stdout)
+        self.assertIn("PAYSTACK_PLAN_STARTER_NGN", half.stdout)
+        full = self.good(BILLING_PRICE_STARTER_NGN_MINOR="450000", PAYSTACK_PLAN_STARTER_NGN="PLN_" + "s" * 10)
+        self.assertNotIn("STARTER", self.check(full).stdout)
+        self.assertEqual(self.check(self.good(BILLING_PRICE_STARTER_USD_MINOR="100", STRIPE_PRICE_STARTER_USD="price_x")).returncode, 1)
+
     def test_offsite_backups_must_be_encrypted(self):
         s3 = dict(BACKUP_S3_URI="s3://bucket/b", BACKUP_S3_ENDPOINT="https://s3.invalid", BACKUP_S3_ACCESS_KEY="a" * 16, BACKUP_S3_SECRET_KEY="s" * 24)
         result = self.check(fixture_env(**s3))
