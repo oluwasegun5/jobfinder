@@ -353,6 +353,12 @@ Question generation, company brief (from job + company data), text mock intervie
 Plans + credits, Paystack + Stripe webhooks, rate limits, security review, load test, observability dashboards, backups, legal pages, production deploy, onboarding flow.
 **Done when:** a user can subscribe and credits apply; load test at target concurrency passes; restore from backup verified; privacy policy + terms live.
 
+### Phase G — Growth: acquisition and activation
+Source: first external feedback after launch. Replace the recurring free monthly grant with a staged one-time trial grant paid out as the user reaches activation milestones; gate it against duplicate accounts using normalized email and CV-derived identity (no phone verification); instrument the acquisition-to-activation funnel; add a tiered subscriptions page; redesign the frontend (clean and modern).
+Activation milestones, in order: email verified, CV parsed, profile and preferences complete, first matches viewed. Each milestone releases one configured part of the trial grant. Amounts, tier names and prices are config, not code.
+Identity gate: a duplicate identity still signs up and can pay, but receives no trial credits. Hashes are salted, deleted with the account, and disclosed in the privacy policy. A CV email is a signal, not proof of ownership; the verified account email or Google identity carries the weight.
+**Done when:** a duplicate identity cannot obtain a second trial grant; the funnel is visible per step; the pricing page shows the tiers from config; the redesigned screens pass the responsive and keyboard-accessibility rules in CLAUDE.md.
+
 ### Phase 7 — Post-launch
 Scraper worker for approved local sources, recruiter side, voice mock interviews, learn-to-rank from feedback, mobile apps, salary insights.
 
@@ -388,3 +394,4 @@ Scraper worker for approved local sources, recruiter side, voice mock interviews
 - [x] Phase 4
 - [x] Phase 5
 - [ ] Phase 6
+- [ ] Phase G
