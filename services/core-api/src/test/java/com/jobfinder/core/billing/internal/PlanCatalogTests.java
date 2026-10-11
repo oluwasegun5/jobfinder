@@ -43,6 +43,20 @@ class PlanCatalogTests {
     }
 
     @Test
+    void aPriceThatIsNotFullyConfiguredIsDroppedRatherThanOffered() {
+        // A plan price needs an amount and the provider's plan id; a pack price only an amount (it is ad hoc).
+        PlanConfig plan = new PlanConfig(null, Map.of("USD", new Price(Provider.STRIPE, 0, "price_x"),
+                "NGN", new Price(Provider.PAYSTACK, 450_000, " ")));
+        assertThat(plan.prices()).isEmpty();
+        PlanConfig ok = new PlanConfig(null, Map.of("USD", new Price(Provider.STRIPE, 500, "price_x")));
+        assertThat(ok.prices()).containsOnlyKeys("USD");
+
+        Pack pack = new Pack("p", "P", BigDecimal.TEN, Map.of("USD", new Price(Provider.STRIPE, 0, null),
+                "NGN", new Price(Provider.PAYSTACK, 800_000, null)));
+        assertThat(pack.prices()).containsOnlyKeys("NGN");
+    }
+
+    @Test
     void anItemIsOfferedOnlyForAConfiguredProviderThatHasAPriceForIt() {
         PlanCatalog catalog = new PlanCatalog(null, properties("sk", "whsec", ""));
         Pack pack = properties("", "", "").packs().get(0);

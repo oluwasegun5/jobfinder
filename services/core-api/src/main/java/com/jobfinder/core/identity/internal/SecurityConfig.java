@@ -65,6 +65,9 @@ class SecurityConfig {
     // without signing in. GET only describes what the link does; POST (RFC 8058 one-click) does it.
     private static final String UNSUBSCRIBE = "/notifications/unsubscribe/*";
 
+    // The plan and pack catalogue (docs/adr/0036, G3 addendum): no user data, rendered by the public pricing page.
+    private static final String PUBLIC_CATALOGUE = "/billing/plans";
+
     // The API docs and health are part of the local/CI contract flow. Gate the docs before production (ADR 0011).
     private static final String[] PUBLIC_OPERATIONAL = {
             "/actuator/health", "/actuator/health/**",
@@ -85,6 +88,7 @@ class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, PUBLIC_AUTH_POSTS).permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_OPERATIONAL).permitAll()
                         .requestMatchers(HttpMethod.GET, UNSUBSCRIBE).permitAll()
+                        .requestMatchers(HttpMethod.GET, PUBLIC_CATALOGUE).permitAll()
                         .requestMatchers(HttpMethod.POST, UNSUBSCRIBE).permitAll()
                         // Admin console API (PLAN.md section 9: admin endpoints are role-gated).
                         .requestMatchers("/admin/**").hasRole("ADMIN")

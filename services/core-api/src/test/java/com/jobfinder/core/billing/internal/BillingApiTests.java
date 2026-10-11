@@ -81,8 +81,7 @@ class BillingApiTests extends PaymentTestSupport {
     }
 
     @Test
-    void everyBillingEndpointRequiresSignIn() throws Exception {
-        mvc.perform(get("/billing/plans")).andExpect(status().isUnauthorized());
+    void everyBillingEndpointButTheCatalogueRequiresSignIn() throws Exception {
         mvc.perform(get("/billing/me")).andExpect(status().isUnauthorized());
         mvc.perform(get("/billing/ledger")).andExpect(status().isUnauthorized());
         mvc.perform(post("/billing/checkout").contentType(MediaType.APPLICATION_JSON).content("{}"))
@@ -103,6 +102,33 @@ class BillingApiTests extends PaymentTestSupport {
                         .value("NGN"))
                 .andExpect(jsonPath("$.packs[?(@.id=='pack_small')].credits").value(2000))
                 .andExpect(jsonPath("$.rolloverCapCredits").value(0));
+    }
+
+    @Test
+    void theCatalogueIsPublicForThePricingPage() throws Exception {
+        // No user data in it, so the public /pricing page reads the same response as the billing page.
+        mvc.perform(get("/billing/plans")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.plans[?(@.code=='free')]").isNotEmpty())
+                .andExpect(jsonPath("$.plans[?(@.code=='pro')].prices[?(@.provider=='STRIPE')].amountMinor")
+                        .value((int) com.jobfinder.core.PaymentFixtures.PRO_USD))
+                .andExpect(jsonPath("$.packs[?(@.id=='pack_large')]").isNotEmpty());
+    }
+
+    @Test
+    void aPaidPlanWithoutConfiguredPricesIsNotOfferedAnywhere() throws Exception {
+        // The test catalogue, like production before the owner sets them, has no Starter values: Starter exists in
+        // the plans table (V38) but is neither listed nor sold.
+        assertThat(plans.byCode("starter")).isPresent();
+        Account account = newAccount();
+
+        getAs(account, "/billing/plans").andExpect(status().isOk())
+                .andExpect(jsonPath("$.plans[?(@.code=='starter')]").isEmpty())
+                .andExpect(jsonPath("$.plans[?(@.code=='pro')]").isNotEmpty());
+        checkout(account, "{\"plan\":\"starter\",\"provider\":\"STRIPE\"}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("provider_not_offered"));
+        checkout(account, "{\"plan\":\"starter\",\"provider\":\"PAYSTACK\"}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("provider_not_offered"));
+        assertThat(subscriptionRow(account.id())).isNull();
     }
 
     @Test
