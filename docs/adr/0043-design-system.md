@@ -69,6 +69,7 @@ Primitives:
 | green | 50 `#EAF4F0`, 100 `#CFE6DD`, 300 `#9BE6CC`, 400 `#5CCFAE`, 600 `#13755F`, 700 `#0F5C4D`, 800 `#0B463B`, 900 `#062019` |
 | marigold | 100 `#FDF0D3`, 200 `#FBE7B5`, 400 `#F2B33D`, 600 `#94650A`, 700 `#8A5A06`, 900 `#3A2D0D` |
 | neutral (green-grey) | 0 `#FFFFFF`, 25 `#F6F8F7`, 50 `#EEF2F0`, 100 `#E1E7E4`, 150 `#D9E1DD`, 300 `#A3B1AB`, 400 `#8A9893`, 450 `#7F8D88`, 500 `#66756F`, 550 `#5E6D67`, 600 `#4D5B56`, 800 `#26332E`, 850 `#1A2622`, 900 `#131D1A`, 950 `#0D1513`, ink `#13231E`, mist `#E8EFEC` |
+| mint | 400 `#6FD59B` (dark-mode success) |
 | red | 100 `#FBE4E1`, 400 `#F07A6E`, 600 `#B02E24`, 950 `#1A0B09` |
 
 Semantic tokens (contrast ratios are WCAG 2.x, measured against the surface they sit on):
@@ -117,17 +118,20 @@ lets headings tighten into a confident, slightly condensed grotesque, so one fam
 
 Scale: major third (1.25) on a 16 px base, sentence case throughout.
 
-| Step | Size / line height | Use |
+| Tailwind class | Size / line height | Use |
 |---|---|---|
-| xs | 12 / 16 | legal links, captions |
-| sm | 14 / 20 | secondary text, labels |
-| base | 16 / 24 | body (inputs are 16 px on phones so Android does not zoom) |
-| lg | 20 / 28 | lead paragraphs, card titles |
-| xl | 25 / 32 | section headings, auth page titles |
-| 2xl | 31 / 36 | landing section titles |
-| display | clamp(2.25rem, 6vw + 1rem, 3.9rem) / 1.05 | landing hero only |
+| `text-xs` | 12 / 16 | legal links, captions |
+| `text-sm` | 14 / 20 | secondary text, labels |
+| `text-base` | 16 / 24 | body (inputs are 16 px on phones so Android does not zoom) |
+| `text-lead` | 20 / 28 | lead paragraphs, example job title |
+| `text-title` | 25 / 32 | auth page titles, section titles in the app |
+| `text-headline` | 31 / 36 | landing section titles, the score number |
+| `text-display` | clamp(2.25rem, 6vw + 1rem, 3.9rem) / 1.05 | landing hero only |
 
-Weights: 400 body, 500 labels and buttons, 650 headings, 750 display. Headings use tight tracking (−0.02em); body uses
+`xs`, `sm` and `base` are Tailwind's own sizes; the four larger steps are new theme tokens, so existing `text-lg`/`text-xl`
+usages in the app keep their size until Part 2 moves them onto the scale.
+
+Weights: 400 body, 500 labels and buttons, 600 headings, 750 display. Headings use tight tracking (−0.02em); body uses
 the default. Lines stay under about 70 characters (`max-w-prose` or narrower). Numbers in scores and prices use
 `tabular-nums`.
 
@@ -135,7 +139,8 @@ the default. Lines stay under about 70 characters (`max-w-prose` or narrower). N
 
 Tailwind's 4 px grid (`--spacing: 0.25rem`). Rhythm: 4/8/12 inside components, 16/24 between related blocks,
 48/64/96 between page sections. Page gutters are 16 px on phones, 24 px from `sm`. Content width 72 rem for marketing pages,
-28 rem for auth forms. Touch targets are at least 44 px tall for primary actions (buttons `lg`, inputs `h-11`).
+28 rem for auth forms. Touch targets are at least 44 px tall on phones for primary actions (buttons `lg`, inputs `h-11`;
+inputs drop to 40 px from `md`, where a pointer is likely).
 
 ### Radius
 
@@ -165,10 +170,10 @@ under `prefers-reduced-motion: reduce` (a global rule in `globals.css`).
 
 ### Component rules
 
-- **Buttons.** One primary button per view. Primary: solid `primary`. Secondary actions: `outline`. Tertiary and nav:
+- **Buttons.** One primary button per section (the header's "Sign up" is the only other one). Primary: solid `primary`. Secondary actions: `outline`. Tertiary and nav:
   `ghost` or `link`. Labels say what happens ("Create account", "Sign in"), no trailing arrows. Disabled uses 50 % opacity and
   keeps its label; pending states change the label ("Signing in…").
-- **Inputs.** 44 px tall (`h-11`) with a 3:1 `input` border on `card`. Label above, always visible; hints below in
+- **Inputs.** 44 px tall on phones (`h-11`, 40 px from `md`) with a 3:1 `input` border on a `card` fill. Label above, always visible; hints below in
   `muted-foreground`, linked with `aria-describedby`. Errors use `destructive` text plus `aria-invalid`, never colour alone.
 - **Cards.** Use for a real grouped object (a job, a form, an example match), not to chop prose into tiles. `card` surface,
   `border`, `rounded-2xl`, `shadow-sm` in light mode.
