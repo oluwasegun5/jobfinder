@@ -59,6 +59,8 @@ app:
       # No default on purpose: startup fails unless JWT_SECRET (>= 32 chars) is set.
       secret: ${JWT_SECRET:}
     web-base-url: ${WEB_BASE_URL:http://localhost:3000}
+    # Sender of the verification and password-reset emails: one address for all mail, see NOTIFICATIONS_MAIL_FROM.
+    mail-from: ${NOTIFICATIONS_MAIL_FROM:no-reply@jobfinder.local}
     google:
       # OAuth client ID of the web app. Blank disables POST /auth/google (503).
       client-id: ${GOOGLE_CLIENT_ID:}
@@ -134,7 +136,7 @@ app:
     # default) only logs the alert.
     alerts:
       recipients: ${INGESTION_ALERT_RECIPIENTS:}
-      from: no-reply@jobfinder.local
+      from: ${NOTIFICATIONS_MAIL_FROM:no-reply@jobfinder.local}
       web-base-url: ${WEB_BASE_URL:http://localhost:3000}
       error-rate-threshold: 0.2
       # A run of fewer targets than this only counts when every target failed.

@@ -61,6 +61,15 @@ need OBJECT_STORAGE_ENDPOINT
 need OBJECT_STORAGE_BUCKET
 need MAIL_HOST
 need MAIL_PORT
+# The sender of all mail (core-api falls back to no-reply@jobfinder.local, which no SMTP provider accepts).
+if ! $rehearsal; then
+  mail_from="$(val NOTIFICATIONS_MAIL_FROM)"
+  case "$mail_from" in
+    '') err "NOTIFICATIONS_MAIL_FROM is not set: use an address on the domain verified at the SMTP provider" ;;
+    *change-me*) err "NOTIFICATIONS_MAIL_FROM still has a placeholder value" ;;
+    *.local) err "NOTIFICATIONS_MAIL_FROM must not end in .local (got '$mail_from'): use an address on the domain verified at the SMTP provider" ;;
+  esac
+fi
 redis_pw="$(val REDIS_PASSWORD)"
 if [ "${#redis_pw}" -lt 32 ] || ! printf '%s' "$redis_pw" | grep -Eq '^[A-Za-z0-9]+$'; then
   err "REDIS_PASSWORD must be 32+ letters and digits only (it is embedded in a URL): openssl rand -hex 24"
