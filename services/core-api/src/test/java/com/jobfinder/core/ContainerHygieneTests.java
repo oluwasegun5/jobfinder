@@ -91,18 +91,29 @@ class ContainerHygieneTests {
     }
 
     @Test
-    void theProductionOverlayResetsEveryPublishedPortExceptWebAndDropsCapabilities() throws IOException {
+    void theProductionOverlayResetsEveryPublishedPortExceptTheEdgeProxyAndDropsCapabilities() throws IOException {
         String overlay = Files.readString(REPO.resolve("infra/docker-compose.prod.yml"));
 
-        for (String service : List.of("postgres", "redis", "rabbitmq", "core-api", "ai-service")) {
-            Matcher block = Pattern.compile("(?m)^  " + service + ":\\n((?:    .*\\n|\\n)*)").matcher(overlay);
-            assertThat(block.find()).as(service + " is in the overlay").isTrue();
-            assertThat(block.group(1)).as(service + " publishes no port").contains("ports: !reset []");
+        for (String service : List.of("postgres", "redis", "rabbitmq", "core-api", "ai-service", "web")) {
+            assertThat(serviceBlock(overlay, service)).as(service + " publishes no port").contains("ports: !reset []");
         }
         assertThat(overlay).contains("cap_drop: [\"ALL\"]").contains("no-new-privileges:true")
                 .contains("read_only: true").contains("SPRING_PROFILES_ACTIVE: prod");
-        Matcher web = Pattern.compile("(?m)^  web:\\n((?:    .*\\n|\\n)*)").matcher(overlay);
-        assertThat(web.find()).isTrue();
-        assertThat(web.group(1)).doesNotContain("ports: !reset");
+
+        // The Caddy edge proxy is the only service that publishes ports: 80, 443 (tcp) and 443 (udp, HTTP/3).
+        String caddy = serviceBlock(overlay, "caddy");
+        assertThat(caddy).doesNotContain("ports: !reset");
+        List<String> published = new ArrayList<>();
+        Matcher ports = Pattern.compile("(?m)^      - \"([^\"]*:\\d+(?:/udp)?)\"$").matcher(caddy);
+        while (ports.find()) {
+            published.add(ports.group(1).replaceAll("^.*:(\\d+(?:/udp)?)$", "$1"));
+        }
+        assertThat(published).containsExactlyInAnyOrder("80", "443", "443/udp");
+    }
+
+    private static String serviceBlock(String compose, String service) {
+        Matcher block = Pattern.compile("(?m)^  " + service + ":\\n((?:    .*\\n|\\n)*)").matcher(compose);
+        assertThat(block.find()).as(service + " is in the overlay").isTrue();
+        return block.group(1);
     }
 }
