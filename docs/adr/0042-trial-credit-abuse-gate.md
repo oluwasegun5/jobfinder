@@ -1,6 +1,6 @@
 # 0042 — Trial credits and the duplicate-account gate
 
-Status: Proposed
+Status: Accepted (2026-10-11). Legal basis for retention after deletion still to be confirmed by counsel before the score is enforced.
 Date: 2026-10-11
 Supersedes: the recurring Free monthly grant in ADR 0036
 Amends: ADR 0040 (one documented exception to "deletion erases everything")
