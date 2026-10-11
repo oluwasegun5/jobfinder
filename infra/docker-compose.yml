@@ -150,6 +150,11 @@ services:
       OBJECT_STORAGE_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY:?set OBJECT_STORAGE_ACCESS_KEY in .env (see .env.example)}
       OBJECT_STORAGE_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY:?set OBJECT_STORAGE_SECRET_KEY in .env (see .env.example)}
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env (see .env.example)}
+      # Peppers of the trial gate's keyed hashes (docs/adr/0042). Blank locally: a random one per start (the gate then
+      # forgets its claims on restart). The production overlay requires TRIAL_PEPPER_V1. V2 exists for rotation.
+      TRIAL_PEPPER_V1: ${TRIAL_PEPPER_V1:-}
+      TRIAL_PEPPER_V2: ${TRIAL_PEPPER_V2:-}
+      TRIAL_PEPPER_CURRENT_VERSION: ${TRIAL_PEPPER_CURRENT_VERSION:-1}
       WEB_BASE_URL: ${WEB_BASE_URL:-http://localhost:3000}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       # Job aggregator keys (docs/adr/0021-aggregator-adapters.md). Blank: that source is registered but skipped.

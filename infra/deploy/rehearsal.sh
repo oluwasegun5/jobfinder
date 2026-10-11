@@ -46,6 +46,7 @@ make_env() {
     echo "COMPOSE_PROJECT_NAME=$PROJECT"
     echo "POSTGRES_PASSWORD=$(rand)"; echo "RABBITMQ_PASSWORD=$(rand)"; echo "REDIS_PASSWORD=$(rand)"
     echo "JWT_SECRET=$(rand 32)"; echo "AI_SERVICE_TOKEN=$(rand 32)"; echo "NOTIFICATIONS_UNSUBSCRIBE_SECRET=$(rand 32)"
+    echo "TRIAL_PEPPER_V1=$(rand 32)"
     echo "OBJECT_STORAGE_ACCESS_KEY=$(rand 8)"; echo "OBJECT_STORAGE_SECRET_KEY=$(rand 16)"
     echo "OBJECT_STORAGE_BUCKET=jobfinder"
     echo "OBJECT_STORAGE_ENDPOINT=http://object-storage:9090"; echo "OBJECT_STORAGE_PATH_STYLE=true"; echo "OBJECT_STORAGE_REGION=us-east-1"
