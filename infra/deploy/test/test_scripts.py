@@ -160,6 +160,20 @@ class Preflight(unittest.TestCase):
             del env[key]
             self.assertEqual(self.check(env).returncode, 1, f"missing {key} accepted")
 
+    def test_the_mail_sender_must_be_a_real_address_in_production_only(self):
+        for bad in ("", "change-me", "no-reply@change-me-your-domain", "no-reply@jobfinder.local"):
+            env = self.good()
+            env["NOTIFICATIONS_MAIL_FROM"] = bad
+            result = self.check(env)
+            self.assertEqual(result.returncode, 1, f"sender {bad!r} accepted")
+            self.assertIn("NOTIFICATIONS_MAIL_FROM", result.stdout)
+        env = self.good()
+        del env["NOTIFICATIONS_MAIL_FROM"]
+        self.assertEqual(self.check(env).returncode, 1, "missing sender accepted")
+        env["NOTIFICATIONS_MAIL_FROM"] = "no-reply@jobfinder.local"
+        result = self.check(env, 0o600, "--rehearsal")
+        self.assertNotIn("NOTIFICATIONS_MAIL_FROM", result.stdout)
+
     def test_short_secrets_are_refused(self):
         self.assertEqual(self.check(self.good(JWT_SECRET="short")).returncode, 1)
         self.assertEqual(self.check(self.good(REDIS_PASSWORD="abc123")).returncode, 1)

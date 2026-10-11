@@ -33,6 +33,7 @@ def fixture_env(passphrase_file: str = "", **overrides: str) -> dict[str, str]:
         "OBJECT_STORAGE_SECRET_KEY": hexs(16),
         "MAIL_HOST": "smtp.jobfinder-test.invalid",
         "MAIL_PORT": "587",
+        "NOTIFICATIONS_MAIL_FROM": "no-reply@jobfinder-test.invalid",
         "LLM_PROVIDER": "anthropic",
         "ANTHROPIC_API_KEY": hexs(12),
         "EMBEDDING_PROVIDER": "voyage",
