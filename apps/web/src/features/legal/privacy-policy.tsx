@@ -79,6 +79,16 @@ export function PrivacyPolicy() {
               <td>To charge and to apply credits (contract); to keep our accounts (legal obligation, legitimate interest).</td>
             </tr>
             <tr>
+              <td>Trial-eligibility fingerprints</td>
+              <td>
+                Keyed one-way hashes (HMAC-SHA-256) of your account email, Google account identifier, uploaded CV file,
+                and any email address or phone number in your CV, so that each person receives free trial credits once,
+                including if an account is deleted and re-created. We cannot read the original values back from these
+                hashes.
+              </td>
+              <td>Our legitimate interest in preventing fraud and abuse.</td>
+            </tr>
+            <tr>
               <td>Technical</td>
               <td>
                 IP address and request counts, held for a short time to limit abuse; server logs and error reports
@@ -144,7 +154,8 @@ export function PrivacyPolicy() {
           <li>
             When you delete your account, everything about you is erased at once from our database, file storage and
             caches, in one step; if a step fails the deletion is refused and you can try again. The exceptions: records of AI
-            calls (feature, model, token counts, cost) stay without any link to you; your payment provider keeps the
+            calls (feature, model, token counts, cost) stay without any link to you; trial-eligibility fingerprints stay,
+            disconnected from you, for the period below; your payment provider keeps the
             records the law requires it to keep. Our database backups are kept for {RETENTION_DAYS.backups} days and then deleted, so
             data you deleted disappears from them at the latest {RETENTION_DAYS.backups} days later; a backup is only ever restored
             to recover from a failure, and nothing in it is used for any other purpose.
@@ -154,6 +165,11 @@ export function PrivacyPolicy() {
             email tokens: deleted {RETENTION_DAYS.expiredTokens} days after they expire.
           </li>
           <li>Log of emails sent: {RETENTION_DAYS.emailLog} days. Generated PDF and DOCX files (they can be made again): {RETENTION_DAYS.renderedFiles} days.</li>
+          <li>
+            Trial-eligibility fingerprints: 12 months after they were last used to check trial eligibility. When you
+            delete your account they are disconnected from it and everything else is erased, but they are kept until
+            that period ends so free trial credits cannot be claimed again.
+          </li>
           <li>Job postings collected from job boards: 30 days (they are not about you).</li>
           <li>Database backups: {RETENTION_DAYS.backups} days (encrypted before they leave our server).</li>
         </ul>

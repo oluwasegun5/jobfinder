@@ -35,6 +35,22 @@ the factual base of the privacy policy template (`apps/web/src/features/legal`).
 | `subscriptions`, `credit_ledger` | billing | plan, provider refs, credit history | `billing/*` | deleted (see ADR 0040 open point); remote subscription cancelled |
 | `ai_calls` | billing | feature, model, tokens, cost; no content | `billing/ai-calls.json` | kept with the user removed |
 | `webhook_events`, `remote_cancellations` | billing | provider ids only | n/a | n/a (no user column) |
+| `trial_accounts` | billing | trial state, milestones reached, risk score (shadow mode), trial start and expiry | `billing/trial.json` | deleted |
+| `trial_identity_claims` | billing | trial-eligibility fingerprints: keyed one-way hashes (HMAC-SHA-256, pepper outside the database) of the account email, Google account identifier, uploaded CV file, and any email or phone number in the CV; no raw value | `billing/trial-claims.json` (kinds and dates; not the hashes) | **kept, unlinked** (`user_id` set to NULL): the one exception to erasure (ADR 0042), purged by retention |
+| `disposable_domain_list`, `trial_seed` | billing | public domain names; a timestamp | n/a | n/a (no user column) |
+
+**Trial-eligibility fingerprints (ADR 0042).** Privacy policy, section 2, row: *Trial-eligibility fingerprints — keyed
+one-way hashes (HMAC-SHA-256) of your account email, Google account identifier, uploaded CV file, and any email address
+or phone number in your CV, so that each person receives free trial credits once, including if an account is deleted
+and re-created. Basis: our legitimate interest in preventing fraud and abuse. We cannot read the original values back
+from these hashes.* Section 7, bullet: *Trial-eligibility fingerprints: 12 months after they were last used to check
+trial eligibility. When you delete your account they are disconnected from it and everything else is erased, but they
+are kept until that period ends so free trial credits cannot be claimed again.* These are pseudonymised personal data
+(we hold the pepper). Lawful basis: legitimate interest in fraud prevention (GDPR Art 6(1)(f), Recital 47; NDPA
+s.25(1)(b)(v)), disclosed upfront. After deletion, a person who gives their email or phone can have the rows found by
+recomputing the digest (GDPR Art 11(2)). Erasure requests for these rows are refused case by case on overriding
+legitimate grounds (GDPR Art 17(1)(c) with Art 21(1); NDPA s.34(2), s.36(2)). **Nigerian and EU/UK counsel must confirm
+before launch.** Logs never contain a digest together with a user id, email or IP.
 
 ## Retention (enforced by `compliance` tasks; defaults, `app.retention.*`)
 
@@ -47,6 +63,7 @@ the factual base of the privacy policy template (`apps/web/src/features/legal`).
 | Webhook delivery ids | 180 days |
 | Email send log | 365 days |
 | Cached rendered files | 90 days |
+| Trial-eligibility fingerprints (`trial_identity_claims`) | 12 months after last used to check trial eligibility (`app.billing.trial.claim-retention`, task `trial-claims`); kept, unlinked, after account deletion until then |
 | Database backups | 30 days (`BACKUP_RETENTION_DAYS`, ADR 0041); a deleted account leaves them at the latest 30 days later |
 | Object storage (CV and rendered files) | no backups of their own; the bucket's versioning and lifecycle settings decide, see `docs/runbooks/backup-restore.md` |
 
