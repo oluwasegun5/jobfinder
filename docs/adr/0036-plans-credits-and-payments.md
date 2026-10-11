@@ -233,3 +233,47 @@ its prices is still the shipped placeholder (100 minor units, or a plan id conta
 **Possible future hardening.** The credit pre-check on AI calls is not atomic with the debit, so concurrent calls can
 overshoot by a bounded amount (documented behaviour); reserving credits under the user's ledger lock before the call is a
 possible future hardening.
+
+---
+
+## Addendum (Phase G3): Starter tier, unconfigured plans and the public pricing page
+
+Added for PROMPTS.md G3. Free becomes a one-time trial (ADR 0042, implemented separately); this addendum adds a middle
+tier and changes nothing else in this record.
+
+**Tiers.** Free (one-time trial, one per person), Starter (new, 2,500 credits a month) and Pro (6,000 a month). The two
+credit packs are unchanged. Starter is a `plans` row seeded by migration `V38__starter_plan.sql` (V36 and V37 are taken by
+G1's trial work; the gap is intended). Its prices are configuration like every other price:
+`BILLING_PRICE_STARTER_USD_MINOR`, `BILLING_PRICE_STARTER_NGN_MINOR`, `STRIPE_PRICE_STARTER_USD`,
+`PAYSTACK_PLAN_STARTER_NGN`.
+
+**An unconfigured price is absent, not a placeholder.** Unlike Pro, the shipped Starter values are blank, not the `100` /
+`PLACEHOLDER` stand-ins. A price whose amount is blank or 0, or a plan price without a provider plan id (Stripe price,
+Paystack plan code), is dropped when the configuration is bound, so it is not shown, cannot be checked out (400
+`provider_not_offered`), cannot match a webhook payment, and is not seen by `BillingPriceGuard`. A paid plan left with no
+price at all is not listed in the catalogue. Deploying Starter to a production that has provider keys but no Starter values
+therefore starts normally and simply does not offer Starter; the guard still refuses a price that is set to a placeholder.
+Recommended launch prices (owner's decision, set on the server): Starter ₦4,500 / $5 and Pro ₦10,000 / $12 a month.
+
+**Public catalogue.** `GET /billing/plans` no longer requires sign-in (it holds no user data: plan codes, names, credits
+and the prices of the providers that are switched on), so the public `/pricing` page and the in-app billing page render the
+same response. Neither page has a price or tier name in code.
+
+**Currency.** The app has no country or locale on the account, so the web picks a default from the browser: NGN when the
+time zone is `Africa/Lagos` or a preferred language is tagged `-NG`, otherwise USD. A toggle lists only the currencies the
+catalogue actually has prices in; each price carries its provider (NGN through Paystack, USD through Stripe).
+
+```mermaid
+flowchart TD
+    A[Plan in plans table, active] --> B{Paid plan with at least one<br/>configured price?}
+    B -- no, or Free --> C[Free: listed as the one-time trial<br/>Paid: not listed, checkout refused]
+    B -- yes --> D{Provider of that price<br/>has keys?}
+    D -- no --> E[Price hidden]
+    D -- yes --> F[Price listed in GET /billing/plans]
+    F --> G{Browser default currency}
+    G -- "Africa/Lagos or -NG language" --> H[NGN first]
+    G -- otherwise --> I[USD first]
+    H --> J[Paystack hosted checkout]
+    I --> K[Stripe hosted checkout]
+    H -. toggle .-> I
+```
