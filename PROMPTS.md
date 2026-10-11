@@ -173,3 +173,25 @@ Privacy policy/terms pages, AI-processing consent at signup, data export (JSON +
 ### P6.5 Production deployment
 Production compose/config for chosen host, managed Postgres (pgvector) + Redis + R2, Vercel for web, GitHub Actions deploy (staging on main, prod on tag), backups + restore runbook, load test (k6) at target concurrency.
 **Done when:** staging deploy from CI works; restore rehearsed; load test report committed.
+
+---
+
+## Phase G — Growth: acquisition and activation
+
+Run G1, G3 and G4 in parallel on separate branches; G2 starts after G1 merges, because G1 introduces the milestone events G2 instruments. Only one core-api test suite runs at a time on the dev machine. Per repo conventions: process flow diagram first, tests first. Design: docs/adr/0042-trial-credit-abuse-gate.md.
+
+### G1 Trial credits and duplicate-account gate
+Implement docs/adr/0042-trial-credit-abuse-gate.md sections 1, 2 (hard rules and score in shadow mode), 3, 5 and 6: V36 migration, `TRIAL_GRANT`/`TRIAL_EXPIRY` ledger reasons, `IdentityNormaliser` and `IdentityDigester` with peppers from env, `trial_identity_claims` unlinked (not deleted) on account deletion, seed claims for existing verified users, disposable-domain list job, `EmailVerified`/`ResumeParsed`/`OnboardingCompleted` events, `TrialGate` in billing, monthly free grant disabled by config, trial status on `/billing/status`, privacy policy and data inventory text from the ADR.
+**Done when:** tests cover delete-and-resignup, Gmail dot/plus/googlemail aliases, Google sub reuse, disposable domains, exact CV file reuse by one prior claimant (deny) and by 3+ claimants (score only), a CV containing another user's email (score only, never deny), concurrent claims for the same identity granting once, and deletion leaving claims with a null user_id and nothing else.
+
+### G2 Activation funnel
+Record milestone events (no PII in payloads) and expose an admin funnel view: signup, email verified, CV uploaded, CV parsed, preferences complete, first matches viewed, first tailored CV. Wire the grant from G1 to the milestone events through Spring application events. Show the user a credit progress indicator in the onboarding stepper.
+**Done when:** each step has a counter and conversion rate in the admin view and a test drives a user through every milestone.
+
+### G3 Pricing and subscriptions page
+Tiers: Free (one-time trial only, ADR 0042), Starter (2,500 credits a month, new) and Pro (6,000 a month, existing); the two credit packs stay. Add Starter by migration and config. Prices stay environment configuration: add `BILLING_PRICE_STARTER_*_MINOR`, `STRIPE_PRICE_STARTER_USD`, `PAYSTACK_PLAN_STARTER_NGN` to `env.production.example`, and make sure a plan whose prices are not configured is simply not offered, so deploying this cannot trip `BillingPriceGuard` and stop production. Build a public `/pricing` page and rework the in-app billing page, both rendered from the plans API: no hardcoded prices or tier names in the web app. NGN through Paystack is shown first for Nigerian users, USD through Stripe otherwise. State "one free trial per person" on the pricing page and in the terms. Leave trial-status display to a follow-up after G1 merges.
+**Done when:** the pages render every offered plan and pack from the API, checkout starts for both providers against mocks, an unconfigured plan is hidden, and the pages are responsive and keyboard accessible.
+
+### G4 Design system and frontend refresh
+Clean and modern. Part 1 (now, in parallel with G1 and G3): a short design brief in `docs/adr/0043-design-system.md` (palette with light and dark, type scale, spacing, radius, elevation, motion, component rules), implemented as Tailwind and shadcn/ui tokens in `globals.css` and the Tailwind config, a shared layout shell, and the landing page plus auth pages (signup, login, verify-email, forgot and reset password) restyled on it. Do not touch billing, pricing or onboarding pages: G3 and G2 own those. Part 2 (after G2 and G3 merge): onboarding, dashboard, feed, jobs, applications, billing and pricing restyled on the same tokens. No new runtime dependencies without an ADR; keep the generated API client.
+**Done when:** the tokens are the only source of colour, type and spacing in the restyled screens, lint and tests pass, and the PR has mobile and desktop screenshots in light and dark.
