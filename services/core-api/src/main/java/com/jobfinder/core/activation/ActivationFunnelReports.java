@@ -2,7 +2,7 @@ package com.jobfinder.core.activation;
 
 import java.time.LocalDate;
 
-/** Read side of the activation funnel for the admin view (docs/adr/0045-activation-funnel.md). */
+/** Read side of the activation funnel for the admin view (docs/adr/0046-activation-funnel.md). */
 public interface ActivationFunnelReports {
 
     /** The longest range a report may cover, in days. */

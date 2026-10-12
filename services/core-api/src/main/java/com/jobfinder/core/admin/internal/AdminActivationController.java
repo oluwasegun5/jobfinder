@@ -20,7 +20,7 @@ import com.jobfinder.core.billing.TrialOutcomeReports;
 import com.jobfinder.core.shared.ApiException;
 
 /**
- * The activation funnel (docs/adr/0045-activation-funnel.md): how many of the users who signed up in a range reached
+ * The activation funnel (docs/adr/0046-activation-funnel.md): how many of the users who signed up in a range reached
  * each step, and how the trial gate decided for them. Everything under {@code /admin} requires the ADMIN role (see the
  * security configuration). The figures are counts: no user is identified.
  */

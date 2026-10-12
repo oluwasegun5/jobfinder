@@ -1,4 +1,4 @@
-# 0045 — Activation funnel and trial progress
+# 0046 — Activation funnel and trial progress
 
 Status: Accepted (2026-10-12)
 Date: 2026-10-12

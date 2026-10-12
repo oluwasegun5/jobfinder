@@ -2,7 +2,7 @@ package com.jobfinder.core.billing;
 
 import java.time.Instant;
 
-/** Read side of the trial gate's decisions for the admin funnel (docs/adr/0045-activation-funnel.md). */
+/** Read side of the trial gate's decisions for the admin funnel (docs/adr/0046-activation-funnel.md). */
 public interface TrialOutcomeReports {
 
     /**

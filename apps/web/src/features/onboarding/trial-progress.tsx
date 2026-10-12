@@ -19,7 +19,7 @@ const MILESTONE_HINTS: Record<string, string> = {
 const credits = (n: number | undefined = 0) => `${n.toLocaleString("en")} ${n === 1 ? "credit" : "credits"}`;
 
 /**
- * The trial credit milestones (docs/adr/0042, 0045): which are unlocked, what each releases and the total, from the
+ * The trial credit milestones (docs/adr/0042, 0046): which are unlocked, what each releases and the total, from the
  * billing status. It says only what the API reports: a trial on hold shows what is unlocked and that the rest is being
  * confirmed, a denied trial is promised nothing and is never told why. Nothing is shown for an account from before the
  * trial, while loading, or when the status cannot be read.

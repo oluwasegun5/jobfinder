@@ -22,7 +22,7 @@ import com.jobfinder.core.jobs.JobViews;
 import com.jobfinder.core.jobs.JobsTestSupport;
 
 /**
- * The activation funnel for admins (docs/adr/0045-activation-funnel.md): ADMIN only, exact counts and conversion per
+ * The activation funnel for admins (docs/adr/0046-activation-funnel.md): ADMIN only, exact counts and conversion per
  * step and per signup week, trial outcome aggregates, and nothing that identifies a user. The seeded cohorts sit in
  * March 2020, far from anything the other tests create, so the figures are exact.
  */

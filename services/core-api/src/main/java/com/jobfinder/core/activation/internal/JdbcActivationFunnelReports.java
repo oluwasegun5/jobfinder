@@ -18,7 +18,7 @@ import com.jobfinder.core.activation.FunnelReport.WeekCohort;
 import com.jobfinder.core.activation.FunnelStep;
 
 /**
- * The funnel, derived from the tables that already record each step (docs/adr/0045-activation-funnel.md): one
+ * The funnel, derived from the tables that already record each step (docs/adr/0046-activation-funnel.md): one
  * read-only query, no table of its own. A user counts at a step only if they reached every step before it.
  */
 @Component
