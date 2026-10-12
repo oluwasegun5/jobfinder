@@ -30,7 +30,7 @@ export function SummaryView({ session }: { session: Session }) {
     <Card aria-label="Interview summary">
       <CardHeader>
         <CardTitle>
-          <h2 className="text-lg font-semibold">Your interview summary</h2>
+          <h2 className="text-lead font-semibold">Your interview summary</h2>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">

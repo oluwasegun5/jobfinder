@@ -35,7 +35,7 @@ export function Unsubscribe() {
   if (token === "" || (info.isError && info.error instanceof ApiProblem && problemCode(info.error.problem) === "invalid_unsubscribe_link")) {
     return (
       <div className="flex flex-col gap-3">
-        <h1 className="text-xl font-semibold tracking-tight">This link doesn&apos;t work</h1>
+        <h1 className="text-title font-semibold">This link doesn&apos;t work</h1>
         <p className="text-sm text-muted-foreground">
           It may be incomplete or too old. You can switch emails off yourself in your notification settings.
         </p>
@@ -65,7 +65,7 @@ export function Unsubscribe() {
   if (unsubscribe.isSuccess) {
     return (
       <div className="flex flex-col gap-3">
-        <h1 className="text-xl font-semibold tracking-tight">You&apos;re unsubscribed</h1>
+        <h1 className="text-title font-semibold">You&apos;re unsubscribed</h1>
         <p role="status" className="text-sm">
           You will no longer get {what(unsubscribe.data)}.
         </p>
@@ -81,7 +81,7 @@ export function Unsubscribe() {
   }
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold tracking-tight">Unsubscribe</h1>
+      <h1 className="text-title font-semibold">Unsubscribe</h1>
       <p className="text-sm">Stop {what(info.data)}?</p>
       <FormError>{unsubscribe.isError ? "That didn't work. Please try again." : undefined}</FormError>
       <Button className="self-start" disabled={unsubscribe.isPending} onClick={() => unsubscribe.mutate()}>

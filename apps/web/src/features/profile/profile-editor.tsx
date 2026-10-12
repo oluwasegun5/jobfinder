@@ -93,7 +93,7 @@ export function ProfileEditor({ resumeId, submitLabel, onSaved, pollMs = PARSE_P
 
   if (waiting) {
     return (
-      <div className="flex flex-col gap-3 rounded-xl border p-4">
+      <div className="flex flex-col gap-3 rounded-2xl border p-4">
         <Loading>Reading your CV… this usually takes less than a minute.</Loading>
         {slow && (
           <p className="text-sm">

@@ -32,7 +32,7 @@ function Points({ title, items, tone }: { title: string; items: { text?: string;
   if (!items || items.length === 0) return null;
   return (
     <section aria-label={title} className="flex flex-col gap-2">
-      <h4 className={cn("text-sm font-semibold", tone === "good" ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400")}>
+      <h4 className={cn("text-sm font-semibold", tone === "good" ? "text-success" : "text-warning")}>
         {title}
       </h4>
       <ul className="flex flex-col gap-3">
@@ -80,7 +80,7 @@ export function FeedbackCard({ feedback, position }: { feedback: Feedback; posit
                     key={key}
                     className={cn(
                       "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium",
-                      present ? "border-emerald-600/40 bg-emerald-500/10" : "border-border text-muted-foreground",
+                      present ? "border-success/40 bg-success/10" : "border-border text-muted-foreground",
                     )}
                   >
                     {present ? <Check className="size-3" aria-hidden /> : <X className="size-3" aria-hidden />}

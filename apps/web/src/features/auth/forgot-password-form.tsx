@@ -28,7 +28,7 @@ export function ForgotPasswordForm() {
   if (sent) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="text-xl font-semibold tracking-tight">Check your email</h1>
+        <h1 className="text-title font-semibold">Check your email</h1>
         <FormNotice>If an account exists for that address, a reset link is on its way.</FormNotice>
         <Link href="/login" className="text-sm underline underline-offset-4">
           Back to sign in
@@ -39,7 +39,7 @@ export function ForgotPasswordForm() {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold tracking-tight">Reset your password</h1>
+      <h1 className="text-title font-semibold">Reset your password</h1>
       <Field id="email" label="Email" type="email" autoComplete="email" required maxLength={254} />
       <FormError>{error}</FormError>
       <Button type="submit" size="lg" disabled={pending}>

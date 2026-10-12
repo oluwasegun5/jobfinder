@@ -6,7 +6,7 @@ import { PLACEHOLDERS, type PlaceholderKey } from "./placeholders";
 /** A value that must be filled in before launch, highlighted so nobody misses it. */
 export function Fill({ of }: { of: PlaceholderKey }) {
   return (
-    <mark className="rounded bg-yellow-200 px-1 text-foreground dark:bg-yellow-900" data-placeholder={of}>
+    <mark className="rounded bg-accent px-1 text-accent-foreground ring-1 ring-warning/50" data-placeholder={of}>
       {PLACEHOLDERS[of]}
     </mark>
   );
@@ -14,7 +14,7 @@ export function Fill({ of }: { of: PlaceholderKey }) {
 
 export function TemplateNotice() {
   return (
-    <div role="note" className="rounded-lg border border-yellow-500 bg-yellow-50 p-4 text-sm text-foreground dark:bg-yellow-950">
+    <div role="note" className="rounded-lg border border-warning/60 bg-accent p-4 text-sm text-accent-foreground">
       <p className="font-semibold">Template: not legal advice</p>
       <p className="mt-1">
         This page is a starting template. It describes what the software does, but it has not been reviewed by a
@@ -28,12 +28,12 @@ export function TemplateNotice() {
 export function LegalPage({ title, children }: { title: string; children: ReactNode }) {
   return (
     <article className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10 sm:px-6">
-      <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
+      <h1 className="text-headline font-semibold">{title}</h1>
       <TemplateNotice />
       <p className="text-sm text-muted-foreground">
         Effective: <Fill of="effectiveDate" />
       </p>
-      <div className="flex flex-col gap-6 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_li]:ml-5 [&_li]:list-disc [&_p]:leading-relaxed [&_section]:flex [&_section]:flex-col [&_section]:gap-3 [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:p-2 [&_th]:text-left [&_table]:w-full [&_table]:border-collapse [&_table]:text-sm">
+      <div className="flex flex-col gap-6 [&_h2]:text-lead [&_h2]:font-semibold [&_li]:ml-5 [&_li]:list-disc [&_p]:leading-relaxed [&_section]:flex [&_section]:flex-col [&_section]:gap-3 [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:p-2 [&_th]:text-left [&_table]:w-full [&_table]:border-collapse [&_table]:text-sm">
         {children}
       </div>
     </article>

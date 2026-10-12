@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { ProfileEditor } from "./profile-editor";
 import { useResumes } from "./queries";
+import { LoadingState } from "@/components/state";
 
 /** The profile page: edits the profile and the content of the primary CV (or the one named by ?resume=). */
 export function ProfileDetails() {
@@ -15,9 +16,7 @@ export function ProfileDetails() {
 
   if (resumes.isPending) {
     return (
-      <p role="status" className="text-sm text-muted-foreground">
-        Loading…
-      </p>
+      <LoadingState>Loading…</LoadingState>
     );
   }
   const list = resumes.data ?? [];

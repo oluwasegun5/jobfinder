@@ -16,6 +16,7 @@ import { PackProgress, StartForm } from "./pack-parts";
 import { usePackForJob } from "./queries";
 import { Section } from "./shared";
 import { CoverLetterEditor, RegenerateControls, ScreeningAnswers } from "./writing-parts";
+import { LoadingState } from "@/components/state";
 
 /**
  * Everything about tailoring for one job on one page: make the pack, see each part's progress, review the CV change by
@@ -29,7 +30,7 @@ export function TailorWorkspace({ jobId }: { jobId: string }) {
   const title = job.data?.title ?? "this job";
   const company = job.data?.company?.name;
 
-  if (pack.isPending || job.isPending) return <p role="status">Loading</p>;
+  if (pack.isPending || job.isPending) return <LoadingState>Loading</LoadingState>;
 
   if (job.isError || pack.isError) {
     const failure = toFailure(job.error ?? pack.error, "Could not load this page. Try again.");
@@ -66,7 +67,7 @@ export function TailorWorkspace({ jobId }: { jobId: string }) {
         <Link href={`/jobs/${jobId}`} className="inline-flex items-center gap-1 text-sm underline">
           <ArrowLeft className="size-4" aria-hidden /> Back to the job
         </Link>
-        <h1 className="text-2xl font-semibold tracking-tight">Tailor for {title}</h1>
+        <h1 className="text-title font-semibold">Tailor for {title}</h1>
         {company && <p className="text-muted-foreground">{company}</p>}
       </header>
 

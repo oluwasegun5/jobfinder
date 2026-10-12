@@ -69,7 +69,7 @@ export function SaveSearch({ filters }: { filters: JobFilters }) {
         </FormNotice>
       )}
       {open && (
-        <form id="save-search-form" aria-label="Save this search" className="flex flex-col gap-3 rounded-xl border p-4" onSubmit={onSubmit}>
+        <form id="save-search-form" aria-label="Save this search" className="flex flex-col gap-3 rounded-2xl border p-4" onSubmit={onSubmit}>
           <p className="text-sm text-muted-foreground">{summary}</p>
           {(filters.postedWithinDays || filters.companyId) && (
             <p className="text-xs text-muted-foreground">
