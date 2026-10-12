@@ -202,6 +202,8 @@ services:
       # Cloudflare R2 signs with the region "auto"; other S3-compatible stores use their own.
       OBJECT_STORAGE_REGION: ${OBJECT_STORAGE_REGION:-auto}
       NOTIFICATIONS_PUBLIC_API_URL: ${NOTIFICATIONS_PUBLIC_API_URL:-}
+      # The trial gate's pepper (ADR 0042): required, at least 32 random bytes; core-api refuses to start without it.
+      TRIAL_PEPPER_V1: ${TRIAL_PEPPER_V1:?set TRIAL_PEPPER_V1 (see infra/deploy/env.production.example)}
       # Billing (ADR 0036). The base compose file does not pass these on. A provider whose key is set while one of its
       # prices is still the placeholder makes core-api refuse to start (BillingPriceGuard): that is intended.
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}

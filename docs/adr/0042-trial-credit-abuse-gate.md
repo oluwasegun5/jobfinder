@@ -163,3 +163,104 @@ Disposable domains: `disposable-email-domains/disposable-email-domains` (CC0) as
 - Adds a deliberate retention exception that must be disclosed and reviewed.
 - Losing the pepper means losing the gate's memory; leaking it with a database dump is a reportable breach (GDPR Art 33, NDPA s.40).
 - Free users no longer get a monthly allowance. If a recurring free tier is wanted later, it becomes a tiny monthly grant keyed per claim identity, not per user id.
+
+## Implementation notes (G1)
+
+G1 builds sections 1, 2 (hard rules enforced, score in shadow mode), 3, 5 and 6, plus rollout steps 1 and 2. This section
+records how, and every place where the code differs from the text above.
+
+### The grant transaction
+
+`TrialGate` listens to the four milestone events after the publishing transaction commits, and handles each one in a new
+transaction of its own. A failure is logged and never undoes the email verification, CV parse or preferences save that
+triggered it.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant P as Publisher (identity / profile / jobs)
+    participant G as billing.TrialGate
+    participant DB as Postgres
+    P->>P: commit (email verified, CV parsed, preferences created, first feed view of a UTC day)
+    P-->>G: milestone event (digests only, AFTER_COMMIT)
+    G->>DB: BEGIN (REQUIRES_NEW)
+    G->>DB: user verified? row in trial_accounts? (insert at M1, then SELECT ... FOR UPDATE)
+    alt trial disabled, DENIED, LEGACY, expired, milestone already unlocked, M4 on M1's UTC day
+        G->>DB: COMMIT (nothing written)
+    else eligible
+        G->>G: collect the event's digests (every live key version), sort them
+        loop each digest
+            G->>DB: pg_advisory_xact_lock(hashtextextended('trial:' || hex(digest), 0))
+        end
+        G->>DB: SELECT trial_identity_claims WHERE digest = ANY(:digests) FOR UPDATE
+        G->>G: hard rules: account email or Google sub claimed by another or a deleted account,<br/>disposable domain, CV file of exactly one prior claimant
+        alt hard match
+            G->>DB: renew last_seen_at / expires_at of the matched claims
+            G->>DB: trial_accounts.state = DENIED
+        else no hard match
+            G->>G: risk score (soft signals) and hourly circuit breaker
+            Note over G: shadow mode (score-enforced=false): log the would-be outcome, grant anyway
+            G->>DB: upsert claims (current key version) ON CONFLICT DO UPDATE<br/>claimed_milestones = claimed_milestones | bit
+            G->>DB: trial_accounts: milestones | bit, score, state = GRANTED
+            G->>DB: CreditLedgerStore.append(TRIAL_GRANT, key trial:<userId>:<milestone>)
+        end
+        G->>DB: COMMIT (advisory locks released)
+    end
+```
+
+### Where the code differs from the text above, and why
+
+- **Where the events live.** `profile` and `matching` already depend on `billing`, and `feed` depends on `profile`, so
+  billing listening to `profile.ResumeParsed` would create a module cycle, which `ApplicationModules.verify()` rejects.
+  All four milestone events (`EmailVerified`, `ResumeParsed`, `OnboardingCompleted`, `FirstMatchesViewed`) therefore
+  live in the new `activation` module, next to `IdentityNormaliser` and `IdentityDigester`. `activation` depends on
+  no other module. identity, profile and jobs publish the events; billing (and later G2) listens.
+- **M4.** `jobs.JobViews` writes `VIEWED` for the jobs on the first page of the feed. It publishes
+  `FirstMatchesViewed(userId, viewedAt, firstEver)` for the user's first feed view of each UTC day, not only the first
+  view ever. Otherwise a user who viewed matches on the day of M1 could never unlock M4. `firstEver` marks the funnel
+  step for G2. The gate grants M4 once, and only on a later UTC day than M1.
+- **CV file claimants.** `UNIQUE (kind, digest, key_version)` allows one row per CV file, so the table also has
+  `claimant_count` (V36). It goes up each time another account presents that file, whether it is granted or denied.
+  Exactly one prior claimant is a HARD match. Two or more is a SOFT signal (`cv-file-shared`, +20): the text above
+  leaves two open, and the design prefers few false positives.
+- **Per-user trial state.** `trial_accounts` (V36, deleted with the account) holds the state (GRANTED, HOLD, DENIED,
+  or LEGACY for accounts that existed before G1), unlocked milestones, the shadow score, M1 time and the expiry. The
+  status API reports PENDING when there is no row. It reports no trial at all (`trial: null`) for LEGACY accounts.
+- **Status API.** The trial is on `GET /billing/me` (the existing account-status endpoint), as `trial`.
+- **AI consent is not a precondition for a grant.** Google accounts start without consent (ADR 0040), and nothing
+  replays a milestone when consent is given later. Credits cannot be spent without consent anyway (`AiUsageGate`), so
+  granting does not change cost.
+- **The first paid grant does not expire trial credits.** ADR 0036 keeps a first payment from expiring anything, and G1
+  does not change that. Unspent trial credits expire with the first renewal, or at the trial expiry if the user never
+  paid. The trial expiry (`TRIAL_EXPIRY`, key `trial-expiry:<userId>`) is skipped for a user with a `PLAN_GRANT` since
+  M1, because their plan and trial credits can no longer be told apart.
+- **Signals not built yet** (all of them soft, so this changes nothing while the score runs in shadow): domain velocity,
+  and IP/ASN velocity. These need the email domain and IP buckets counted in Redis. They are added with the
+  score-tuning step (rollout step 3), so `EmailVerified` carries no IP yet.
+- **Seed of existing users.** Flyway cannot see the peppers, so V36 records only the cutoff (`trial_seed`). A
+  ShedLock-guarded startup job (`TrialSeedJob`) writes claims with every milestone bit, plus a LEGACY `trial_accounts`
+  row, for each account verified before the cutoff. It is idempotent and resumable.
+- **HOLD.** HOLD exists only when `app.billing.trial.score-enforced=true`. It then grants the M1 tranche and withholds
+  the rest. The review queue and appeals (`/admin/trials`, section 4) are not part of G1.
+- **Two small additions.** First, a Google account linked after M1 (a second `EmailVerified` for the same user) is
+  claimed with the account's milestones, so it cannot start another trial later. Second, an account whose email has no
+  usable claim key (the normaliser cannot read it) gets no trial, because it would otherwise have no claim at all.
+
+### Configuration
+
+| Key (env) | Default | Meaning |
+|---|---|---|
+| `app.billing.trial.enabled` (`BILLING_TRIAL_ENABLED`) | true | listen to the milestones and grant |
+| `app.billing.trial.tranches.m1..m4` (`BILLING_TRIAL_M1..M4`) | 30 / 70 / 100 / 100 | credits per milestone |
+| `app.billing.trial.validity` (`BILLING_TRIAL_VALIDITY`) | 30d | after M1; then `TRIAL_EXPIRY` |
+| `app.billing.trial.daily-cap-credits` (`BILLING_TRIAL_DAILY_CAP_CREDITS`) | 150 | daily cap while the trial runs |
+| `app.billing.trial.hourly-ceiling` (`BILLING_TRIAL_HOURLY_CEILING`) | 200 | circuit breaker (grants per hour) |
+| `app.billing.trial.score-enforced` (`BILLING_TRIAL_SCORE_ENFORCED`) | false | shadow mode while false |
+| `app.billing.trial.score.*` | see section 2 | weights, `hold-at` 30, `deny-at` 60, `fast-onboarding-within` 2m |
+| `app.billing.trial.claim-retention` | 365d | claims kept after they were last seen |
+| `app.billing.trial.disposable.*` (`BILLING_TRIAL_DISPOSABLE_REFRESH`) | refresh off, weekly cron, `max-change` 0.2 | the domain list; `allow`, `deny` override it |
+| `app.billing.trial.seed.enabled` | true | seed existing accounts at startup |
+| `app.billing.jobs.free-grant-enabled` (`BILLING_FREE_GRANT_ENABLED`) | false | the old monthly Free grant (job and lazy grant) |
+| `app.billing.jobs.trial-expiry-cron` | `0 20 * * * *` | the trial expiry job |
+| `app.trial-identity.current-key-version` (`TRIAL_PEPPER_CURRENT_VERSION`) | 1 | pepper version for new claims |
+| `TRIAL_PEPPER_V<n>` (environment only) | none | peppers, at least 32 bytes; required under `prod` |

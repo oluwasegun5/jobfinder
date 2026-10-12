@@ -150,7 +150,8 @@ class Preflight(unittest.TestCase):
 
     def test_every_missing_or_placeholder_secret_is_refused(self):
         for key in ("POSTGRES_PASSWORD", "RABBITMQ_PASSWORD", "REDIS_PASSWORD", "JWT_SECRET", "AI_SERVICE_TOKEN",
-                    "NOTIFICATIONS_UNSUBSCRIBE_SECRET", "OBJECT_STORAGE_ACCESS_KEY", "OBJECT_STORAGE_SECRET_KEY", "MAIL_HOST"):
+                    "NOTIFICATIONS_UNSUBSCRIBE_SECRET", "TRIAL_PEPPER_V1", "OBJECT_STORAGE_ACCESS_KEY",
+                    "OBJECT_STORAGE_SECRET_KEY", "MAIL_HOST"):
             env = self.good()
             env[key] = "change-me-" + key.lower()
             result = self.check(env)

@@ -25,6 +25,7 @@ def fixture_env(passphrase_file: str = "", **overrides: str) -> dict[str, str]:
         "RABBITMQ_PASSWORD": hexs(16),
         "REDIS_PASSWORD": hexs(16),
         "JWT_SECRET": hexs(32),
+        "TRIAL_PEPPER_V1": hexs(32),
         "AI_SERVICE_TOKEN": hexs(32),
         "NOTIFICATIONS_UNSUBSCRIBE_SECRET": hexs(32),
         "OBJECT_STORAGE_ENDPOINT": "https://storage.jobfinder-test.invalid",

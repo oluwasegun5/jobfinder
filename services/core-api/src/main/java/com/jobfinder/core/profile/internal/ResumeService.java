@@ -19,6 +19,7 @@ import com.jobfinder.core.profile.internal.ResumeDtos.DownloadUrlResponse;
 import com.jobfinder.core.profile.internal.ResumeDtos.ResumeResponse;
 import com.jobfinder.core.billing.AiConsentRequiredException;
 import com.jobfinder.core.identity.AiConsent;
+import com.jobfinder.core.activation.IdentityNormaliser;
 import com.jobfinder.core.shared.ApiException;
 import com.jobfinder.core.storage.ObjectStorage;
 import com.jobfinder.core.storage.UploadScans;
@@ -99,8 +100,10 @@ class ResumeService {
         try {
             Resume saved = tx.execute(status -> {
                 boolean first = resumes.countByUserId(userId) == 0;
-                Resume resume = resumes.save(
-                        new Resume(id, userId, label(requestedLabel, originalFilename), key, format, content.length, first));
+                Resume created = new Resume(id, userId, label(requestedLabel, originalFilename), key, format,
+                        content.length, first);
+                created.recordContentSha256(IdentityNormaliser.fileSha256(content));
+                Resume resume = resumes.save(created);
                 versions.save(new ResumeVersion(id, 1, ResumeVersion.Source.UPLOAD));
                 // Parsing is queued after this transaction commits (ResumeParseDispatcher).
                 events.publishEvent(new ResumeUploaded(id, userId, 1));
