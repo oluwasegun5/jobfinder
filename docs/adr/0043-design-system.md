@@ -204,3 +204,26 @@ under `prefers-reduced-motion: reduce` (a global rule in `globals.css`).
 - Dark mode becomes reachable for the first time (it follows the OS). Screens already carry `dark:` variants; Part 2 checks
   each one.
 - No new runtime dependency. The font is fetched at build time, exactly as Geist was, and replaces both Geist families.
+
+## Part 2 addendum: the in-app screens (2026-10-12)
+
+Part 2 applies the tokens to the signed-in screens without changing behaviour, API calls or copy meaning.
+
+- **No palette classes.** Components use only semantic tokens. Status chips use `Badge` variants (`success`, `warning`,
+  `destructive`); notices use `border-warning/50 bg-warning/10`; the legal draft banner and placeholder marks use
+  `accent`; feedback headings use `text-success` / `text-warning`. The feed score badge takes its colour from
+  `scoreBand()`, and an estimate is never coloured as a verdict.
+- **Type scale.** In-app page titles are `text-title`, section titles `text-lead`, prices and the legal title
+  `text-headline`. `text-lg` and `text-xl` are no longer used outside the onboarding screens, which move with the activation
+  work.
+- **App shell.** The sidebar (md and up) and the phone header share the `Wordmark` and the global focus style. On phones the
+  menu is a drawer under a sticky 56 px header: 44 px rows, focus moves into it, Escape closes it and returns focus to the
+  button. Navigation is grouped (find, track, account) with dividers.
+- **Buttons.** `sm` is 40 px on phones and 32 px from `md`, so secondary actions stay easy to hit. The `outline` border is
+  mixed halfway toward the `input` border so it reads as a button on both themes. Credit packs and plan upgrades are solid
+  primary buttons, full width on phones.
+- **States.** `components/state.tsx` holds `LoadingState` (announced, with a spinner), `EmptyState` (title optional, body,
+  one action) and the inline link class. Errors keep using `FormError` and `FailureNotice`, each with a retry where trying
+  again can help.
+- **Contrast.** Every screen was audited in light and dark with a script that composites backgrounds and checks each text
+  node against 4.5:1 (3:1 for large text); no text fell below AA.
