@@ -15,7 +15,7 @@ export function CvStep() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Upload your CV</h1>
+        <h1 className="text-title font-semibold">Upload your CV</h1>
         <p className="text-sm text-muted-foreground">
           We&apos;ll read it to fill in your profile. You&apos;ll check everything before it is saved.
         </p>

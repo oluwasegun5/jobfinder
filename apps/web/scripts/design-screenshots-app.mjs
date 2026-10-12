@@ -80,6 +80,18 @@ const billingMe = {
   balance: 240,
   grantedThisPeriod: 300,
   usedThisPeriod: 60,
+  trial: {
+    state: "ACTIVE",
+    unlocked: 100,
+    remaining: 200,
+    milestones: ["EMAIL_VERIFIED", "CV_PARSED"],
+    tranches: [
+      { milestone: "EMAIL_VERIFIED", code: "M1", credits: 30, unlocked: true },
+      { milestone: "CV_PARSED", code: "M2", credits: 70, unlocked: true },
+      { milestone: "ONBOARDING_COMPLETED", code: "M3", credits: 100, unlocked: false },
+      { milestone: "MATCHES_VIEWED", code: "M4", credits: 100, unlocked: false },
+    ],
+  },
   allowance: { dailyCap: 500, used: 40, remaining: 460, resetsAt: "2026-10-13T00:00:00Z" },
 };
 const plans = {
@@ -94,9 +106,30 @@ const plans = {
   rolloverCapCredits: 0,
 };
 
+const activationStep = (step, count, fromPrevious, overall) => ({ step, count, fromPrevious, overall });
+const activation = {
+  from: "2026-09-13",
+  to: "2026-10-12",
+  steps: [
+    activationStep("SIGNUP", 200, undefined, 1),
+    activationStep("EMAIL_VERIFIED", 150, 0.75, 0.75),
+    activationStep("CV_UPLOADED", 90, 0.6, 0.45),
+    activationStep("CV_PARSED", 80, 0.8889, 0.4),
+    activationStep("ONBOARDING_COMPLETED", 60, 0.75, 0.3),
+    activationStep("FIRST_MATCHES_VIEWED", 30, 0.5, 0.15),
+    activationStep("FIRST_TAILORED_CV", 6, 0.2, 0.03),
+  ],
+  cohorts: [
+    { weekStart: "2026-09-07", counts: [120, 90, 50, 45, 30, 15, 3] },
+    { weekStart: "2026-09-14", counts: [80, 60, 40, 35, 30, 15, 3] },
+  ],
+  trial: { granted: 140, hold: 4, denied: 6 },
+};
+
 const routes = {
+  "GET /admin/activation": () => activation,
   "POST /auth/refresh": () => ({ accessToken: "stub", expiresIn: 900 }),
-  "GET /auth/me": () => ({ id: "u1", email: "ada@example.test", role: "USER", emailVerified: true, aiConsent: true }),
+  "GET /auth/me": () => ({ id: "u1", email: "ada@example.test", role: "ADMIN", emailVerified: true, aiConsent: true }),
   "GET /profile": () => ({ onboardingCompleted: true }),
   "GET /actuator/health": () => ({ status: "UP" }),
   "GET /feed": () => feed,
@@ -128,6 +161,8 @@ const pages = [
   { name: "applications", path: "/applications", wait: "Backend Engineer" },
   { name: "billing", path: "/billing", wait: "Add credits" },
   { name: "settings-notifications", path: "/settings/notifications", wait: "Notifications" },
+  { name: "onboarding", path: "/onboarding/cv", wait: "Upload your CV" },
+  { name: "admin-activation", path: "/admin/activation", wait: "Funnel" },
   { name: "interviews", path: "/interviews", wait: "Mock interviews" },
 ];
 const viewports = [

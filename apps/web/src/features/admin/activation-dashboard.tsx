@@ -68,7 +68,7 @@ export function ActivationDashboard() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold tracking-tight">Activation</h1>
+      <h1 className="text-title font-semibold">Activation</h1>
 
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex flex-col gap-1.5">
@@ -126,7 +126,7 @@ export function ActivationDashboard() {
       {report && signups > 0 && (
         <>
           <section aria-label="Funnel" className="flex flex-col gap-2">
-            <h2 className="text-lg font-semibold">Funnel</h2>
+            <h2 className="text-lead font-semibold">Funnel</h2>
             <div className="overflow-x-auto rounded-xl border" role="region" aria-label="Funnel table" tabIndex={0}>
               <table className="w-full min-w-[32rem] text-left text-sm">
                 <caption className="sr-only">Users per activation step with conversion</caption>
@@ -161,7 +161,7 @@ export function ActivationDashboard() {
           </section>
 
           <section aria-label="Trial outcomes" className="flex flex-col gap-2">
-            <h2 className="text-lg font-semibold">Trial outcomes</h2>
+            <h2 className="text-lead font-semibold">Trial outcomes</h2>
             <dl aria-label="Trial outcome counts" className="grid grid-cols-3 gap-3">
               {[
                 { name: "Granted", value: trial?.granted },
@@ -170,7 +170,7 @@ export function ActivationDashboard() {
               ].map(({ name, value }) => (
                 <div key={name} className="rounded-xl border p-3">
                   <dt className="text-xs text-muted-foreground">{name}</dt>
-                  <dd className="text-lg font-semibold tabular-nums">{formatCount(value)}</dd>
+                  <dd className="text-lead font-semibold tabular-nums">{formatCount(value)}</dd>
                 </div>
               ))}
             </dl>
@@ -178,7 +178,7 @@ export function ActivationDashboard() {
           </section>
 
           <section aria-label="Signup weeks" className="flex flex-col gap-2">
-            <h2 className="text-lg font-semibold">By signup week</h2>
+            <h2 className="text-lead font-semibold">By signup week</h2>
             <div className="overflow-x-auto rounded-xl border" role="region" aria-label="Signup weeks table" tabIndex={0}>
               <table className="w-full min-w-[44rem] text-left text-sm">
                 <caption className="sr-only">Users per activation step, by the week they signed up</caption>

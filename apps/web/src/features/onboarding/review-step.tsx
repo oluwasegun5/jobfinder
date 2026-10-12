@@ -17,7 +17,7 @@ export function ReviewStep() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Review your profile</h1>
+        <h1 className="text-title font-semibold">Review your profile</h1>
         <p className="text-sm text-muted-foreground">Correct anything that&apos;s wrong, then continue.</p>
       </div>
       {!requested && resumes.isPending ? (
