@@ -45,7 +45,7 @@ export function FlagList({ flags, compact = false }: { flags: Flag[]; compact?: 
             key={`${flag.code}-${flag.path}-${index}`}
             className={cn(
               "flex gap-2 rounded-lg border px-3 py-2 text-sm",
-              blocking ? "border-destructive/50 bg-destructive/10 text-destructive" : "border-amber-500/50 bg-amber-500/10",
+              blocking ? "border-destructive/50 bg-destructive/10 text-destructive" : "border-warning/50 bg-warning/10",
             )}
           >
             <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
@@ -81,7 +81,7 @@ export function FactCheckBanner({ draft }: { draft: Draft }) {
   }
   if (warnings > 0) {
     return (
-      <p role="status" className="flex items-center gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-sm font-medium">
+      <p role="status" className="flex items-center gap-2 rounded-lg border border-warning/50 bg-warning/10 px-3 py-2 text-sm font-medium">
         <AlertTriangle className="size-4 shrink-0" aria-hidden />
         {warnings} warning{warnings === 1 ? "" : "s"} to read before you approve. Nothing blocks approval, but you decide.
       </p>
@@ -194,7 +194,7 @@ export function CopyButton({ text, label, className }: { text: string; label: st
 export function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
     <section aria-labelledby={`${id}-heading`} className="flex scroll-mt-4 flex-col gap-3" id={id}>
-      <h2 id={`${id}-heading`} className="text-lg font-semibold">
+      <h2 id={`${id}-heading`} className="text-lead font-semibold">
         {title}
       </h2>
       {children}

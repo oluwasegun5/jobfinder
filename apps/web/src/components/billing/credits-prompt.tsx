@@ -11,7 +11,7 @@ import { buttonVariants } from "@/components/ui/button";
  */
 export function InsufficientCreditsPrompt({ message }: { message?: string }) {
   return (
-    <div role="alert" className="flex flex-col gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-sm">
+    <div role="alert" className="flex flex-col gap-2 rounded-lg border border-warning/50 bg-warning/10 px-3 py-2 text-sm">
       <p className="flex items-start gap-2">
         <Coins className="mt-0.5 size-4 shrink-0" aria-hidden />
         <span>{message ?? "You are out of AI credits. Nothing was lost: what is already made is kept."}</span>

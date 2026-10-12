@@ -209,7 +209,7 @@ function AnswersForm({ jobId, draft }: { jobId: string; draft: Draft }) {
         {answers.map((a) => {
           const open = a.status === "NEEDS_INPUT" && (values[a.id] ?? "").trim() === "";
           return (
-            <li key={a.id} className="flex flex-col gap-1.5 rounded-xl border p-3">
+            <li key={a.id} className="flex flex-col gap-1.5 rounded-2xl border p-3">
               <Label htmlFor={`answer-${a.id}`}>{a.question}</Label>
               <span className={open ? "text-xs font-medium text-destructive" : "text-xs text-muted-foreground"}>
                 {STATUS_LABELS[a.status] ?? a.status}

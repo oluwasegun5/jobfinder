@@ -33,7 +33,7 @@ export function VerifyEmail() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold tracking-tight">Verify your email</h1>
+      <h1 className="text-title font-semibold">Verify your email</h1>
       {result.state === "verifying" && <FormNotice>Verifying your email…</FormNotice>}
       {result.state === "done" && <FormNotice>Your email is verified. You can sign in now.</FormNotice>}
       {result.state === "failed" && <FormError>{result.message}</FormError>}

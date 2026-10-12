@@ -83,7 +83,7 @@ export function CheckboxField({
 /** A titled group of inputs; the legend gives screen readers (and tests) a name for the group. */
 export function Section({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
   return (
-    <fieldset className={cn("flex min-w-0 flex-col gap-4 rounded-xl border p-4", className)}>
+    <fieldset className={cn("flex min-w-0 flex-col gap-4 rounded-2xl border p-4", className)}>
       <legend className="px-1 text-base font-medium">{title}</legend>
       {children}
     </fieldset>

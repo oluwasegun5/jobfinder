@@ -11,7 +11,7 @@ export function PreferencesStep() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Set your preferences</h1>
+        <h1 className="text-title font-semibold">Set your preferences</h1>
         <p className="text-sm text-muted-foreground">
           Tell us what you&apos;re after. All of it is optional and you can change it any time from your profile.
         </p>

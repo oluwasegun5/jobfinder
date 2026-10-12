@@ -8,6 +8,7 @@ import { problemFieldErrors, problemMessage } from "@/features/auth/api-errors";
 import { FormError, FormNotice } from "@/features/auth/form-parts";
 import { CheckboxField, Field, Section, SelectField } from "@/features/profile/fields";
 import { ApiProblem } from "@/features/profile/queries";
+import { LoadingState } from "@/components/state";
 
 import {
   useNotificationPreferences,
@@ -70,9 +71,7 @@ export function NotificationSettings() {
 
   if (preferences.isPending) {
     return (
-      <p role="status" className="text-sm text-muted-foreground">
-        Loading your notification settings…
-      </p>
+      <LoadingState>Loading your notification settings…</LoadingState>
     );
   }
   if (preferences.isError) {

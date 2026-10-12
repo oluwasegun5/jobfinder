@@ -51,7 +51,7 @@ function ChangeCard({
   return (
     <li
       className={cn(
-        "flex flex-col gap-3 rounded-xl border p-3",
+        "flex flex-col gap-3 rounded-2xl border p-3",
         blocking && accepted && "border-destructive/60",
         !accepted && "bg-muted/40",
       )}

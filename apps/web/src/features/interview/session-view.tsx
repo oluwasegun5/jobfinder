@@ -30,6 +30,7 @@ import {
 } from "./model";
 import { useCompleteSession, useSession, useSubmitAnswer } from "./queries";
 import { SummaryView } from "./summary-view";
+import { LoadingState } from "@/components/state";
 
 const buttonLink =
   "inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground outline-none hover:bg-primary/80 focus-visible:ring-3 focus-visible:ring-ring/50";
@@ -122,7 +123,7 @@ function AnswerForm({ session }: { session: Session }) {
     <Card>
       <CardHeader>
         <CardTitle>
-          <h2 className="text-lg font-semibold">Your turn</h2>
+          <h2 className="text-lead font-semibold">Your turn</h2>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -233,7 +234,7 @@ export function InterviewSession({ id }: { id: string }) {
     previous.current = answered;
   }, [answered]);
 
-  if (query.isPending) return <p role="status">Loading your interview…</p>;
+  if (query.isPending) return <LoadingState>Loading your interview…</LoadingState>;
   if (query.isError || !session) {
     return (
       <div className="flex flex-col gap-3">
@@ -251,7 +252,7 @@ export function InterviewSession({ id }: { id: string }) {
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-2">
-        <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-semibold tracking-tight outline-none">
+        <h1 ref={headingRef} tabIndex={-1} className="text-title font-semibold outline-none">
           Mock interview: {session.jobTitle ?? "this job"}
         </h1>
         <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
@@ -280,7 +281,7 @@ export function InterviewSession({ id }: { id: string }) {
 
       {pairs.length > 0 && (
         <section aria-label="Your answers and feedback" className="flex flex-col gap-2">
-          <h2 className="text-lg font-semibold">Your answers and feedback</h2>
+          <h2 className="text-lead font-semibold">Your answers and feedback</h2>
           <ol className="flex flex-col gap-2">
             {pairs.map((pair, index) => (
               <PastExchange key={pair.question.position} exchange={pair} number={index + 1} open={index === pairs.length - 1} />

@@ -9,7 +9,7 @@ export default function Page() {
   return (
     <RequireOnboarding>
       <div className="mx-auto flex max-w-3xl flex-col gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Mock interviews</h1>
+        <h1 className="text-title font-semibold">Mock interviews</h1>
         <InterviewHistory />
       </div>
     </RequireOnboarding>

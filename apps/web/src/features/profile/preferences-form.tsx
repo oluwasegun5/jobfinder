@@ -8,6 +8,7 @@ import { FormError, FormNotice } from "@/features/auth/form-parts";
 
 import { CheckboxField, Field, Section, TextAreaField } from "./fields";
 import { ApiProblem, usePreferences, useSavePreferences, type Preferences, type PreferencesRequest } from "./queries";
+import { LoadingState } from "@/components/state";
 
 const WORK_MODES = [
   { value: "REMOTE", label: "Remote" },
@@ -66,9 +67,7 @@ export function PreferencesForm({ submitLabel, onSaved }: { submitLabel: string;
 
   if (preferences.isPending) {
     return (
-      <p role="status" className="text-sm text-muted-foreground">
-        Loading your preferences…
-      </p>
+      <LoadingState>Loading your preferences…</LoadingState>
     );
   }
   if (preferences.isError) {

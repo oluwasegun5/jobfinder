@@ -4,12 +4,13 @@ import { Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { problemMessage } from "@/features/auth/api-errors";
 import { FormError } from "@/features/auth/form-parts";
 import { ApiProblem } from "@/features/profile/queries";
 
 import { describeCriteria, FREQUENCIES, FREQUENCY_LABELS, searchHref } from "./criteria";
+import { EmptyState, LoadingState } from "@/components/state";
 import {
   completeSearches,
   useDeleteSavedSearch,
@@ -33,7 +34,7 @@ function Row({ search }: { search: SavedSearch }) {
     update.mutate({ id: search.id, body: { name: search.name, criteria: search.criteria, frequency } });
 
   return (
-    <li className="flex flex-col gap-3 rounded-xl border p-4">
+    <li className="flex flex-col gap-3 rounded-2xl border p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <h2 className="truncate text-base font-medium">{search.name}</h2>
@@ -88,9 +89,7 @@ export function SavedSearches() {
 
   if (searches.isPending) {
     return (
-      <p role="status" className="text-sm text-muted-foreground">
-        Loading your saved searches…
-      </p>
+      <LoadingState>Loading your saved searches…</LoadingState>
     );
   }
   if (searches.isError) {
@@ -106,15 +105,16 @@ export function SavedSearches() {
   const items = completeSearches(searches.data.items);
   if (items.length === 0) {
     return (
-      <div className="flex flex-col gap-2 text-sm">
-        <p className="font-medium">No saved searches</p>
-        <p className="text-muted-foreground">
-          Search for jobs, then choose &quot;Save this search&quot; to get an email when new jobs match.
-        </p>
-        <Link href="/jobs" className="underline">
-          Find jobs
-        </Link>
-      </div>
+      <EmptyState
+        title="No saved searches"
+        action={
+          <Link href="/jobs" className={buttonVariants()}>
+            Find jobs
+          </Link>
+        }
+      >
+        Search for jobs, then choose &quot;Save this search&quot; to get an email when new jobs match.
+      </EmptyState>
     );
   }
   return (

@@ -16,6 +16,7 @@ import { ApiProblem } from "@/features/profile/queries";
 import { clearSession } from "@/lib/auth/session";
 
 import { deleteAccount, fetchDataExport, saveBlob, useConsent, useSetAiConsent } from "./queries";
+import { LoadingState } from "@/components/state";
 
 export const DELETE_PHRASE = "DELETE";
 
@@ -66,9 +67,7 @@ function AiProcessingCard() {
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {consent.isPending && (
-          <p role="status" className="text-sm text-muted-foreground">
-            Loading…
-          </p>
+          <LoadingState>Loading…</LoadingState>
         )}
         {consent.isError && <FormError>We couldn&apos;t load your consent. Please reload the page.</FormError>}
         {consent.data && (

@@ -53,7 +53,7 @@ export function LoginForm() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold tracking-tight">Sign in</h1>
+      <h1 className="text-title font-semibold">Sign in</h1>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <Field id="email" label="Email" type="email" autoComplete="email" required maxLength={254} />
         <Field

@@ -13,7 +13,7 @@ export function isForbidden(error: unknown): boolean {
 export function NotAllowed() {
   return (
     <div role="alert" className="flex flex-col gap-2 rounded-lg border bg-muted/40 p-4">
-      <h1 className="text-lg font-semibold">Not allowed</h1>
+      <h1 className="text-lead font-semibold">Not allowed</h1>
       <p className="text-sm text-muted-foreground">This page is for administrators.</p>
       <p>
         <Link href="/dashboard" className="text-sm underline">

@@ -38,7 +38,7 @@ export function ResetPasswordForm() {
   if (!token) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="text-xl font-semibold tracking-tight">Choose a new password</h1>
+        <h1 className="text-title font-semibold">Choose a new password</h1>
         <FormError>This reset link is incomplete.</FormError>
         <Link href="/forgot-password" className="text-sm underline underline-offset-4">
           Request a new link
@@ -50,7 +50,7 @@ export function ResetPasswordForm() {
   if (done) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="text-xl font-semibold tracking-tight">Password changed</h1>
+        <h1 className="text-title font-semibold">Password changed</h1>
         <FormNotice>Your password has been changed. Sign in with the new one.</FormNotice>
         <Link href="/login" className="text-sm underline underline-offset-4">
           Go to sign in
@@ -61,7 +61,7 @@ export function ResetPasswordForm() {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold tracking-tight">Choose a new password</h1>
+      <h1 className="text-title font-semibold">Choose a new password</h1>
       <Field
         id="password"
         label="New password"

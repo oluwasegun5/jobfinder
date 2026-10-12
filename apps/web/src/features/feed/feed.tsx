@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { EmptyState as EmptyPanel, inlineLinkClass } from "@/components/state";
 import { Button } from "@/components/ui/button";
 import { problemMessage } from "@/features/auth/api-errors";
 import { FormError } from "@/features/auth/form-parts";
@@ -11,7 +12,7 @@ import { ApiProblem } from "@/features/profile/queries";
 import { FeedCard } from "./feed-card";
 import { useFeed, type EmptyReason } from "./queries";
 
-const linkClass = "underline underline-offset-4";
+const linkClass = inlineLinkClass;
 
 function EmptyState({ reason, onRetry }: { reason: EmptyReason | undefined; onRetry: () => void }) {
   let title: string;
@@ -54,10 +55,7 @@ function EmptyState({ reason, onRetry }: { reason: EmptyReason | undefined; onRe
       );
   }
   return (
-    <div className="flex flex-col gap-1 rounded-xl border p-6">
-      <h2 className="text-base font-medium">{title}</h2>
-      <p className="text-sm text-muted-foreground">{body}</p>
-    </div>
+    <EmptyPanel title={title}>{body}</EmptyPanel>
   );
 }
 

@@ -12,6 +12,7 @@ import { safeHref } from "@/features/jobs/format";
 import { formatWhen, toFailure, type Failure } from "@/features/tailoring/errors";
 import { LENGTH_LABELS, TONE_LABELS, type Length, type Tone } from "@/features/tailoring/model";
 import { CopyButton, FailureNotice, Section } from "@/features/tailoring/shared";
+import { LoadingState } from "@/components/state";
 
 import {
   CANCEL_REASON_LABELS,
@@ -291,7 +292,7 @@ function Detail({ app }: { app: ApplicationDetail }) {
         <Link href="/applications" className="inline-flex items-center gap-1 text-sm underline">
           <ArrowLeft className="size-4" aria-hidden /> Back to the board
         </Link>
-        <h1 className="text-2xl font-semibold tracking-tight">{app.title}</h1>
+        <h1 className="text-title font-semibold">{app.title}</h1>
         {app.company && <p className="text-muted-foreground">{app.company}</p>}
         <div className="flex flex-wrap items-center gap-3 text-sm">
           {href && (
@@ -345,7 +346,7 @@ function Detail({ app }: { app: ApplicationDetail }) {
 
 export function ApplicationDetailView({ id }: { id: string }) {
   const application = useApplication(id);
-  if (application.isPending) return <p role="status">Loading application</p>;
+  if (application.isPending) return <LoadingState>Loading application</LoadingState>;
   if (application.isError) {
     const failure = toFailure(application.error, "Could not load this application. Try again.");
     return (

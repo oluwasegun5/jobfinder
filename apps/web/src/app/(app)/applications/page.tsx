@@ -9,7 +9,7 @@ export default function Page() {
   return (
     <RequireOnboarding>
       <div className="mx-auto flex max-w-[110rem] flex-col gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Applications</h1>
+        <h1 className="text-title font-semibold">Applications</h1>
         <Board />
       </div>
     </RequireOnboarding>

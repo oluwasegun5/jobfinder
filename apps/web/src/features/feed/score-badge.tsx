@@ -1,13 +1,20 @@
 import { Badge } from "@/components/ui/badge";
+import { normalizeScore, scoreBand, type ScoreBand } from "@/lib/score-scale";
 import { cn } from "@/lib/utils";
 
 import type { FeedItem } from "./queries";
 
+const bandText: Record<ScoreBand, string> = {
+  low: "text-score-low",
+  fair: "text-score-fair",
+  strong: "text-score-strong",
+  top: "text-score-top",
+};
+
+/** An estimate is never coloured as a verdict: only a score the model gave takes its band colour. */
 function tone(score: number, aiScored: boolean): string {
-  if (!aiScored) return "border-border text-muted-foreground";
-  if (score >= 75) return "border-emerald-600/50 text-emerald-700 dark:text-emerald-400";
-  if (score >= 50) return "border-amber-600/50 text-amber-700 dark:text-amber-400";
-  return "border-border text-muted-foreground";
+  if (!aiScored) return "text-muted-foreground";
+  return bandText[scoreBand(score)];
 }
 
 /**
@@ -17,10 +24,10 @@ function tone(score: number, aiScored: boolean): string {
  */
 export function ScoreBadge({ item }: { item: Pick<FeedItem, "matchScore" | "scoreSource"> }) {
   const aiScored = item.scoreSource === "LLM_SCORED";
-  const score = item.matchScore ?? 0;
+  const score = normalizeScore(item.matchScore ?? 0);
   return (
     <div className="flex items-center gap-2">
-      <span className={cn("inline-flex items-baseline gap-0.5 rounded-lg border px-2 py-1 text-base font-semibold tabular-nums", tone(score, aiScored))}>
+      <span className={cn("inline-flex items-baseline gap-0.5 rounded-lg border bg-card px-2 py-1 text-base font-semibold tabular-nums", tone(score, aiScored))}>
         <span className="sr-only">{aiScored ? "Match score " : "Estimated match score "}</span>
         {aiScored ? "" : "~"}
         {score}

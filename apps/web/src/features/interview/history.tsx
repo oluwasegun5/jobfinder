@@ -4,20 +4,20 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { FailureNotice } from "@/features/tailoring/shared";
 
 import { interviewFailure } from "./errors";
 import { formatCredits, formatScore, formatWhen, statusLabel } from "./model";
 import { useSessionList } from "./queries";
+import { EmptyState, LoadingState } from "@/components/state";
 
 /** The user's interviews, newest first. */
 export function InterviewHistory() {
   const [page, setPage] = useState(0);
   const list = useSessionList(page);
 
-  if (list.isPending) return <p role="status">Loading your interviews…</p>;
+  if (list.isPending) return <LoadingState>Loading your interviews…</LoadingState>;
   if (list.isError || !list.data) {
     return <FailureNotice failure={interviewFailure(list.error)} onRetry={() => void list.refetch()} retrying={list.isFetching} />;
   }
@@ -26,19 +26,15 @@ export function InterviewHistory() {
   const totalPages = list.data.totalPages ?? 1;
   if (items.length === 0 && page === 0) {
     return (
-      <Card>
-        <CardContent className="flex flex-col gap-3 pt-4">
-          <p className="text-sm">You have not practised an interview yet. Pick a job and start one from its page.</p>
-          <div>
-            <Link
-              href="/jobs"
-              className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground outline-none hover:bg-primary/80 focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              Find a job
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+      <EmptyState
+        action={
+          <Link href="/jobs" className={buttonVariants()}>
+            Find a job
+          </Link>
+        }
+      >
+        You have not practised an interview yet. Pick a job and start one from its page.
+      </EmptyState>
     );
   }
 
@@ -49,7 +45,7 @@ export function InterviewHistory() {
           <li key={row.id}>
             <Link
               href={`/interviews/${row.id}`}
-              className="flex flex-col gap-1 rounded-lg border px-3 py-3 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="flex flex-col gap-1 rounded-2xl border bg-card px-4 py-3 transition-colors duration-120 ease-standard hover:bg-muted"
             >
               <span className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">{row.jobTitle ?? "Interview"}</span>

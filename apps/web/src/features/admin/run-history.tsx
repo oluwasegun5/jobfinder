@@ -53,7 +53,7 @@ export function RunHistory() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Run history</h1>
+        <h1 className="text-title font-semibold">Run history</h1>
         <Link href="/admin/ingestion" className="rounded-md text-sm underline outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
           Job sources
         </Link>
@@ -94,7 +94,7 @@ export function RunHistory() {
 
       {items.length > 0 && (
         <div
-          className="overflow-x-auto rounded-xl border"
+          className="overflow-x-auto rounded-2xl border"
           role="region"
           aria-label="Run history table"
           tabIndex={0}

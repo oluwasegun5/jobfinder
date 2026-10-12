@@ -45,7 +45,7 @@ export function SignupForm() {
   if (sentTo) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="text-xl font-semibold tracking-tight">Check your email</h1>
+        <h1 className="text-title font-semibold">Check your email</h1>
         <FormNotice>
           We sent a verification link to <strong>{sentTo}</strong>. Open it to activate your account, then
           sign in.
@@ -59,7 +59,7 @@ export function SignupForm() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold tracking-tight">Create your account</h1>
+      <h1 className="text-title font-semibold">Create your account</h1>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <Field id="email" label="Email" type="email" autoComplete="email" required maxLength={254} />
         <Field

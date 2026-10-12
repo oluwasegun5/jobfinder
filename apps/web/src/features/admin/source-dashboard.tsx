@@ -15,6 +15,7 @@ import { HealthBadge, RunStatusBadge } from "./badges";
 import { ALERT_LABELS, formatAgo, formatDateTime, formatDuration, formatUntil, SCHEDULE_LABELS } from "./format";
 import { NotAllowed, isForbidden } from "./require-admin";
 import { useAdminSources, useSetSourceEnabled, useStartRun, type AdminSource } from "./queries";
+import { LoadingState } from "@/components/state";
 
 type Notice = { kind: "info" | "error"; text: string };
 
@@ -70,7 +71,7 @@ function SourceCard({ source, onNotice }: { source: AdminSource; onNotice: (noti
   }
 
   return (
-    <li className="flex flex-col gap-3 rounded-xl border bg-card p-4 text-card-foreground" aria-label={code}>
+    <li className="flex flex-col gap-3 rounded-2xl border bg-card p-4 text-card-foreground" aria-label={code}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-2">
           <h2 className="text-base font-semibold tracking-tight">
@@ -211,7 +212,7 @@ export function SourceDashboard() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Job sources</h1>
+        <h1 className="text-title font-semibold">Job sources</h1>
         <Link href="/admin/ingestion/runs" className="rounded-md text-sm underline outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
           Run history
         </Link>
@@ -223,9 +224,7 @@ export function SourceDashboard() {
       {notice?.kind === "error" && <FormError>{notice.text}</FormError>}
 
       {sources.isPending && (
-        <p role="status" className="text-sm text-muted-foreground">
-          Loading sources
-        </p>
+        <LoadingState>Loading sources</LoadingState>
       )}
       {sources.isError && (
         <>

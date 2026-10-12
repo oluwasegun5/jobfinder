@@ -19,9 +19,9 @@ export function Stepper({ current }: { current: 0 | 1 | 2 }) {
             <span
               aria-hidden
               className={cn(
-                "flex size-6 items-center justify-center rounded-full border text-xs",
+                "flex size-7 items-center justify-center rounded-full border text-xs font-medium",
                 index < current && "bg-primary text-primary-foreground",
-                index === current && "border-primary",
+                index === current && "border-primary bg-primary/10 text-primary",
               )}
             >
               {index + 1}

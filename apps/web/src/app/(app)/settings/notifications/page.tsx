@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Notifications" };
 export default function Page() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Notifications</h1>
+      <h1 className="text-title font-semibold">Notifications</h1>
       <NotificationSettings />
     </div>
   );

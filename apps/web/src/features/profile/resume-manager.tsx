@@ -26,6 +26,7 @@ import {
   type Resume,
 } from "./queries";
 import { UploadCv } from "./upload-cv";
+import { EmptyState, LoadingState } from "@/components/state";
 
 function formatSize(bytes = 0) {
   return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -160,13 +161,11 @@ export function ResumeManager() {
     <div className="flex flex-col gap-6">
       <FormError>{error}</FormError>
       {resumes.isPending && (
-        <p role="status" className="text-sm text-muted-foreground">
-          Loading your CVs…
-        </p>
+        <LoadingState>Loading your CVs…</LoadingState>
       )}
       {resumes.isError && <FormError>We couldn&apos;t load your CVs.</FormError>}
       {resumes.data && resumes.data.length === 0 && (
-        <p className="text-sm text-muted-foreground">You haven&apos;t uploaded a CV yet.</p>
+        <EmptyState>You haven&apos;t uploaded a CV yet.</EmptyState>
       )}
       {resumes.data && resumes.data.length > 0 && (
         <ul aria-label="Your CVs" className="flex flex-col gap-3">

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, type FormEvent } from "react";
 
+import { EmptyState } from "@/components/state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -78,7 +79,7 @@ function FilterPanel({ filters, onApply }: { filters: JobFilters; onApply: (next
   return (
     <form
       aria-label="Filters"
-      className="grid gap-4 rounded-xl border p-4 sm:grid-cols-2 lg:grid-cols-3"
+      className="grid gap-4 rounded-2xl border p-4 sm:grid-cols-2 lg:grid-cols-3"
       onSubmit={(e) => {
         e.preventDefault();
         onApply({ ...draft, minSalary: draft.minSalary.replace(/\D/g, "") });
@@ -179,7 +180,7 @@ export function JobSearch() {
   return (
     <div className="flex flex-col gap-4">
       {filters.similarTo ? (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-muted/40 p-3 text-sm">
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border bg-muted/40 p-3 text-sm">
           <Sparkles className="size-4" aria-hidden />
           <span>Showing jobs similar to one you were looking at.</span>
           <Link href={`/jobs/${filters.similarTo}`} className="underline">
@@ -204,7 +205,7 @@ export function JobSearch() {
               onChange={(e) => setKeyword(e.target.value)}
             />
           </div>
-          <Button type="submit">
+          <Button type="submit" className="h-11 md:h-10">
             <Search /> Search
           </Button>
         </form>
@@ -246,7 +247,7 @@ export function JobSearch() {
         </ul>
       )}
       {!search.isPending && !search.isError && jobs.length === 0 && (
-        <p className="text-sm text-muted-foreground">Nothing matched. Try fewer filters or different keywords.</p>
+        <EmptyState>Nothing matched. Try fewer filters or different keywords.</EmptyState>
       )}
 
       {search.hasNextPage && (

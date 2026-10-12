@@ -14,6 +14,7 @@ import { FailureNotice } from "@/features/tailoring/shared";
 import { interviewFailure } from "./errors";
 import { DEFAULT_TURNS, TURN_CHOICES } from "./model";
 import { usePrep, useStartSession, type StartOutcome } from "./queries";
+import { LoadingState } from "@/components/state";
 
 const selectClass =
   "h-9 w-full max-w-48 rounded-lg border border-input bg-background px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
@@ -47,7 +48,7 @@ export function StartInterview({ jobId, prepId }: { jobId: string; prepId?: stri
     send();
   }
 
-  if (job.isPending) return <p role="status">Loading the job…</p>;
+  if (job.isPending) return <LoadingState>Loading the job…</LoadingState>;
   if (job.isError || !job.data) {
     return (
       <div className="flex flex-col gap-3">
@@ -65,11 +66,11 @@ export function StartInterview({ jobId, prepId }: { jobId: string; prepId?: stri
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold tracking-tight">Practise the interview for {title}</h1>
+      <h1 className="text-title font-semibold">Practise the interview for {title}</h1>
       <Card>
         <CardHeader>
           <CardTitle>
-            <h2 className="text-lg font-semibold">Text mock interview</h2>
+            <h2 className="text-lead font-semibold">Text mock interview</h2>
           </CardTitle>
         </CardHeader>
         <CardContent>
