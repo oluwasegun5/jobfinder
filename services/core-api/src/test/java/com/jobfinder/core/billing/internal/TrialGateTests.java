@@ -94,6 +94,32 @@ class TrialGateTests extends TrialTestSupport {
     }
 
     @Test
+    void aGoogleAccountLinkedAfterTheTrialStartedIsClaimedToo() {
+        DigestSet sub = digester.googleSubject("google-sub-" + UUID.randomUUID());
+        UUID first = bareVerifiedUser();
+        String email1 = newEmail();
+        m1(first, email1, Instant.now());
+        // Later the same account links Google: identity publishes M1 again, now with the Google subject.
+        events.publishEvent(new EmailVerified(first, emailDigest(email1), "example.test", sub, Instant.now()));
+        assertThat(trialGranted(first)).isEqualByComparingTo(M1);
+
+        UUID second = bareVerifiedUser();
+        events.publishEvent(new EmailVerified(second, emailDigest(newEmail()), "example.test", sub, Instant.now()));
+
+        assertThat(trialState(second)).isEqualTo("DENIED");
+    }
+
+    @Test
+    void anAccountWithoutAUsableClaimKeyGetsNoTrial() {
+        UUID id = bareVerifiedUser();
+
+        events.publishEvent(new EmailVerified(id, null, null, null, Instant.now()));
+
+        assertThat(trialState(id)).isEqualTo("DENIED");
+        assertThat(trialGranted(id)).isZero();
+    }
+
+    @Test
     void aDisposableDomainGetsNoTrialButTheAccountWorks() throws Exception {
         String email = "user-" + UUID.randomUUID() + "@mailinator.com";
         UUID id = signUpAndVerify(email);

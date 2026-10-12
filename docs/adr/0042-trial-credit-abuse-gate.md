@@ -220,8 +220,9 @@ sequenceDiagram
   view ever. Otherwise a user who viewed matches on the day of M1 could never unlock M4. `firstEver` marks the funnel
   step for G2. The gate grants M4 once, and only on a later UTC day than M1.
 - **CV file claimants.** `UNIQUE (kind, digest, key_version)` allows one row per CV file, so the table also has
-  `claimant_count` (V36). It goes up when another user is granted a milestone with that file. One prior claimant is a
-  HARD match. Two or more is a SOFT signal (`cv-file-shared`). A user denied on a file does not raise the count.
+  `claimant_count` (V36). It goes up each time another account presents that file, whether it is granted or denied.
+  Exactly one prior claimant is a HARD match. Two or more is a SOFT signal (`cv-file-shared`, +20): the text above
+  leaves two open, and the design prefers few false positives.
 - **Per-user trial state.** `trial_accounts` (V36, deleted with the account) holds the state (GRANTED, HOLD, DENIED,
   or LEGACY for accounts that existed before G1), unlocked milestones, the shadow score, M1 time and the expiry. The
   status API reports PENDING when there is no row. It reports no trial at all (`trial: null`) for LEGACY accounts.
@@ -241,3 +242,25 @@ sequenceDiagram
   row, for each account verified before the cutoff. It is idempotent and resumable.
 - **HOLD.** HOLD exists only when `app.billing.trial.score-enforced=true`. It then grants the M1 tranche and withholds
   the rest. The review queue and appeals (`/admin/trials`, section 4) are not part of G1.
+- **Two small additions.** First, a Google account linked after M1 (a second `EmailVerified` for the same user) is
+  claimed with the account's milestones, so it cannot start another trial later. Second, an account whose email has no
+  usable claim key (the normaliser cannot read it) gets no trial, because it would otherwise have no claim at all.
+
+### Configuration
+
+| Key (env) | Default | Meaning |
+|---|---|---|
+| `app.billing.trial.enabled` (`BILLING_TRIAL_ENABLED`) | true | listen to the milestones and grant |
+| `app.billing.trial.tranches.m1..m4` (`BILLING_TRIAL_M1..M4`) | 30 / 70 / 100 / 100 | credits per milestone |
+| `app.billing.trial.validity` (`BILLING_TRIAL_VALIDITY`) | 30d | after M1; then `TRIAL_EXPIRY` |
+| `app.billing.trial.daily-cap-credits` (`BILLING_TRIAL_DAILY_CAP_CREDITS`) | 150 | daily cap while the trial runs |
+| `app.billing.trial.hourly-ceiling` (`BILLING_TRIAL_HOURLY_CEILING`) | 200 | circuit breaker (grants per hour) |
+| `app.billing.trial.score-enforced` (`BILLING_TRIAL_SCORE_ENFORCED`) | false | shadow mode while false |
+| `app.billing.trial.score.*` | see section 2 | weights, `hold-at` 30, `deny-at` 60, `fast-onboarding-within` 2m |
+| `app.billing.trial.claim-retention` | 365d | claims kept after they were last seen |
+| `app.billing.trial.disposable.*` (`BILLING_TRIAL_DISPOSABLE_REFRESH`) | refresh off, weekly cron, `max-change` 0.2 | the domain list; `allow`, `deny` override it |
+| `app.billing.trial.seed.enabled` | true | seed existing accounts at startup |
+| `app.billing.jobs.free-grant-enabled` (`BILLING_FREE_GRANT_ENABLED`) | false | the old monthly Free grant (job and lazy grant) |
+| `app.billing.jobs.trial-expiry-cron` | `0 20 * * * *` | the trial expiry job |
+| `app.trial-identity.current-key-version` (`TRIAL_PEPPER_CURRENT_VERSION`) | 1 | pepper version for new claims |
+| `TRIAL_PEPPER_V<n>` (environment only) | none | peppers, at least 32 bytes; required under `prod` |

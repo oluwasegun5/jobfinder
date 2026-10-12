@@ -149,6 +149,17 @@ class TrialGate {
         if (found.isEmpty() && milestone != TrialMilestone.EMAIL_VERIFIED) {
             return Outcome.SKIPPED; // nothing before M1
         }
+        if (found.isPresent() && milestone == TrialMilestone.EMAIL_VERIFIED) {
+            // M1 again: a Google account linked later. Claim it too, so it cannot start another trial.
+            recordLinkedIdentities(found.get(), candidates, now);
+            return Outcome.SKIPPED;
+        }
+        if (milestone == TrialMilestone.EMAIL_VERIFIED && candidates.isEmpty()) {
+            // No usable claim key (the normaliser could not read the address): no trial rather than an unbounded one.
+            accounts.save(new TrialAccount(userId, State.DENIED, 0, 0, at, null, null), now);
+            log.info("Trial denied: user={} milestone={} rule=no-claim-key", userId, milestone.code());
+            return Outcome.DENIED;
+        }
         if (found.isPresent() && !eligible(found.get(), milestone, at, now)) {
             return Outcome.SKIPPED;
         }
@@ -285,6 +296,28 @@ class TrialGate {
         }
         log.info("Trial tranche granted: user={} milestone={} credits={}", userId, milestone.code(), tranche);
         return state == State.HOLD ? Outcome.HELD : Outcome.GRANTED;
+    }
+
+    /**
+     * Claims identities an account gains after its M1 (a Google account linked to a password account) with the
+     * account's milestones, unless another account already holds them. A denied account claims nothing.
+     */
+    private void recordLinkedIdentities(TrialAccount account, List<Candidate> candidates, Instant now) {
+        if (account.state() == State.DENIED || candidates.isEmpty()) {
+            return;
+        }
+        List<IdentityDigest> all = new ArrayList<>();
+        candidates.forEach(c -> all.addAll(c.digests().digests()));
+        claims.lock(all);
+        List<Claim> existing = claims.findForUpdate(all);
+        Instant expires = now.plus(properties.claimRetention());
+        for (Candidate c : candidates) {
+            boolean heldByOther = matching(existing, c.digests()).stream()
+                    .anyMatch(claim -> claim.kind() == c.kind() && !claim.ownedBy(account.userId()));
+            if (!heldByOther && account.milestones() != 0) {
+                claims.upsert(c.kind(), c.digests().current(), account.userId(), account.milestones(), now, expires);
+            }
+        }
     }
 
     /** A later milestone counts only while the trial runs, once, and M4 only on a later UTC day than M1. */

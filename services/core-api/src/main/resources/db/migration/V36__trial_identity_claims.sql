@@ -4,8 +4,8 @@
 --    phone, Google id or file. Unlinked (user_id set to NULL), not deleted, when the account is deleted, so that the same
 --    person cannot claim the trial again; purged 12 months after last_seen_at (expires_at). The one documented exception
 --    to "deletion erases everything" (ADR 0040, amended by ADR 0042).
---    claimant_count: how many different users were granted a milestone with this value (one row per value, so the count
---    tells a CV file of one prior claimant, a hard match, from a shared template, a soft one).
+--    claimant_count: how many accounts presented this value (one row per value, so the count tells a CV file of one
+--    prior claimant, a hard match, from a shared template, a soft one).
 CREATE TABLE trial_identity_claims (
     id                 UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     kind               VARCHAR(16) NOT NULL CHECK (kind IN ('EMAIL', 'GOOGLE_SUB', 'CV_FILE', 'CV_EMAIL', 'CV_PHONE')),
