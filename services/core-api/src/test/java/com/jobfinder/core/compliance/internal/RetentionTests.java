@@ -46,7 +46,7 @@ class RetentionTests extends ResumeTestSupport {
     @Test
     void theSetOfRetentionTasksIsTheDocumentedOne() {
         assertThat(runner.taskNames()).containsExactlyInAnyOrder("raw-postings", "expired-tokens",
-                "unverified-accounts", "webhook-events", "notification-log", "rendered-files");
+                "unverified-accounts", "webhook-events", "notification-log", "rendered-files", "trial-claims");
     }
 
     @Test

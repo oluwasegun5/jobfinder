@@ -150,7 +150,8 @@ class Preflight(unittest.TestCase):
 
     def test_every_missing_or_placeholder_secret_is_refused(self):
         for key in ("POSTGRES_PASSWORD", "RABBITMQ_PASSWORD", "REDIS_PASSWORD", "JWT_SECRET", "AI_SERVICE_TOKEN",
-                    "NOTIFICATIONS_UNSUBSCRIBE_SECRET", "OBJECT_STORAGE_ACCESS_KEY", "OBJECT_STORAGE_SECRET_KEY", "MAIL_HOST"):
+                    "NOTIFICATIONS_UNSUBSCRIBE_SECRET", "TRIAL_PEPPER_V1", "OBJECT_STORAGE_ACCESS_KEY",
+                    "OBJECT_STORAGE_SECRET_KEY", "MAIL_HOST"):
             env = self.good()
             env[key] = "change-me-" + key.lower()
             result = self.check(env)
@@ -205,6 +206,16 @@ class Preflight(unittest.TestCase):
         self.assertEqual(self.check(ok).returncode, 0, self.check(ok).stdout)
         ok["BILLING_PRICE_PACK_LARGE_USD_MINOR"] = "100"
         self.assertEqual(self.check(ok).returncode, 1, "the placeholder price 100 must be refused")
+
+    def test_starter_is_optional_but_a_half_pair_is_flagged(self):
+        # Blank Starter values are fine (Starter is simply not offered); half a pair is warned about; 100 is refused.
+        self.assertEqual(self.check(self.good()).returncode, 0)
+        half = self.check(self.good(BILLING_PRICE_STARTER_NGN_MINOR="450000"))
+        self.assertEqual(half.returncode, 0, half.stdout)
+        self.assertIn("PAYSTACK_PLAN_STARTER_NGN", half.stdout)
+        full = self.good(BILLING_PRICE_STARTER_NGN_MINOR="450000", PAYSTACK_PLAN_STARTER_NGN="PLN_" + "s" * 10)
+        self.assertNotIn("STARTER", self.check(full).stdout)
+        self.assertEqual(self.check(self.good(BILLING_PRICE_STARTER_USD_MINOR="100", STRIPE_PRICE_STARTER_USD="price_x")).returncode, 1)
 
     def test_offsite_backups_must_be_encrypted(self):
         s3 = dict(BACKUP_S3_URI="s3://bucket/b", BACKUP_S3_ENDPOINT="https://s3.invalid", BACKUP_S3_ACCESS_KEY="a" * 16, BACKUP_S3_SECRET_KEY="s" * 24)

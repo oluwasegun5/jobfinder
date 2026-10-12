@@ -23,6 +23,7 @@ class BillingJobsScheduler {
 
     static final String FREE_GRANT_LOCK = "billing:free-grant";
     static final String EXPIRY_LOCK = "billing:expiry";
+    static final String TRIAL_EXPIRY_LOCK = "billing:trial-expiry";
 
     private static final Logger log = LoggerFactory.getLogger(BillingJobsScheduler.class);
 
@@ -46,6 +47,11 @@ class BillingJobsScheduler {
     @Scheduled(cron = "${app.billing.jobs.expiry-cron:0 0 * * * *}", zone = "${app.billing.jobs.zone:UTC}")
     void scheduledExpiry() {
         locked(EXPIRY_LOCK, () -> jobs.expire(Instant.now(clock)));
+    }
+
+    @Scheduled(cron = "${app.billing.jobs.trial-expiry-cron:0 20 * * * *}", zone = "${app.billing.jobs.zone:UTC}")
+    void scheduledTrialExpiry() {
+        locked(TRIAL_EXPIRY_LOCK, () -> jobs.expireTrials(Instant.now(clock)));
     }
 
     private void locked(String name, java.util.function.IntSupplier work) {

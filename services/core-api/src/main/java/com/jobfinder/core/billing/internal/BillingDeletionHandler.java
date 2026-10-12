@@ -14,8 +14,9 @@ import com.jobfinder.core.identity.UserDeletionRequested;
  * Billing's share of an account deletion: the user's paid subscriptions are stopped at the provider (best effort: a
  * failure is queued for retry and never blocks the deletion), the user's subscription and credit ledger rows are
  * erased, and their AI calls lose the link to the person but stay, because the cost history belongs to the business
- * (no content is stored in it). {@code webhook_events} holds provider ids only, so it needs nothing. Runs in the
- * deleting transaction.
+ * (no content is stored in it). {@code webhook_events} holds provider ids only, so it needs nothing. The trial state is
+ * erased and the trial-eligibility claims are unlinked (user_id NULL), not erased (docs/adr/0042). Runs in the deleting
+ * transaction.
  */
 @Component
 class BillingDeletionHandler {
@@ -25,8 +26,13 @@ class BillingDeletionHandler {
     private final RemoteCancellations remote;
     private final Clock clock;
 
+    private final TrialAccountStore trialAccounts;
+    private final TrialClaimStore trialClaims;
+
     BillingDeletionHandler(JdbcClient jdbc, SubscriptionStore subscriptions, RemoteCancellations remote,
-            Clock clock) {
+            Clock clock, TrialAccountStore trialAccounts, TrialClaimStore trialClaims) {
+        this.trialAccounts = trialAccounts;
+        this.trialClaims = trialClaims;
         this.jdbc = jdbc;
         this.subscriptions = subscriptions;
         this.remote = remote;
@@ -43,5 +49,9 @@ class BillingDeletionHandler {
         jdbc.sql("delete from credit_ledger where user_id = :userId").param("userId", event.userId()).update();
         jdbc.sql("update ai_calls set user_id = null where user_id = :userId").param("userId", event.userId())
                 .update();
+        // The trial: the per-user state goes; the eligibility claims (keyed hashes only) stay, unlinked, so that the
+        // same person cannot claim the trial again (docs/adr/0042, section 3: the one exception to full erasure).
+        trialAccounts.delete(event.userId());
+        trialClaims.unlink(event.userId());
     }
 }

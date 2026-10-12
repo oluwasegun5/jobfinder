@@ -41,10 +41,16 @@ export function TermsOfService() {
       </Section>
       <Section title="5. Plans, credits and payment">
         <p>
-          AI features use credits. The Free plan includes a monthly amount; paid plans and credit packs are priced on the
-          billing page. Payments are processed by Stripe or Paystack; subscriptions renew until cancelled and can be
-          cancelled at any time, effective at the end of the paid period. Refunds: <Fill of="refundPolicy" />. We may
-          change prices or credit amounts with notice before the change applies to you.
+          AI features use credits. New accounts can receive free trial credits once; paid plans and credit packs are
+          priced on the <Link href="/pricing">pricing page</Link>. Payments are processed by Stripe or Paystack;
+          subscriptions renew monthly until cancelled and can be cancelled at any time, effective at the end of the paid
+          period. Refunds: <Fill of="refundPolicy" />. We may change prices or credit amounts with notice before the
+          change applies to you.
+        </p>
+        <p>
+          One free trial per person. The free trial is offered once to each person, not once to each account. Opening
+          further accounts, or using someone else&apos;s details, to receive trial credits again is not allowed; such
+          accounts receive no trial credits, but you can still use them and buy a plan or credits.
         </p>
       </Section>
       <Section title="6. Acceptable use">

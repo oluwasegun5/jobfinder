@@ -9,6 +9,8 @@ import { formatDateTime } from "@/features/admin/format";
 import { FailureNotice } from "@/features/tailoring/shared";
 import { toFailure } from "@/features/tailoring/errors";
 
+import { CurrencyPicker, FREE_PLAN, PackList, PlanList } from "./catalogue-view";
+import { browserSignals, currenciesOf, defaultCurrency, formatCredits, formatPrice, prefersNaira, providerName } from "./pricing";
 import {
   useBillingMe,
   useCancelSubscription,
@@ -19,9 +21,6 @@ import {
   type LedgerLine,
 } from "./queries";
 
-// The generated types mark every field optional, so the page reads them defensively.
-type Price = { provider?: string; currency?: string; amountMinor?: number };
-
 const REASONS: Record<string, string> = {
   AI_USAGE: "AI usage",
   PLAN_GRANT: "Plan credits",
@@ -30,29 +29,22 @@ const REASONS: Record<string, string> = {
   REFUND_ADJUSTMENT: "Adjustment",
 };
 
-export function formatCredits(value: number | string | undefined | null): string {
-  const n = Number(value ?? 0);
-  if (!Number.isFinite(n)) return "0";
-  return n.toLocaleString("en", { maximumFractionDigits: 2 });
-}
+// Kept here too: other billing screens import them from this module.
+export { formatCredits, formatPrice };
 
-export function formatPrice(price: Price): string {
-  const amount = (price.amountMinor ?? 0) / 100;
-  try {
-    return new Intl.NumberFormat("en", { style: "currency", currency: price.currency ?? "USD" }).format(amount);
-  } catch {
-    return `${amount.toFixed(2)} ${price.currency ?? ""}`;
-  }
-}
-
-const providerName = (provider?: string) => (provider === "PAYSTACK" ? "Paystack" : "Stripe");
-
-export function BillingPage() {
+/**
+ * The signed-in billing page: the caller's plan and balance, the paid plans and packs from the API in their currency
+ * (naira through Paystack first for Nigerian browsers, dollars through Stripe otherwise; {@code naira} overrides the
+ * browser for tests), cancellation and the credit history.
+ */
+export function BillingPage({ naira: nairaOverride }: { naira?: boolean } = {}) {
   const me = useBillingMe();
   const plans = usePlans();
   const checkout = useCheckout();
   const cancel = useCancelSubscription();
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [chosenCurrency, setChosenCurrency] = useState<string>();
+  const [naira] = useState(() => nairaOverride ?? prefersNaira(browserSignals()));
 
   if (me.isPending || plans.isPending) return <p role="status">Loading</p>;
   if (me.isError || plans.isError) {
@@ -62,7 +54,10 @@ export function BillingPage() {
   const account = me.data;
   const catalogue = plans.data;
   const subscription = account.subscription ?? undefined;
-  const paid = account.plan?.code !== "free";
+  const paid = account.plan?.code !== FREE_PLAN;
+  const currencies = currenciesOf(catalogue, naira);
+  const currency = chosenCurrency && currencies.includes(chosenCurrency) ? chosenCurrency : defaultCurrency(currencies, naira);
+  const paidPlans = (catalogue.plans ?? []).filter((plan) => plan.code !== FREE_PLAN);
 
   function start(request: CheckoutRequest) {
     checkout.mutate(request, { onSuccess: (result) => result.url && window.location.assign(result.url) });
@@ -118,52 +113,55 @@ export function BillingPage() {
 
       {checkout.isError && <FailureNotice failure={toFailure(checkout.error, "Could not start the checkout. Try again.")} />}
 
-      {!paid && (
-        <section aria-label="Upgrade" className="flex flex-col gap-3">
-          <h2 className="text-lg font-semibold">Upgrade</h2>
-          {(catalogue.plans ?? [])
-            .filter((plan) => plan.code !== "free")
-            .map((plan) => (
-              <Card key={plan.code} size="sm">
-                <CardContent className="flex flex-col gap-2">
-                  <p className="font-medium">
-                    {plan.name}: {formatCredits(plan.monthlyCredits)} credits a month
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {(plan.prices ?? []).length === 0 && <span className="text-sm text-muted-foreground">Not available right now.</span>}
-                    {(plan.prices ?? []).map((price) => (
-                      <Button key={price.provider} disabled={checkout.isPending} onClick={() => start({ plan: plan.code, provider: price.provider ?? "" })}>
-                        {`Upgrade for ${formatPrice(price)} a month with ${providerName(price.provider)}`}
-                      </Button>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-        </section>
-      )}
+      {currencies.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Paid plans and credit packs are not available right now.</p>
+      ) : (
+        <>
+          <CurrencyPicker catalogue={catalogue} currencies={currencies} value={currency} onChange={setChosenCurrency} />
 
-      <section aria-label="Credit packs" className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Add credits</h2>
-        <p className="text-sm text-muted-foreground">Credit packs never expire.</p>
-        {(catalogue.packs ?? []).length === 0 && <p className="text-sm text-muted-foreground">No credit packs are available right now.</p>}
-        {(catalogue.packs ?? []).map((pack) => (
-          <Card key={pack.id} size="sm">
-            <CardContent className="flex flex-col gap-2">
-              <p className="font-medium">
-                {pack.name}: {formatCredits(pack.credits)} credits
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {(pack.prices ?? []).map((price) => (
-                  <Button key={price.provider} variant="outline" disabled={checkout.isPending} onClick={() => start({ pack: pack.id, provider: price.provider ?? "" })}>
-                    {`Buy for ${formatPrice(price)} with ${providerName(price.provider)}`}
+          {!paid && paidPlans.length > 0 && (
+            <section aria-labelledby="upgrade-heading" className="flex flex-col gap-3">
+              <h2 id="upgrade-heading" className="text-lg font-semibold">
+                Upgrade
+              </h2>
+              <PlanList
+                plans={paidPlans}
+                currency={currency}
+                action={(plan, price) => (
+                  <Button
+                    className="w-full"
+                    aria-label={`Upgrade to ${plan.name} for ${formatPrice(price)} a month with ${providerName(price.provider)}`}
+                    disabled={checkout.isPending}
+                    onClick={() => start({ plan: plan.code, provider: price.provider ?? "" })}
+                  >
+                    {`Upgrade to ${plan.name}`}
                   </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </section>
+                )}
+              />
+            </section>
+          )}
+
+          <section aria-labelledby="packs-heading" className="flex flex-col gap-3">
+            <h2 id="packs-heading" className="text-lg font-semibold">
+              Add credits
+            </h2>
+            <PackList
+              packs={catalogue.packs ?? []}
+              currency={currency}
+              action={(pack, price) => (
+                <Button
+                  variant="outline"
+                  aria-label={`Buy ${pack.name} for ${formatPrice(price)} with ${providerName(price.provider)}`}
+                  disabled={checkout.isPending}
+                  onClick={() => start({ pack: pack.id, provider: price.provider ?? "" })}
+                >
+                  {`Buy ${pack.name}`}
+                </Button>
+              )}
+            />
+          </section>
+        </>
+      )}
 
       <LedgerList />
     </div>

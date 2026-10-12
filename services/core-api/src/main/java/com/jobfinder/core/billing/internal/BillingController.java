@@ -36,10 +36,12 @@ class BillingController {
         this.billing = billing;
     }
 
-    /** The plans and credit packs, with the prices of the providers that are switched on. */
+    /**
+     * The plans and credit packs, with the prices of the providers that are switched on. Public (no sign-in): it holds
+     * no user data, and the public pricing page renders it (docs/adr/0036, G3 addendum).
+     */
     @GetMapping("/plans")
     Catalogue plans() {
-        CurrentUser.require();
         return billing.catalogue();
     }
 

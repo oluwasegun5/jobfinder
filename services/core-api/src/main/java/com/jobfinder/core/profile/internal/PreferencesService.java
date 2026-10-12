@@ -2,15 +2,18 @@ package com.jobfinder.core.profile.internal;
 
 import java.sql.Array;
 import java.sql.SQLException;
+import java.time.Clock;
 import java.util.Arrays;
 import java.util.Currency;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 
+import com.jobfinder.core.activation.OnboardingCompleted;
 import com.jobfinder.core.profile.internal.ProfileDtos.PreferencesRequest;
 import com.jobfinder.core.profile.internal.ProfileDtos.PreferencesResponse;
 import com.jobfinder.core.profile.internal.ProfileDtos.WorkMode;
@@ -25,9 +28,13 @@ import com.jobfinder.core.shared.ApiException;
 class PreferencesService {
 
     private final JdbcClient jdbc;
+    private final ApplicationEventPublisher events;
+    private final Clock clock;
 
-    PreferencesService(JdbcClient jdbc) {
+    PreferencesService(JdbcClient jdbc, ApplicationEventPublisher events, Clock clock) {
         this.jdbc = jdbc;
+        this.events = events;
+        this.clock = clock;
     }
 
     static boolean exists(JdbcClient jdbc, UUID userId) {
@@ -54,7 +61,7 @@ class PreferencesService {
 
     PreferencesResponse save(UUID userId, PreferencesRequest request) {
         check(request);
-        jdbc.sql("""
+        Boolean inserted = jdbc.sql("""
                 insert into preferences (id, user_id, target_titles, locations, work_modes, min_salary, currency,
                                          needs_sponsorship, excluded_companies, excluded_industries, created_at,
                                          updated_at)
@@ -66,6 +73,7 @@ class PreferencesService {
                     currency = excluded.currency, needs_sponsorship = excluded.needs_sponsorship,
                     excluded_companies = excluded.excluded_companies,
                     excluded_industries = excluded.excluded_industries, updated_at = now()
+                returning (xmax = 0) as inserted
                 """)
                 .param("id", UUID.randomUUID())
                 .param("userId", userId)
@@ -77,7 +85,11 @@ class PreferencesService {
                 .param("needsSponsorship", request.needsSponsorship())
                 .param("excludedCompanies", array(request.excludedCompanies()))
                 .param("excludedIndustries", array(request.excludedIndustries()))
-                .update();
+                .query(Boolean.class).single();
+        if (Boolean.TRUE.equals(inserted)) {
+            // Milestone M3 for the trial (docs/adr/0042): onboarding completes when the preferences row is created.
+            events.publishEvent(new OnboardingCompleted(userId, clock.instant()));
+        }
         return get(userId);
     }
 

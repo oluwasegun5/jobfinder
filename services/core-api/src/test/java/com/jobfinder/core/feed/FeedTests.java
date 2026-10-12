@@ -275,7 +275,9 @@ class FeedTests extends MatchingTestSupport {
         assertThat(titlesOf(forA)).doesNotContain("Java Backend Engineer", "Data Analyst");
         assertThat(afterForOther).isEqualTo(beforeForOther);
         assertThat(titlesOf(afterForOther)).contains("Java Backend Engineer", "Data Analyst");
-        assertThat(count("select count(*) from user_job_actions where user_id = ?", other)).isZero();
+        // Viewing the feed records VIEWED (the activation milestone, ADR 0042); no feedback action of the other user.
+        assertThat(count("select count(*) from user_job_actions where user_id = ? and action <> 'VIEWED'", other))
+                .isZero();
         getAs(otherSession, "/jobs/" + a.id("hidden")).andExpect(jsonPath("$.hidden").value(false))
                 .andExpect(jsonPath("$.applied").value(false));
     }

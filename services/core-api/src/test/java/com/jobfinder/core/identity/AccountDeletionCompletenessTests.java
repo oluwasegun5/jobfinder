@@ -46,7 +46,9 @@ class AccountDeletionCompletenessTests extends ResumeTestSupport {
     private static final Map<String, String> NON_CASCADING = Map.of(
             "ai_calls.user_id", "SET NULL: the cost history (model, tokens, cost; no content) stays, without the person",
             "credit_ledger.ai_call_id", "NO ACTION: the ledger rows are deleted first by BillingDeletionHandler",
-            "notification_log.saved_search_id", "SET NULL: the log row is itself deleted through its own user_id");
+            "notification_log.saved_search_id", "SET NULL: the log row is itself deleted through its own user_id",
+            "trial_identity_claims.user_id", "SET NULL: trial-eligibility fingerprints (keyed hashes only) are "
+                    + "unlinked, not erased, so a deleted account cannot claim the trial again (ADR 0042)");
 
     /** Every user-owned table and the export file that carries its content, or the reason it is not exported. */
     private static final Map<String, String> EXPORT = Map.ofEntries(
@@ -74,7 +76,9 @@ class AccountDeletionCompletenessTests extends ResumeTestSupport {
             Map.entry("notification_log", "notifications/email-log.json"),
             Map.entry("subscriptions", "billing/subscriptions.json"),
             Map.entry("credit_ledger", "billing/credit-ledger.json"),
-            Map.entry("ai_calls", "billing/ai-calls.json"));
+            Map.entry("ai_calls", "billing/ai-calls.json"),
+            Map.entry("trial_accounts", "billing/trial.json"),
+            Map.entry("trial_identity_claims", "billing/trial-claims.json"));
 
     private static final Map<String, String> NOT_EXPORTED = Map.of(
             "refresh_tokens", "session secrets (hashes) and no personal data of their own",
@@ -209,6 +213,12 @@ class AccountDeletionCompletenessTests extends ResumeTestSupport {
         jdbc.update("insert into ai_calls (id, request_key, user_id, feature, provider, model, status, created_at) "
                 + "values (?, ?, ?, 'tailor_resume', 'p', 'm', 'SUCCEEDED', ?)", UUID.randomUUID(),
                 "erase-" + UUID.randomUUID(), userId, ts(Instant.now()));
+        // The trial: its state, and one claim (unlinked, not erased, on deletion).
+        jdbc.update("insert into trial_accounts (user_id, state, milestones, started_at, expires_at, created_at, "
+                + "updated_at) values (?, 'GRANTED', 1, now(), now() + interval '30 days', now(), now())", userId);
+        jdbc.update("insert into trial_identity_claims (kind, digest, key_version, user_id, claimed_milestones, "
+                + "first_claimed_at, last_seen_at, expires_at) values ('EMAIL', decode(md5(random()::text) || "
+                + "md5(random()::text), 'hex'), 1, ?, 1, now(), now(), now() + interval '365 days')", userId);
         return resumes;
     }
 

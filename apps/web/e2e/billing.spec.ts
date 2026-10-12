@@ -11,6 +11,9 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  */
 const PRO = { code: "pro", name: "Pro", monthlyCredits: 6000 };
 
+// The default currency follows the browser (naira for a Nigerian time zone); pin it so the run is the same anywhere.
+test.use({ timezoneId: "Europe/London", locale: "en-GB" });
+
 type State = { subscribed: boolean; canceled: boolean; balance: number; requests: string[] };
 
 function backend(options: { subscribed?: boolean; balance?: number } = {}) {
@@ -103,12 +106,15 @@ test("the billing page shows the plan, the balance and the history, and upgradin
   await expect(history.getByText("AI usage")).toBeVisible();
   await expect(history.getByText("balance 296")).toBeVisible();
 
-  // Each provider that is switched on is offered with its own currency; a pack is offered too.
-  await expect(page.getByRole("button", { name: /Upgrade for .*9\.00 a month with Stripe/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Upgrade for .*15,000\.00 a month with Paystack/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Buy for .*5\.00 with Stripe/ })).toBeVisible();
+  // Each provider that is switched on is offered in its own currency, dollars first outside Nigeria; a pack too.
+  await expect(page.getByRole("radio", { name: "USD" })).toBeChecked();
+  await expect(page.getByRole("button", { name: "Upgrade to Pro for $9 a month with Stripe" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Buy Small pack for $5 with Stripe" })).toBeVisible();
+  await page.getByText("NGN", { exact: true }).click();
+  await expect(page.getByRole("button", { name: "Upgrade to Pro for ₦15,000 a month with Paystack" })).toBeVisible();
+  await page.getByText("USD", { exact: true }).click();
 
-  await page.getByRole("button", { name: /Upgrade for .*9\.00 a month with Stripe/ }).click();
+  await page.getByRole("button", { name: "Upgrade to Pro for $9 a month with Stripe" }).click();
   await expect(page).toHaveURL(/\/billing\/return\?stub=1$/);
   await expect(page.getByRole("heading", { name: "Checkout" })).toBeVisible();
   expect(api.state.requests).toContain("POST /billing/checkout");

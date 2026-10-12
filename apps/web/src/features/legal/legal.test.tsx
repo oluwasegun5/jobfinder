@@ -82,6 +82,24 @@ describe("legal templates", () => {
     expect(container.querySelector('[data-placeholder="backupRetention"]')).toBeNull();
   });
 
+  it("discloses the trial-eligibility fingerprints, their basis and their retention (ADR 0042)", () => {
+    const { container } = render(<PrivacyPolicy />);
+    const text = (container.textContent ?? "").replace(/\s+/g, " ");
+
+    expect(text).toContain(
+      "Keyed one-way hashes (HMAC-SHA-256) of your account email, Google account identifier, uploaded CV file, and any " +
+        "email address or phone number in your CV, so that each person receives free trial credits once, including if " +
+        "an account is deleted and re-created.",
+    );
+    expect(text).toContain("Our legitimate interest in preventing fraud and abuse.");
+    expect(text).toContain("We cannot read the original values back from these hashes.");
+    expect(text).toContain(
+      "Trial-eligibility fingerprints: 12 months after they were last used to check trial eligibility. When you " +
+        "delete your account they are disconnected from it and everything else is erased, but they are kept until " +
+        "that period ends so free trial credits cannot be claimed again.",
+    );
+  });
+
   it("names the subprocessors and the user rights", () => {
     const sub = render(<Subprocessors />);
     for (const name of ["Anthropic", "Google", "Stripe", "Paystack", "Sentry"]) expect(sub.container.textContent).toContain(name);
@@ -90,6 +108,14 @@ describe("legal templates", () => {
     const policy = render(<PrivacyPolicy />);
     expect(policy.container.textContent).toMatch(/Nigeria Data Protection Act/);
     expect(policy.container.textContent).toMatch(/GDPR/);
+  });
+
+  it("states that the free trial is once per person and points to the pricing page", () => {
+    const { container } = render(<TermsOfService />);
+
+    expect(container.textContent).toContain("One free trial per person.");
+    expect(container.textContent).not.toMatch(/monthly amount/i);
+    expect(container.querySelector('a[href="/pricing"]')).not.toBeNull();
   });
 
   it("links to every legal page from the footer navigation", () => {

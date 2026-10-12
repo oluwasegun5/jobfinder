@@ -46,7 +46,16 @@ class Resume {
 
     private Instant updatedAt;
 
+    // SHA-256 of the uploaded bytes, taken at upload so the parse step can digest the file for the trial gate without
+    // reading it again (docs/adr/0042). Never changes.
+    @Column(name = "content_sha256", updatable = false)
+    private byte[] contentSha256;
+
     protected Resume() {
+    }
+
+    void recordContentSha256(byte[] sha256) {
+        this.contentSha256 = sha256 == null ? null : sha256.clone();
     }
 
     Resume(UUID id, UUID userId, String label, String fileKey, ResumeFormat fileType, long sizeBytes,

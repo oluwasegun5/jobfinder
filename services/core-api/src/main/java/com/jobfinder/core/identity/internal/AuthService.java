@@ -11,6 +11,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.jobfinder.core.activation.EmailVerified;
+import com.jobfinder.core.activation.IdentityDigester;
+import com.jobfinder.core.activation.IdentityNormaliser;
 import com.jobfinder.core.identity.UserDeletionRequested;
 
 /**
@@ -43,13 +46,16 @@ class AuthService {
     private final TransactionTemplate tx;
     private final AuthProperties properties;
     private final Clock clock;
+    private final IdentityDigester digester;
     /** Compared against when the email is unknown so both paths spend the same time hashing. */
     private final String dummyHash;
 
     AuthService(UserRepository users, OAuthAccountRepository oauthAccounts, GoogleTokenVerifier google,
             RefreshTokenService refreshTokens, EmailTokenService emailTokens,
             JwtService jwt, RateLimiter rateLimiter, PasswordEncoder passwordEncoder,
-            ApplicationEventPublisher events, TransactionTemplate tx, AuthProperties properties, Clock clock) {
+            ApplicationEventPublisher events, TransactionTemplate tx, AuthProperties properties, Clock clock,
+            IdentityDigester digester) {
+        this.digester = digester;
         this.users = users;
         this.oauthAccounts = oauthAccounts;
         this.google = google;
@@ -102,8 +108,20 @@ class AuthService {
             if (!user.isEmailVerified()) {
                 user.markEmailVerified(clock.instant());
                 users.save(user);
+                publishEmailVerified(user, null);
             }
         });
+    }
+
+    /**
+     * Milestone M1 for the trial (docs/adr/0042): published inside the verifying transaction and handled after it
+     * commits. Carries digests and the email's domain only, never the address or the Google id.
+     */
+    private void publishEmailVerified(User user, String googleSubject) {
+        String email = user.getEmail();
+        events.publishEvent(new EmailVerified(user.getId(), digester.email(email).orElse(null),
+                IdentityNormaliser.emailDomain(email).orElse(null),
+                googleSubject == null ? null : digester.googleSubject(googleSubject), clock.instant()));
     }
 
     void resendVerification(String rawEmail, String ip) {
@@ -170,6 +188,8 @@ class AuthService {
             return users.findById(linked.get().getUserId()).orElse(null);
         }
         User user = users.findByEmail(email).orElse(null);
+        // Milestone M1 (docs/adr/0042) whenever this sign-in links a Google account: a new account, a newly verified
+        // one, or an existing account getting Google added. A returning Google sign-in (matched above) is not one.
         if (user == null) {
             user = new User(email, null);
             user.markEmailVerified(clock.instant());
@@ -183,6 +203,7 @@ class AuthService {
             refreshTokens.revokeAllForUser(user.getId());
         }
         oauthAccounts.saveAndFlush(new OAuthAccount(user.getId(), OAuthAccount.GOOGLE, subject));
+        publishEmailVerified(user, subject);
         return user;
     }
 
