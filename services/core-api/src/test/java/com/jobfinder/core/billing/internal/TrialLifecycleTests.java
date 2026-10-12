@@ -155,6 +155,18 @@ class TrialLifecycleTests extends TrialTestSupport {
                 .andExpect(jsonPath("$.trial.unlocked").value(30))
                 .andExpect(jsonPath("$.trial.remaining").value(30))
                 .andExpect(jsonPath("$.trial.milestones[0]").value("EMAIL_VERIFIED"))
+                .andExpect(jsonPath("$.trial.tranches.length()").value(4))
+                .andExpect(jsonPath("$.trial.tranches[0].milestone").value("EMAIL_VERIFIED"))
+                .andExpect(jsonPath("$.trial.tranches[0].code").value("M1"))
+                .andExpect(jsonPath("$.trial.tranches[0].credits").value(30))
+                .andExpect(jsonPath("$.trial.tranches[0].unlocked").value(true))
+                .andExpect(jsonPath("$.trial.tranches[1].milestone").value("CV_PARSED"))
+                .andExpect(jsonPath("$.trial.tranches[1].credits").value(70))
+                .andExpect(jsonPath("$.trial.tranches[1].unlocked").value(false))
+                .andExpect(jsonPath("$.trial.tranches[2].credits").value(100))
+                .andExpect(jsonPath("$.trial.tranches[3].milestone").value("MATCHES_VIEWED"))
+                .andExpect(jsonPath("$.trial.tranches[3].credits").value(100))
+                .andExpect(jsonPath("$.trial.tranches[3].unlocked").value(false))
                 .andExpect(jsonPath("$.trial.expiresAt").value(
                         startedAt.plus(30, ChronoUnit.DAYS).atOffset(ZoneOffset.UTC).toInstant().toString()))
                 .andExpect(jsonPath("$.balance").value(30))
@@ -171,7 +183,9 @@ class TrialLifecycleTests extends TrialTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.trial.state").value("DENIED"))
                 .andExpect(jsonPath("$.trial.unlocked").value(0))
-                .andExpect(jsonPath("$.trial.reason").doesNotExist());
+                .andExpect(jsonPath("$.trial.reason").doesNotExist())
+                // Nothing is promised to a denied trial, and nothing says why.
+                .andExpect(jsonPath("$.trial.tranches.length()").value(0));
     }
 
     @Test
@@ -180,6 +194,9 @@ class TrialLifecycleTests extends TrialTestSupport {
 
         assertThat(billingTrial(id).state()).isEqualTo("PENDING");
         assertThat(billingTrial(id).unlocked()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(billingTrial(id).tranches()).extracting(TrialService.TrancheView::code)
+                .containsExactly("M1", "M2", "M3", "M4");
+        assertThat(billingTrial(id).tranches()).noneMatch(TrialService.TrancheView::unlocked);
     }
 
     @Autowired
