@@ -1156,6 +1156,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/activation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["activation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/actuator": {
         parameters: {
             query?: never;
@@ -1850,6 +1866,12 @@ export interface components {
             /** Format: date-time */
             graceEndsAt?: string;
         };
+        TrancheView: {
+            milestone?: string;
+            code?: string;
+            credits?: number;
+            unlocked?: boolean;
+        };
         TrialView: {
             state?: string;
             unlocked?: number;
@@ -1857,6 +1879,7 @@ export interface components {
             /** Format: date-time */
             expiresAt?: string;
             milestones?: string[];
+            tranches?: components["schemas"]["TrancheView"][];
         };
         CheckoutRequest: {
             plan?: string;
@@ -2478,6 +2501,38 @@ export interface components {
             /** Format: int64 */
             outputTokens?: number;
             costUsd?: number;
+        };
+        ActivationResponse: {
+            /** Format: date */
+            from?: string;
+            /** Format: date */
+            to?: string;
+            steps?: components["schemas"]["StepResponse"][];
+            cohorts?: components["schemas"]["CohortResponse"][];
+            trial?: components["schemas"]["TrialOutcomesResponse"];
+        };
+        CohortResponse: {
+            /** Format: date */
+            weekStart?: string;
+            counts?: number[];
+        };
+        StepResponse: {
+            /** @enum {string} */
+            step?: "SIGNUP" | "EMAIL_VERIFIED" | "CV_UPLOADED" | "CV_PARSED" | "ONBOARDING_COMPLETED" | "FIRST_MATCHES_VIEWED" | "FIRST_TAILORED_CV";
+            /** Format: int64 */
+            count?: number;
+            /** Format: double */
+            fromPrevious?: number;
+            /** Format: double */
+            overall?: number;
+        };
+        TrialOutcomesResponse: {
+            /** Format: int64 */
+            granted?: number;
+            /** Format: int64 */
+            hold?: number;
+            /** Format: int64 */
+            denied?: number;
         };
         ProblemDetail: {
             type?: string;
@@ -4952,6 +5007,29 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CostReportResponse"];
+                };
+            };
+        };
+    };
+    activation: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ActivationResponse"];
                 };
             };
         };

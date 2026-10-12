@@ -3550,6 +3550,46 @@
         }
       }
     },
+    "/admin/activation": {
+      "get": {
+        "tags": [
+          "admin-activation-controller"
+        ],
+        "operationId": "activation",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/actuator": {
       "get": {
         "tags": [
@@ -5687,6 +5727,23 @@
           }
         }
       },
+      "TrancheView": {
+        "type": "object",
+        "properties": {
+          "milestone": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "credits": {
+            "type": "number"
+          },
+          "unlocked": {
+            "type": "boolean"
+          }
+        }
+      },
       "TrialView": {
         "type": "object",
         "properties": {
@@ -5707,6 +5764,12 @@
             "type": "array",
             "items": {
               "type": "string"
+            }
+          },
+          "tranches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrancheView"
             }
           }
         }
@@ -7575,6 +7638,96 @@
           },
           "costUsd": {
             "type": "number"
+          }
+        }
+      },
+      "ActivationResponse": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date"
+          },
+          "to": {
+            "type": "string",
+            "format": "date"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StepResponse"
+            }
+          },
+          "cohorts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CohortResponse"
+            }
+          },
+          "trial": {
+            "$ref": "#/components/schemas/TrialOutcomesResponse"
+          }
+        }
+      },
+      "CohortResponse": {
+        "type": "object",
+        "properties": {
+          "weekStart": {
+            "type": "string",
+            "format": "date"
+          },
+          "counts": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        }
+      },
+      "StepResponse": {
+        "type": "object",
+        "properties": {
+          "step": {
+            "type": "string",
+            "enum": [
+              "SIGNUP",
+              "EMAIL_VERIFIED",
+              "CV_UPLOADED",
+              "CV_PARSED",
+              "ONBOARDING_COMPLETED",
+              "FIRST_MATCHES_VIEWED",
+              "FIRST_TAILORED_CV"
+            ]
+          },
+          "count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "fromPrevious": {
+            "type": "number",
+            "format": "double"
+          },
+          "overall": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "TrialOutcomesResponse": {
+        "type": "object",
+        "properties": {
+          "granted": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "hold": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "denied": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },

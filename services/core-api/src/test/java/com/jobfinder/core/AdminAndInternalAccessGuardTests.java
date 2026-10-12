@@ -78,7 +78,7 @@ class AdminAndInternalAccessGuardTests extends AuthTestSupport {
         List<String> internal = under("/internal/").stream().map(Endpoint::key).toList();
         assertThat(internal).contains("PUT /internal/v1/billing/usage", "POST /internal/v1/embeddings/backfill");
         assertThat(under("/admin/").stream().map(Endpoint::key).collect(Collectors.toList()))
-                .contains("GET /admin/billing/costs", "GET /admin/ingestion/sources");
+                .contains("GET /admin/billing/costs", "GET /admin/ingestion/sources", "GET /admin/activation");
     }
 
     private List<Endpoint> under(String prefix) {

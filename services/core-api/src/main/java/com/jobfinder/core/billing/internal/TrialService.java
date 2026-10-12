@@ -27,9 +27,17 @@ import com.jobfinder.core.billing.internal.TrialAccountStore.TrialAccount;
 @Service
 class TrialService {
 
-    /** What {@code GET /billing/me} shows. {@code state}: PENDING (before M1), GRANTED, HOLD or DENIED. */
+    /**
+     * What {@code GET /billing/me} shows. {@code state}: PENDING (before M1), GRANTED, HOLD or DENIED. {@code tranches}:
+     * the four milestones in order with the credits each releases and whether it is unlocked; empty for a DENIED trial,
+     * which is promised nothing (and is never told why).
+     */
     record TrialView(String state, BigDecimal unlocked, BigDecimal remaining, Instant expiresAt,
-            List<String> milestones) {
+            List<String> milestones, List<TrancheView> tranches) {
+    }
+
+    /** One milestone of the trial: its name, its short code (M1 to M4), the credits it releases and whether it is reached. */
+    record TrancheView(String milestone, String code, BigDecimal credits, boolean unlocked) {
     }
 
     private static final Logger log = LoggerFactory.getLogger(TrialService.class);
@@ -38,10 +46,12 @@ class TrialService {
     private final CreditLedgerStore ledger;
     private final SubscriptionStore subscriptions;
     private final JdbcClient jdbc;
+    private final TrialProperties properties;
     private final TransactionTemplate tx;
 
     TrialService(TrialAccountStore accounts, CreditLedgerStore ledger, SubscriptionStore subscriptions, JdbcClient jdbc,
-            PlatformTransactionManager transactions) {
+            TrialProperties properties, PlatformTransactionManager transactions) {
+        this.properties = properties;
         this.accounts = accounts;
         this.ledger = ledger;
         this.subscriptions = subscriptions;
@@ -59,7 +69,7 @@ class TrialService {
     TrialView view(UUID userId, Instant now) {
         Optional<TrialAccount> found = accounts.find(userId);
         if (found.isEmpty()) {
-            return new TrialView("PENDING", BigDecimal.ZERO, BigDecimal.ZERO, null, List.of());
+            return new TrialView("PENDING", BigDecimal.ZERO, BigDecimal.ZERO, null, List.of(), tranches(0));
         }
         TrialAccount a = found.get();
         if (a.state() == State.LEGACY) {
@@ -71,7 +81,12 @@ class TrialService {
             remaining = ledger.position(userId).planPortion().min(unlocked).max(BigDecimal.ZERO);
         }
         return new TrialView(a.state().name(), unlocked, remaining, a.expiresAt(),
-                TrialMilestone.names(a.milestones()));
+                TrialMilestone.names(a.milestones()), a.state() == State.DENIED ? List.of() : tranches(a.milestones()));
+    }
+
+    private List<TrancheView> tranches(int reached) {
+        return java.util.Arrays.stream(TrialMilestone.values())
+                .map(m -> new TrancheView(m.name(), m.code(), properties.tranche(m), m.in(reached))).toList();
     }
 
     /** Whether the user's trial is live (so the trial daily cap applies): running and no paid plan. */
