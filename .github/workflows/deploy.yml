@@ -5,6 +5,7 @@ name: deploy
 #   pull request       build and scan the four images for linux/amd64 and linux/arm64; nothing is published
 #   push to main       publish sha-<commit> (one multi-arch index per image: amd64 + arm64) and deploy it to STAGING (when
 #                      the staging environment is configured)
+#                      With AUTO_DEPLOY_PRODUCTION=true it also deploys that sha straight to PRODUCTION (ADR 0045).
 #   push of a v* tag   promote the already-tested sha-<commit> images to the tag (or build them if they do not exist),
 #                      then deploy to PRODUCTION, which waits for a reviewer to approve the `production` environment
 #
@@ -21,6 +22,8 @@ name: deploy
 on:
   push:
     branches: [main]
+    # Documentation-only pushes do not rebuild or redeploy (path filters are ignored for tag pushes).
+    paths-ignore: ["docs/**", "**/*.md"]
     tags: ["v*.*.*"]
   pull_request:
     paths:
@@ -301,7 +304,12 @@ jobs:
   # The `production` environment must have required reviewers (Settings > Environments): that is the manual approval.
   deploy-production:
     needs: [meta, manifest]
-    if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
+    # A v* tag always deploys. A push to main deploys too when the repository variable AUTO_DEPLOY_PRODUCTION is 'true'
+    # (ADR 0045): the images were built, scanned and published by this workflow, and deploy.sh backs up first, smoke
+    # tests and rolls back on failure. Unset or any other value: main only publishes images.
+    if: >-
+      github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v')
+      || (github.ref == 'refs/heads/main' && vars.AUTO_DEPLOY_PRODUCTION == 'true'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production
