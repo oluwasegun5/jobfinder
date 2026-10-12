@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.ConstructorBinding;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
@@ -111,17 +112,51 @@ record BillingProperties(@DefaultValue("500") BigDecimal dailyCapCredits,
         return packs.stream().filter(p -> p.id().equals(id)).findFirst();
     }
 
-    /** A price in minor units (cents, kobo) of one currency, charged by one provider. */
+    /**
+     * A price in minor units (cents, kobo) of one currency, charged by one provider. An amount of 0 (what a blank
+     * environment variable binds to) means "not configured": such a price is dropped by {@link PlanConfig} and
+     * {@link Pack}, so it is never offered, charged, matched or seen by {@link BillingPriceGuard}.
+     */
     record Price(Provider provider, long amountMinor, String providerPlanId) {
         Price {
-            if (provider == null || amountMinor < 1) {
-                throw new IllegalArgumentException("A price needs a provider and a positive amount-minor");
+            if (provider == null || amountMinor < 0) {
+                throw new IllegalArgumentException("A price needs a provider and an amount-minor of 0 or more");
             }
+        }
+
+        /** What configuration binds through: a blank {@code amount-minor} arrives as null and means unset (0). */
+        @ConstructorBinding
+        Price(Provider provider, Long amountMinor, String providerPlanId) {
+            this(provider, amountMinor == null ? 0L : amountMinor.longValue(), providerPlanId);
+        }
+
+        /** Set at all: an amount, and for a subscription plan also the provider's plan id (Stripe price, Paystack plan). */
+        boolean configured(boolean needsProviderPlanId) {
+            return amountMinor > 0 && (!needsProviderPlanId || (providerPlanId != null && !providerPlanId.isBlank()));
         }
     }
 
-    /** {@code monthlyCredits} null: use the seeded plans row. {@code prices} is keyed by ISO currency code. */
+    private static Map<String, Price> configuredOnly(Map<String, Price> prices, boolean needsProviderPlanId) {
+        if (prices == null) {
+            return Map.of();
+        }
+        Map<String, Price> kept = new java.util.LinkedHashMap<>();
+        prices.forEach((currency, price) -> {
+            if (price != null && price.configured(needsProviderPlanId)) {
+                kept.put(currency, price);
+            }
+        });
+        return java.util.Collections.unmodifiableMap(kept);
+    }
+
+    /**
+     * {@code monthlyCredits} null: use the seeded plans row. {@code prices} is keyed by ISO currency code and holds only
+     * the fully configured prices (docs/adr/0036, G3 addendum): a plan whose prices are all unset is not offered.
+     */
     record PlanConfig(BigDecimal monthlyCredits, @DefaultValue Map<String, Price> prices) {
+        PlanConfig {
+            prices = configuredOnly(prices, true);
+        }
     }
 
     record Pack(String id, String name, BigDecimal credits, @DefaultValue Map<String, Price> prices) {
@@ -129,6 +164,7 @@ record BillingProperties(@DefaultValue("500") BigDecimal dailyCapCredits,
             if (id == null || id.isBlank() || credits == null || credits.signum() <= 0) {
                 throw new IllegalArgumentException("A credit pack needs an id and positive credits");
             }
+            prices = configuredOnly(prices, false);
         }
     }
 

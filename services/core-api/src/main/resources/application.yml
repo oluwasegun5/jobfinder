@@ -231,6 +231,21 @@ app:
       free:
         # monthly-credits: set to override the seeded value (300) for the free plan
         prices: {}
+      starter:
+        # monthly-credits: set to override the seeded value (2500, migration V38)
+        # Unlike Pro, Starter ships UNSET rather than as a placeholder: a price without its amount, or a plan price
+        # without its provider plan id, is dropped, and a paid plan with no price left is not offered (and does not trip
+        # BillingPriceGuard). Set all four BILLING_PRICE_STARTER_*_MINOR / STRIPE_PRICE_STARTER_USD /
+        # PAYSTACK_PLAN_STARTER_NGN values to offer it (docs/adr/0036, G3 addendum).
+        prices:
+          USD:
+            provider: STRIPE
+            amount-minor: ${BILLING_PRICE_STARTER_USD_MINOR:}
+            provider-plan-id: ${STRIPE_PRICE_STARTER_USD:}
+          NGN:
+            provider: PAYSTACK
+            amount-minor: ${BILLING_PRICE_STARTER_NGN_MINOR:}
+            provider-plan-id: ${PAYSTACK_PLAN_STARTER_NGN:}
       pro:
         # monthly-credits: set to override the seeded value (6000)
         prices:

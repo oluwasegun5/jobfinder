@@ -8,11 +8,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { LegalLinks } from "@/features/legal/legal-page";
 import { cn } from "@/lib/utils";
 
-/**
- * Public links in the marketing/auth header, before the account actions. Empty for now: G3 adds
- * `{ href: "/pricing", label: "Pricing" }` here.
- */
-export const publicNavLinks: { href: string; label: string }[] = [];
+/** Public links in the marketing/auth header, before the account actions. */
+export const publicNavLinks: { href: string; label: string }[] = [{ href: "/pricing", label: "Pricing" }];
 
 /** The mark is a small score arc: the product's signature number, drawn instead of a logo file. */
 function BrandMark({ className }: { className?: string }) {

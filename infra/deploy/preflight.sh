@@ -100,6 +100,14 @@ if ! $rehearsal; then
       [ "$(val "$k")" != "100" ] && [ -n "$(val "$k")" ] || err "$k is unset or still the placeholder 100"
     done
   fi
+  # Starter is optional (blank: not offered). Half a pair is not offered either, which is probably not what was meant.
+  for pair in "BILLING_PRICE_STARTER_USD_MINOR STRIPE_PRICE_STARTER_USD" "BILLING_PRICE_STARTER_NGN_MINOR PAYSTACK_PLAN_STARTER_NGN"; do
+    amount="${pair% *}"; plan="${pair#* }"
+    if { [ -n "$(val "$amount")" ] && [ -z "$(val "$plan")" ]; } || { [ -z "$(val "$amount")" ] && [ -n "$(val "$plan")" ]; }; then
+      warn "$amount and $plan must both be set for Starter to be offered in that currency"
+    fi
+    [ "$(val "$amount")" != "100" ] || err "$amount is the placeholder 100"
+  done
   if [ -z "$(val STRIPE_SECRET_KEY)" ] && [ -z "$(val PAYSTACK_SECRET_KEY)" ]; then
     warn "no payment provider key is set: nobody can subscribe (fine for a staging environment)"
   fi

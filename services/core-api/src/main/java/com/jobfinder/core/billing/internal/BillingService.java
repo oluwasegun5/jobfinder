@@ -128,8 +128,13 @@ class BillingService {
 
     // ---- catalogue ------------------------------------------------------------------------------------------
 
+    /**
+     * The plans and packs. A paid plan with no configured price at all is left out (it cannot be bought: docs/adr/0036,
+     * G3 addendum); one whose prices all belong to providers without keys stays, with no prices, as before.
+     */
     Catalogue catalogue() {
         List<PlanView> planViews = plans.all().stream().filter(Plan::active)
+                .filter(p -> PlanCatalog.FREE.equals(p.code()) || !plans.prices(p).isEmpty())
                 .map(p -> new PlanView(p.code(), p.name(), p.monthlyCredits(), offeredPrices(plans.prices(p))))
                 .toList();
         List<PackView> packViews = properties.packs().stream()

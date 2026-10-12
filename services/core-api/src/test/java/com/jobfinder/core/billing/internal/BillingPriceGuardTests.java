@@ -79,6 +79,57 @@ class BillingPriceGuardTests {
     }
 
     @Test
+    void prodWithoutStarterValuesStartsAndSimplyDoesNotOfferStarter() {
+        // Production today: real Pro and pack prices, both providers keyed, nothing set for Starter. Absent variables
+        // and the blank ones docker compose passes on (KEY=) must both leave Starter unpriced, never a placeholder.
+        String[] keys = concat(REAL_PRICES, "spring.profiles.active=prod", "STRIPE_SECRET_KEY=sk_test_FAKE",
+                "STRIPE_WEBHOOK_SECRET=whsec_FAKE", "PAYSTACK_SECRET_KEY=sk_test_FAKE");
+        runner(keys).run(context -> {
+            assertThat(context).hasNotFailed();
+            assertThat(context.getBean(BillingProperties.class).plan("starter").orElseThrow().prices()).isEmpty();
+        });
+        runner(concat(keys, "BILLING_PRICE_STARTER_USD_MINOR=", "BILLING_PRICE_STARTER_NGN_MINOR=",
+                "STRIPE_PRICE_STARTER_USD=", "PAYSTACK_PLAN_STARTER_NGN=")).run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context.getBean(BillingProperties.class).plan("starter").orElseThrow().prices())
+                            .isEmpty();
+                });
+    }
+
+    @Test
+    void aHalfConfiguredStarterPriceIsDroppedNotCharged() {
+        // An amount without a provider plan id (or the reverse) cannot be checked out, so it is not offered.
+        runner(concat(REAL_PRICES, "spring.profiles.active=prod", "STRIPE_SECRET_KEY=sk_test_FAKE",
+                "STRIPE_WEBHOOK_SECRET=whsec_FAKE", "PAYSTACK_SECRET_KEY=sk_test_FAKE",
+                "BILLING_PRICE_STARTER_USD_MINOR=500", "PAYSTACK_PLAN_STARTER_NGN=PLN_realstarter")).run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context.getBean(BillingProperties.class).plan("starter").orElseThrow().prices())
+                            .isEmpty();
+                });
+    }
+
+    @Test
+    void aConfiguredStarterIsOfferedAndStillGuardedAgainstPlaceholders() {
+        String[] starter = concat(REAL_PRICES, "spring.profiles.active=prod", "STRIPE_SECRET_KEY=sk_test_FAKE",
+                "STRIPE_WEBHOOK_SECRET=whsec_FAKE", "PAYSTACK_SECRET_KEY=sk_test_FAKE",
+                "BILLING_PRICE_STARTER_USD_MINOR=500", "STRIPE_PRICE_STARTER_USD=price_1Realstarterusd",
+                "BILLING_PRICE_STARTER_NGN_MINOR=450000", "PAYSTACK_PLAN_STARTER_NGN=PLN_realstarter");
+        runner(starter).run(context -> {
+            assertThat(context).hasNotFailed();
+            assertThat(context.getBean(BillingProperties.class).plan("starter").orElseThrow().prices())
+                    .containsOnlyKeys("USD", "NGN");
+        });
+        runner(concat(starter, "BILLING_PRICE_STARTER_NGN_MINOR=100")).run(context -> {
+            assertThat(context).hasFailed();
+            assertThat(context.getStartupFailure()).rootCause().hasMessageContaining("plan starter NGN (paystack)");
+        });
+        runner(concat(starter, "STRIPE_PRICE_STARTER_USD=price_PLACEHOLDER_starter")).run(context -> {
+            assertThat(context).hasFailed();
+            assertThat(context.getStartupFailure()).rootCause().hasMessageContaining("plan starter USD (stripe)");
+        });
+    }
+
+    @Test
     void prodWithoutProviderKeysStartsEvenWithPlaceholders() {
         // Nothing is offered without keys, so nothing can be charged.
         runner("spring.profiles.active=prod").run(context -> assertThat(context).hasNotFailed());
