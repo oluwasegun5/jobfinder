@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/state";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { problemMessage } from "@/features/auth/api-errors";
 import { FormError } from "@/features/auth/form-parts";
 import { ApiProblem } from "@/features/profile/queries";
@@ -31,9 +32,15 @@ export function SavedJobs() {
         </>
       )}
       {!saved.isPending && !saved.isError && jobs.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          Jobs you save show up here. <Link href="/jobs" className="underline">Find jobs</Link>
-        </p>
+        <EmptyState
+          action={
+            <Link href="/jobs" className={buttonVariants()}>
+              Find jobs
+            </Link>
+          }
+        >
+          Jobs you save show up here.
+        </EmptyState>
       )}
       {jobs.length > 0 && (
         <ul className="flex flex-col gap-3" aria-label="Saved jobs">

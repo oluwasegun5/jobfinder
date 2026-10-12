@@ -13,13 +13,14 @@ import { ApiProblem } from "@/features/profile/queries";
 import { safeHref } from "./format";
 import { JobFacts } from "./job-card";
 import { useJob, useJobState } from "./queries";
+import { LoadingState } from "@/components/state";
 
 export function JobDetailView({ id }: { id: string }) {
   const job = useJob(id);
   const state = useJobState();
   const [error, setError] = useState<string>();
 
-  if (job.isPending) return <p role="status">Loading job</p>;
+  if (job.isPending) return <LoadingState>Loading job</LoadingState>;
 
   if (job.isError) {
     const notFound = job.error instanceof ApiProblem && job.error.status === 404;
@@ -62,7 +63,7 @@ export function JobDetailView({ id }: { id: string }) {
         <ArrowLeft className="size-4" aria-hidden /> Back to jobs
       </Link>
       <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold">{title}</h1>
+        <h1 className="text-title font-semibold">{title}</h1>
         <p>{data.company?.name}</p>
         <JobFacts job={data} />
         {data.status && data.status !== "ACTIVE" && <p className="text-sm text-destructive">This job is no longer listed.</p>}

@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { CurrencyPicker, PackList, PlanList, TRIAL_RULE } from "./catalogue-view";
 import { browserSignals, currenciesOf, defaultCurrency, prefersNaira } from "./pricing";
 import { usePlans } from "./queries";
+import { LoadingState } from "@/components/state";
 
 /**
  * The public pricing page body: every plan and pack the API offers, in the visitor's currency (naira through Paystack
@@ -22,7 +23,7 @@ export function PricingView({ naira, signedIn }: { naira: boolean; signedIn: boo
   const plans = usePlans();
   const [chosen, setChosen] = useState<string>();
 
-  if (plans.isPending) return <p role="status">Loading prices</p>;
+  if (plans.isPending) return <LoadingState>Loading prices</LoadingState>;
   if (plans.isError) {
     return <FailureNotice failure={toFailure(plans.error, "Could not load the prices. Try again.")} onRetry={() => void plans.refetch()} retrying={plans.isFetching} />;
   }
@@ -52,7 +53,7 @@ export function PricingView({ naira, signedIn }: { naira: boolean; signedIn: boo
         }
       />
       <section aria-labelledby="packs-heading" className="flex flex-col gap-3">
-        <h2 id="packs-heading" className="text-xl font-semibold tracking-tight">
+        <h2 id="packs-heading" className="text-title font-semibold">
           Need more? Add credits
         </h2>
         <PackList

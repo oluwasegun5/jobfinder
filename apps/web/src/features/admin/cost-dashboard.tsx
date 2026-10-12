@@ -34,9 +34,9 @@ function Summary({ totals }: { totals: AdminCostRow | undefined }) {
   return (
     <dl aria-label="Totals for the range" className="grid grid-cols-2 gap-3 sm:grid-cols-5">
       {items.map(({ label, value }) => (
-        <div key={label} className="rounded-xl border p-3">
+        <div key={label} className="rounded-2xl border p-3">
           <dt className="text-xs text-muted-foreground">{label}</dt>
-          <dd className="text-lg font-semibold tabular-nums">{value}</dd>
+          <dd className="text-lead font-semibold tabular-nums">{value}</dd>
         </div>
       ))}
     </dl>
@@ -51,8 +51,8 @@ function CostTable({ caption, keys, rows }: { caption: string; keys: Column[]; r
   if (!rows || rows.length === 0) return null;
   return (
     <section aria-label={caption} className="flex flex-col gap-2">
-      <h2 className="text-lg font-semibold">{caption}</h2>
-      <div className="overflow-x-auto rounded-xl border" role="region" aria-label={`${caption} table`} tabIndex={0}>
+      <h2 className="text-lead font-semibold">{caption}</h2>
+      <div className="overflow-x-auto rounded-2xl border" role="region" aria-label={`${caption} table`} tabIndex={0}>
         <table className="w-full min-w-[40rem] text-left text-sm">
           <caption className="sr-only">{caption}</caption>
           <thead className="border-b bg-muted/50 text-xs text-muted-foreground">
@@ -121,7 +121,7 @@ export function CostDashboard() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">AI cost</h1>
+        <h1 className="text-title font-semibold">AI cost</h1>
         <Link href="/admin/ingestion" className="rounded-md text-sm underline outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
           Job sources
         </Link>

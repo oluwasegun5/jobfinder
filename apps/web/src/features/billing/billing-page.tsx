@@ -11,6 +11,7 @@ import { toFailure } from "@/features/tailoring/errors";
 
 import { CurrencyPicker, FREE_PLAN, PackList, PlanList } from "./catalogue-view";
 import { browserSignals, currenciesOf, defaultCurrency, formatCredits, formatPrice, prefersNaira, providerName } from "./pricing";
+import { LoadingState } from "@/components/state";
 import {
   useBillingMe,
   useCancelSubscription,
@@ -46,7 +47,7 @@ export function BillingPage({ naira: nairaOverride }: { naira?: boolean } = {}) 
   const [chosenCurrency, setChosenCurrency] = useState<string>();
   const [naira] = useState(() => nairaOverride ?? prefersNaira(browserSignals()));
 
-  if (me.isPending || plans.isPending) return <p role="status">Loading</p>;
+  if (me.isPending || plans.isPending) return <LoadingState>Loading</LoadingState>;
   if (me.isError || plans.isError) {
     return <FailureNotice failure={toFailure(me.error ?? plans.error, "Could not load billing. Try again.")} onRetry={() => { void me.refetch(); void plans.refetch(); }} retrying={me.isFetching} />;
   }
@@ -121,7 +122,7 @@ export function BillingPage({ naira: nairaOverride }: { naira?: boolean } = {}) 
 
           {!paid && paidPlans.length > 0 && (
             <section aria-labelledby="upgrade-heading" className="flex flex-col gap-3">
-              <h2 id="upgrade-heading" className="text-lg font-semibold">
+              <h2 id="upgrade-heading" className="text-lead font-semibold">
                 Upgrade
               </h2>
               <PlanList
@@ -142,7 +143,7 @@ export function BillingPage({ naira: nairaOverride }: { naira?: boolean } = {}) 
           )}
 
           <section aria-labelledby="packs-heading" className="flex flex-col gap-3">
-            <h2 id="packs-heading" className="text-lg font-semibold">
+            <h2 id="packs-heading" className="text-lead font-semibold">
               Add credits
             </h2>
             <PackList
@@ -150,7 +151,7 @@ export function BillingPage({ naira: nairaOverride }: { naira?: boolean } = {}) 
               currency={currency}
               action={(pack, price) => (
                 <Button
-                  variant="outline"
+                  className="w-full sm:w-auto"
                   aria-label={`Buy ${pack.name} for ${formatPrice(price)} with ${providerName(price.provider)}`}
                   disabled={checkout.isPending}
                   onClick={() => start({ pack: pack.id, provider: price.provider ?? "" })}
@@ -170,16 +171,16 @@ export function BillingPage({ naira: nairaOverride }: { naira?: boolean } = {}) 
 
 function LedgerList() {
   const ledger = useLedger();
-  if (ledger.isPending) return <p role="status">Loading history</p>;
+  if (ledger.isPending) return <LoadingState>Loading history</LoadingState>;
   if (ledger.isError) return <FailureNotice failure={toFailure(ledger.error, "Could not load your history.")} onRetry={() => void ledger.refetch()} retrying={ledger.isFetching} />;
   const lines = ledger.data.pages.flatMap((page) => page.items ?? []).filter((line): line is LedgerLine => line !== undefined);
   return (
     <section aria-label="Credit history" className="flex flex-col gap-3">
-      <h2 className="text-lg font-semibold">History</h2>
+      <h2 className="text-lead font-semibold">History</h2>
       {lines.length === 0 && <p className="text-sm text-muted-foreground">Nothing yet.</p>}
-      <ul className="flex flex-col divide-y rounded-lg border text-sm">
+      <ul className="flex flex-col divide-y rounded-2xl border bg-card text-sm shadow-sm dark:shadow-none">
         {lines.map((line) => (
-          <li key={line.id} className="flex items-center justify-between gap-3 px-3 py-2">
+          <li key={line.id} className="flex items-center justify-between gap-3 px-4 py-3">
             <span className="flex flex-col">
               <span>{REASONS[line.reason ?? ""] ?? line.reason}</span>
               <time className="text-xs text-muted-foreground" dateTime={line.createdAt}>

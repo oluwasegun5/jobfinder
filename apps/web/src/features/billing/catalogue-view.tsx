@@ -63,7 +63,7 @@ export function CurrencyPicker({
 function Amount({ price, suffix }: { price: Price; suffix?: string }) {
   return (
     <p className="flex items-baseline gap-1">
-      <span className="text-3xl font-semibold tracking-tight">{formatPrice(price)}</span>
+      <span className="text-headline font-semibold">{formatPrice(price)}</span>
       {suffix && <span className="text-sm text-muted-foreground">{suffix}</span>}
     </p>
   );
@@ -93,12 +93,12 @@ export function PlanList({
           <li key={plan.code}>
             <Card className="h-full">
               <CardHeader>
-                <h3 className="text-lg font-semibold">{plan.name}</h3>
+                <h3 className="text-lead font-semibold">{plan.name}</h3>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col gap-3">
                 {free ? (
                   <>
-                    <p className="text-3xl font-semibold tracking-tight">Free</p>
+                    <p className="text-headline font-semibold">Free</p>
                     <p className="text-muted-foreground">A one-time trial with credits to try every feature.</p>
                     <p className="font-medium">{TRIAL_RULE}</p>
                     {trialAction && <div className="mt-auto">{trialAction}</div>}
@@ -138,7 +138,7 @@ export function PackList({
     <ul aria-label="Credit packs" className="grid gap-4 sm:grid-cols-2">
       {priced.map(({ pack, price }) => (
         <li key={pack.id}>
-          <Card size="sm" className="h-full">
+          <Card className="h-full">
             <CardContent className="flex flex-col gap-2">
               <h3 className="font-semibold">{pack.name}</h3>
               <Amount price={price} />

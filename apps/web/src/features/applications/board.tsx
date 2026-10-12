@@ -26,6 +26,7 @@ import {
   type Status,
 } from "./model";
 import { useBoard, useCreateApplication, useMoveApplication } from "./queries";
+import { LoadingState } from "@/components/state";
 
 const selectClass =
   "h-8 w-full rounded-lg border border-input bg-background px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
@@ -123,7 +124,7 @@ function ManualEntry({ onDone }: { onDone: (title: string) => void }) {
   };
 
   return (
-    <form onSubmit={submit} aria-label="Add an application" className="flex flex-col gap-3 rounded-xl border p-4" noValidate>
+    <form onSubmit={submit} aria-label="Add an application" className="flex flex-col gap-3 rounded-2xl border p-4" noValidate>
       <p className="text-sm text-muted-foreground">For a job you found somewhere else. Only the title is required.</p>
       <div className="grid gap-3 md:grid-cols-2">
         <div className="flex flex-col gap-1.5">
@@ -209,7 +210,7 @@ export function Board() {
     if (id) moveTo(id, to);
   };
 
-  if (board.isPending) return <p role="status">Loading applications</p>;
+  if (board.isPending) return <LoadingState>Loading applications</LoadingState>;
   if (board.isError && !board.data) {
     return (
       <div className="flex flex-col gap-3">
