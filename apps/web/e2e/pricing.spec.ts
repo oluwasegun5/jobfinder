@@ -92,7 +92,7 @@ test.describe("from elsewhere", () => {
   test("shows dollars through Stripe first, and the landing page links to it", async ({ page }, testInfo) => {
     await stubApi(page);
     await page.goto("/");
-    await page.getByRole("navigation", { name: "Account" }).getByRole("link", { name: "Pricing" }).click();
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Pricing" }).click();
 
     await expect(page).toHaveURL(/\/pricing$/);
     await expect(page.getByRole("radio", { name: "USD" })).toBeChecked();
