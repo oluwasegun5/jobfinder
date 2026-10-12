@@ -10,7 +10,7 @@ export default function Page() {
     <RequireOnboarding>
       <div className="mx-auto flex max-w-4xl flex-col gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">For you</h1>
+          <h1 className="text-title font-semibold">For you</h1>
           <p className="text-sm text-muted-foreground">
             Jobs ranked against your resume and preferences. Save, hide or mark jobs as applied and the feed learns what you want.
           </p>

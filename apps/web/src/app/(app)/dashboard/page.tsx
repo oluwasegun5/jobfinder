@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiStatus } from "@/features/health/api-status";
 import { RequireOnboarding } from "@/features/onboarding/require-onboarding";
@@ -11,7 +12,7 @@ export default function DashboardPage() {
   return (
     <RequireOnboarding>
       <div className="mx-auto flex max-w-4xl flex-col gap-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+        <h1 className="text-title font-semibold">Dashboard</h1>
         <div className="grid gap-4 sm:grid-cols-2">
           <Card>
             <CardHeader>
@@ -21,7 +22,7 @@ export default function DashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Link href="/feed" className="text-sm font-medium underline underline-offset-4">
+              <Link href="/feed" className={buttonVariants()}>
                 See jobs picked for you
               </Link>
             </CardContent>

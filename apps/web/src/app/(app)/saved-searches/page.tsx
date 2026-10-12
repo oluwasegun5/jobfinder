@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Saved searches" };
 export default function Page() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4">
-      <h1 className="text-2xl font-semibold tracking-tight">Saved searches</h1>
+      <h1 className="text-title font-semibold">Saved searches</h1>
       <SavedSearches />
     </div>
   );
