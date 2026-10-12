@@ -1834,6 +1834,7 @@ export interface components {
             /** Format: date-time */
             periodEnd?: string;
             allowance?: components["schemas"]["AllowanceView"];
+            trial?: components["schemas"]["TrialView"];
         };
         PlanSummary: {
             code?: string;
@@ -1848,6 +1849,14 @@ export interface components {
             cancelAtPeriodEnd?: boolean;
             /** Format: date-time */
             graceEndsAt?: string;
+        };
+        TrialView: {
+            state?: string;
+            unlocked?: number;
+            remaining?: number;
+            /** Format: date-time */
+            expiresAt?: string;
+            milestones?: string[];
         };
         CheckoutRequest: {
             plan?: string;

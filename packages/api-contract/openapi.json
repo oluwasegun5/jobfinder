@@ -5645,6 +5645,9 @@
           },
           "allowance": {
             "$ref": "#/components/schemas/AllowanceView"
+          },
+          "trial": {
+            "$ref": "#/components/schemas/TrialView"
           }
         }
       },
@@ -5681,6 +5684,30 @@
           "graceEndsAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "TrialView": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string"
+          },
+          "unlocked": {
+            "type": "number"
+          },
+          "remaining": {
+            "type": "number"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "milestones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
