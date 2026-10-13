@@ -15,9 +15,19 @@ export type AdminAlert = components["schemas"]["SourceAlertResponse"];
 export type AdminCostReport = components["schemas"]["CostReportResponse"];
 export type AdminCostRow = components["schemas"]["CostRowResponse"];
 export type AdminActivation = components["schemas"]["ActivationResponse"];
+export type AdminTrialPage = components["schemas"]["TrialPageResponse"];
+export type AdminTrialItem = components["schemas"]["TrialItemResponse"];
+export type AdminTrialDetail = components["schemas"]["TrialDetailResponse"];
+export type AdminTrialOutcome = components["schemas"]["DecisionOutcomeResponse"];
+export type TrialView = "PENDING" | "DECIDED";
+export type TrialStateFilter = "HOLD" | "DENIED" | "GRANTED";
 
 /** While any source is running, how often the list is re-read to catch the end of the run. */
 export const RUN_POLL_MS = 3_000;
+/** Trials per page of the review queue (the server allows up to 100). */
+export const TRIALS_PAGE_SIZE = 20;
+/** The longest note core-api accepts with a decision. */
+export const TRIAL_NOTE_MAX = 1000;
 /** Runs per page of the history (the server allows up to 100). */
 export const RUNS_PAGE_SIZE = 20;
 
@@ -26,6 +36,10 @@ export const adminKeys = {
   runs: (source: string | undefined, page: number) => ["admin", "runs", source ?? "all", page] as const,
   allRuns: ["admin", "runs"] as const,
   costs: (from: string | undefined, to: string | undefined) => ["admin", "costs", from ?? "default", to ?? "default"] as const,
+  trials: (view: TrialView, state: TrialStateFilter | undefined, page: number) =>
+    ["admin", "trials", "list", view, state ?? "any", page] as const,
+  allTrials: ["admin", "trials"] as const,
+  trial: (userId: string) => ["admin", "trials", "detail", userId] as const,
   activation: (from: string | undefined, to: string | undefined) =>
     ["admin", "activation", from ?? "default", to ?? "default"] as const,
 };
@@ -111,5 +125,45 @@ export function useAdminActivation(from: string | undefined, to: string | undefi
     queryKey: adminKeys.activation(from, to),
     placeholderData: keepPreviousData,
     queryFn: async () => unwrap(await api.GET("/admin/activation", { params: { query: { from, to } } })),
+  });
+}
+
+/** One page (zero-based) of the trial review queue, oldest first. */
+export function useAdminTrials(view: TrialView, state: TrialStateFilter | undefined, page: number) {
+  return useQuery({
+    queryKey: adminKeys.trials(view, state, page),
+    placeholderData: keepPreviousData,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/admin/trials", {
+          params: { query: { view, state, page, size: TRIALS_PAGE_SIZE } },
+        }),
+      ),
+  });
+}
+
+/** One trial account with the decisions taken about it; only fetched while its drawer is open. */
+export function useAdminTrial(userId: string | undefined) {
+  return useQuery({
+    queryKey: adminKeys.trial(userId ?? ""),
+    enabled: userId !== undefined,
+    queryFn: async () =>
+      unwrap(await api.GET("/admin/trials/{userId}", { params: { path: { userId: userId as string } } })),
+  });
+}
+
+/** Approves or denies a held or denied trial with the admin's note; refreshes the queue and the account. */
+export function useDecideTrial() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId, action, note }: { userId: string; action: "approve" | "deny"; note: string }) => {
+      const params = { params: { path: { userId } }, body: { note } };
+      return unwrap(
+        action === "approve"
+          ? await api.POST("/admin/trials/{userId}/approve", params)
+          : await api.POST("/admin/trials/{userId}/deny", params),
+      );
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminKeys.allTrials }),
   });
 }

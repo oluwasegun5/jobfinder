@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Bookmark, BookmarkCheck, Briefcase, Coins, CreditCard, DatabaseZap, Filter, KanbanSquare, LayoutDashboard, Menu, MessagesSquare, ShieldCheck, Sparkles, UserRound, X } from "lucide-react";
+import { Bell, Bookmark, BookmarkCheck, Briefcase, Coins, CreditCard, DatabaseZap, Filter, KanbanSquare, LayoutDashboard, Menu, MessagesSquare, ScanSearch, ShieldCheck, Sparkles, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
@@ -44,6 +44,7 @@ const adminNavItems: NavItem[] = [
   { label: "Job sources", icon: DatabaseZap, href: "/admin/ingestion" },
   { label: "AI cost", icon: Coins, href: "/admin/billing" },
   { label: "Activation", icon: Filter, href: "/admin/activation" },
+  { label: "Trial review", icon: ScanSearch, href: "/admin/trials" },
 ];
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {

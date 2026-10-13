@@ -32,6 +32,7 @@ describe("AppShell", () => {
     expect(screen.queryByRole("link", { name: "Job sources" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "AI cost" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Activation" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Trial review" })).not.toBeInTheDocument();
     unmount();
 
     role = "ADMIN";
@@ -39,6 +40,7 @@ describe("AppShell", () => {
     expect(screen.getByRole("link", { name: "Job sources" })).toHaveAttribute("href", "/admin/ingestion");
     expect(screen.getByRole("link", { name: "AI cost" })).toHaveAttribute("href", "/admin/billing");
     expect(screen.getByRole("link", { name: "Activation" })).toHaveAttribute("href", "/admin/activation");
+    expect(screen.getByRole("link", { name: "Trial review" })).toHaveAttribute("href", "/admin/trials");
     role = undefined;
   });
 
