@@ -47,6 +47,19 @@ class OpenApiDocsTests {
 	}
 
 	@Test
+	void apiDocsDescribeTheTrialReviewQueue() throws Exception {
+		String body = mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(status().isOk())
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+
+		assertThat(body).contains("\"/admin/trials\"", "\"/admin/trials/{userId}\"", "\"/admin/trials/{userId}/approve\"",
+				"\"/admin/trials/{userId}/deny\"", "TrialPageResponse", "TrialDetailResponse", "DecisionOutcomeResponse",
+				"ReviewRequest");
+	}
+
+	@Test
 	void apiDocsDescribeTheMockInterviewEndpoints() throws Exception {
 		String body = mockMvc.perform(get("/v3/api-docs"))
 				.andExpect(status().isOk())

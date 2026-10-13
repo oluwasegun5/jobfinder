@@ -2109,6 +2109,88 @@
         }
       }
     },
+    "/admin/trials/{userId}/deny": {
+      "post": {
+        "tags": [
+          "admin-trials-controller"
+        ],
+        "operationId": "deny",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionOutcomeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/trials/{userId}/approve": {
+      "post": {
+        "tags": [
+          "admin-trials-controller"
+        ],
+        "operationId": "approve_1",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionOutcomeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/ingestion/targets": {
       "post": {
         "tags": [
@@ -3433,6 +3515,105 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/PackResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/trials": {
+      "get": {
+        "tags": [
+          "admin-trials-controller"
+        ],
+        "operationId": "list_3",
+        "parameters": [
+          {
+            "name": "view",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "PENDING",
+              "enum": [
+                "PENDING",
+                "DECIDED"
+              ]
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "HOLD",
+                "DENIED",
+                "GRANTED"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrialPageResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/trials/{userId}": {
+      "get": {
+        "tags": [
+          "admin-trials-controller"
+        ],
+        "operationId": "detail",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrialDetailResponse"
                 }
               }
             }
@@ -6290,6 +6471,110 @@
           }
         }
       },
+      "ReviewRequest": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "note"
+        ]
+      },
+      "DecisionOutcomeResponse": {
+        "type": "object",
+        "properties": {
+          "applied": {
+            "type": "boolean"
+          },
+          "creditsGranted": {
+            "type": "number"
+          },
+          "item": {
+            "$ref": "#/components/schemas/TrialItemResponse"
+          }
+        }
+      },
+      "ReasonResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "points": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hard": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TrialItemResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "maskedEmail": {
+            "type": "string"
+          },
+          "signedUpAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "HOLD",
+              "DENIED",
+              "GRANTED"
+            ]
+          },
+          "reviewStatus": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "DENIED"
+            ]
+          },
+          "riskScore": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReasonResponse"
+            }
+          },
+          "milestonesReached": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "milestonesGranted": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "trialExpiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "decidedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "AddTargetRequest": {
         "type": "object",
         "properties": {
@@ -7526,6 +7811,73 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "TrialPageResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrialItemResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "DecisionResponse": {
+        "type": "object",
+        "properties": {
+          "adminId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "APPROVE",
+              "DENY"
+            ]
+          },
+          "note": {
+            "type": "string"
+          },
+          "creditsGranted": {
+            "type": "number"
+          },
+          "decidedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TrialDetailResponse": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/TrialItemResponse"
+          },
+          "decisions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DecisionResponse"
+            }
           }
         }
       },
