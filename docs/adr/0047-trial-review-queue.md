@@ -26,20 +26,20 @@ through the existing ledger path) or denies (final). Every decision is written t
 ```mermaid
 flowchart TD
     M[Milestone event M1..M4] --> G{TrialGate decision<br/>ADR 0042 section 4}
-    G -- GRANT --> L1[Ledger line TRIAL_GRANT<br/>state GRANTED]
-    G -- hard rule or score >= deny-at --> D[State DENIED<br/>reasons and score recorded<br/>milestones reached are remembered]
-    G -- score hold band or circuit breaker --> H[State HOLD<br/>M1 tranche granted,<br/>later tranches withheld<br/>reasons recorded]
+    G -- "GRANT" --> L1[Ledger line TRIAL_GRANT<br/>state GRANTED]
+    G -- "hard rule, or score at the deny threshold" --> D[State DENIED<br/>reasons and score recorded<br/>milestones reached are remembered]
+    G -- "score in the hold band, or circuit breaker" --> H[State HOLD<br/>M1 tranche granted,<br/>later tranches withheld<br/>reasons recorded]
     D --> Q[(Review queue<br/>GET /admin/trials)]
     H --> Q
     Q --> R{Admin reviews<br/>reasons, score, masked email}
-    R -- APPROVE + note --> AP[Grant every tranche for the<br/>milestones reached and not yet granted<br/>key trial:userId:Mn, idempotent<br/>state GRANTED, later milestones<br/>skip hard rules and score]
-    R -- DENY + note --> DN[State DENIED, final<br/>unspent trial credits expire<br/>TRIAL_EXPIRY]
+    R -- "APPROVE with a note" --> AP[Grant every tranche for the<br/>milestones reached and not yet granted<br/>key trial:userId:Mn, idempotent<br/>state GRANTED, later milestones<br/>skip hard rules and score]
+    R -- "DENY with a note" --> DN[State DENIED, final<br/>unspent trial credits expire<br/>TRIAL_EXPIRY]
     AP --> L2[Ledger line TRIAL_GRANT]
     AP --> A[(trial_review_decisions<br/>who, when, note<br/>append-only)]
     DN --> A
     A --> RET[Purged after 24 months]
-    AP -. approve again .-> AP2[No change, no second audit row<br/>HTTP 200 applied=false]
-    DN -. approve after deny .-> X[409 trial_denied_final]
+    AP -. "approve again" .-> AP2[No change, no second audit row<br/>HTTP 200 applied=false]
+    DN -. "approve after deny" .-> X[409 trial_denied_final]
 ```
 
 ### 2. What the queue lists and shows
