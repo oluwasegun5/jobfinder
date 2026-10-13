@@ -134,6 +134,34 @@ class TrialService {
         }
     }
 
+    /**
+     * Expires what is left of the account's trial credits ({@code TRIAL_EXPIRY}, once per user). The caller holds the
+     * user's ledger lock. A paid grant since M1 mixes plan and trial credits, so nothing is expired then; renewals
+     * expire them from then on (ADR 0036). Used by the expiry and by an admin's final denial (ADR 0047).
+     *
+     * @return the credits expired (zero when none)
+     */
+    BigDecimal expireUnspentCredits(TrialAccount a, Instant now) {
+        UUID userId = a.userId();
+        if (a.startedAt() == null) {
+            return BigDecimal.ZERO;
+        }
+        boolean paid = jdbc.sql("""
+                select exists (select 1 from credit_ledger where user_id = :u and reason = 'PLAN_GRANT'
+                                and created_at >= :since)
+                """).param("u", userId).param("since", OffsetDateTime.ofInstant(a.startedAt(), ZoneOffset.UTC))
+                .query(Boolean.class).single();
+        if (paid) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal left = ledger.position(userId).planPortion().min(granted(userId));
+        if (left.signum() > 0 && ledger.append(userId, left.negate(), LedgerReason.TRIAL_EXPIRY, null,
+                expiryKey(userId), now)) {
+            return left;
+        }
+        return BigDecimal.ZERO;
+    }
+
     private boolean expire(UUID userId, Instant now) {
         ledger.lock(userId);
         Optional<TrialAccount> found = accounts.find(userId);
@@ -145,18 +173,7 @@ class TrialService {
                 || (a.state() != State.GRANTED && a.state() != State.HOLD)) {
             return false;
         }
-        // A paid grant since M1 mixes plan and trial credits; renewals expire them from then on (ADR 0036).
-        boolean paid = jdbc.sql("""
-                select exists (select 1 from credit_ledger where user_id = :u and reason = 'PLAN_GRANT'
-                                and created_at >= :since)
-                """).param("u", userId).param("since", OffsetDateTime.ofInstant(a.startedAt(), ZoneOffset.UTC))
-                .query(Boolean.class).single();
-        if (!paid) {
-            BigDecimal left = ledger.position(userId).planPortion().min(granted(userId));
-            if (left.signum() > 0) {
-                ledger.append(userId, left.negate(), LedgerReason.TRIAL_EXPIRY, null, expiryKey(userId), now);
-            }
-        }
+        expireUnspentCredits(a, now);
         accounts.save(new TrialAccount(a.userId(), a.state(), a.milestones(), a.riskScore(), a.startedAt(),
                 a.expiresAt(), now), now);
         log.info("Trial ended: user={}", userId);

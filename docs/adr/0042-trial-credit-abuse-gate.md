@@ -241,7 +241,8 @@ sequenceDiagram
   ShedLock-guarded startup job (`TrialSeedJob`) writes claims with every milestone bit, plus a LEGACY `trial_accounts`
   row, for each account verified before the cutoff. It is idempotent and resumable.
 - **HOLD.** HOLD exists only when `app.billing.trial.score-enforced=true`. It then grants the M1 tranche and withholds
-  the rest. The review queue and appeals (`/admin/trials`, section 4) are not part of G1.
+  the rest. The review queue (`/admin/trials`, section 4) is not part of G1; it is built in ADR 0047. Appeals have no defined path yet
+  (see "Not decided here: appeals" in ADR 0047).
 - **Two small additions.** First, a Google account linked after M1 (a second `EmailVerified` for the same user) is
   claimed with the account's milestones, so it cannot start another trial later. Second, an account whose email has no
   usable claim key (the normaliser cannot read it) gets no trial, because it would otherwise have no claim at all.

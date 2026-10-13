@@ -37,6 +37,7 @@ the factual base of the privacy policy template (`apps/web/src/features/legal`).
 | `webhook_events`, `remote_cancellations` | billing | provider ids only | n/a | n/a (no user column) |
 | `trial_accounts` | billing | trial state, milestones reached, risk score (shadow mode), trial start and expiry | `billing/trial.json` | deleted |
 | `trial_identity_claims` | billing | trial-eligibility fingerprints: keyed one-way hashes (HMAC-SHA-256, pepper outside the database) of the account email, Google account identifier, uploaded CV file, and any email or phone number in the CV; no raw value | `billing/trial-claims.json` (kinds and dates; not the hashes) | **kept, unlinked** (`user_id` set to NULL): the one exception to erasure (ADR 0042), purged by retention |
+| `trial_review_decisions` | billing | an admin's decision on a held or denied trial: action, the admin's id, a free-text note (no personal data by instruction), credits released, date | not exported (internal fraud-prevention record; found by user id on request) | **kept, unlinked** (`user_id` set to NULL) until the retention is over (ADR 0047), purged by retention |
 | `disposable_domain_list`, `trial_seed` | billing | public domain names; a timestamp | n/a | n/a (no user column) |
 
 **Trial-eligibility fingerprints (ADR 0042).** Privacy policy, section 2, row: *Trial-eligibility fingerprints — keyed
@@ -64,6 +65,7 @@ before launch.** Logs never contain a digest together with a user id, email or I
 | Email send log | 365 days |
 | Cached rendered files | 90 days |
 | Trial-eligibility fingerprints (`trial_identity_claims`) | 12 months after last used to check trial eligibility (`app.billing.trial.claim-retention`, task `trial-claims`); kept, unlinked, after account deletion until then |
+| Trial review decisions and admin notes (`trial_review_decisions`) | 24 months after the decision (`app.billing.trial.review-retention`, never shorter than 730 days; task `trial-review-decisions`); kept, unlinked, after account deletion until then |
 | Database backups | 30 days (`BACKUP_RETENTION_DAYS`, ADR 0041); a deleted account leaves them at the latest 30 days later |
 | Object storage (CV and rendered files) | no backups of their own; the bucket's versioning and lifecycle settings decide, see `docs/runbooks/backup-restore.md` |
 

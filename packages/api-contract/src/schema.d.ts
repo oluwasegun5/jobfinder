@@ -676,6 +676,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/trials/{userId}/deny": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["deny"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/trials/{userId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["approve_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/ingestion/targets": {
         parameters: {
             query?: never;
@@ -1100,6 +1132,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["getPack"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/trials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_3"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/trials/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["detail"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2034,6 +2098,40 @@ export interface components {
         RetryRequest: {
             parts?: ("TAILORED_RESUME" | "COVER_LETTER" | "SCREENING_ANSWERS")[];
         };
+        ReviewRequest: {
+            note: string;
+        };
+        DecisionOutcomeResponse: {
+            applied?: boolean;
+            creditsGranted?: number;
+            item?: components["schemas"]["TrialItemResponse"];
+        };
+        ReasonResponse: {
+            code?: string;
+            /** Format: int32 */
+            points?: number;
+            hard?: boolean;
+        };
+        TrialItemResponse: {
+            /** Format: uuid */
+            userId?: string;
+            maskedEmail?: string;
+            /** Format: date-time */
+            signedUpAt?: string;
+            /** @enum {string} */
+            state?: "HOLD" | "DENIED" | "GRANTED";
+            /** @enum {string} */
+            reviewStatus?: "PENDING" | "APPROVED" | "DENIED";
+            /** Format: int32 */
+            riskScore?: number;
+            reasons?: components["schemas"]["ReasonResponse"][];
+            milestonesReached?: string[];
+            milestonesGranted?: string[];
+            /** Format: date-time */
+            trialExpiresAt?: string;
+            /** Format: date-time */
+            decidedAt?: string;
+        };
         AddTargetRequest: {
             source: string;
             identifier: string;
@@ -2461,6 +2559,31 @@ export interface components {
             createdAt?: string;
             /** Format: date-time */
             updatedAt?: string;
+        };
+        TrialPageResponse: {
+            items?: components["schemas"]["TrialItemResponse"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+        };
+        DecisionResponse: {
+            /** Format: uuid */
+            adminId?: string;
+            /** @enum {string} */
+            action?: "APPROVE" | "DENY";
+            note?: string;
+            creditsGranted?: number;
+            /** Format: date-time */
+            decidedAt?: string;
+        };
+        TrialDetailResponse: {
+            item?: components["schemas"]["TrialItemResponse"];
+            decisions?: components["schemas"]["DecisionResponse"][];
         };
         IngestionSourceListResponse: {
             items?: components["schemas"]["IngestionSourceResponse"][];
@@ -4196,6 +4319,58 @@ export interface operations {
             };
         };
     };
+    deny: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DecisionOutcomeResponse"];
+                };
+            };
+        };
+    };
+    approve_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DecisionOutcomeResponse"];
+                };
+            };
+        };
+    };
     addTarget: {
         parameters: {
             query?: never;
@@ -4940,6 +5115,53 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PackResponse"];
+                };
+            };
+        };
+    };
+    list_3: {
+        parameters: {
+            query?: {
+                view?: "PENDING" | "DECIDED";
+                state?: "HOLD" | "DENIED" | "GRANTED";
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrialPageResponse"];
+                };
+            };
+        };
+    };
+    detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrialDetailResponse"];
                 };
             };
         };

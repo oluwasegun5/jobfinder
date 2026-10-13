@@ -48,7 +48,9 @@ class AccountDeletionCompletenessTests extends ResumeTestSupport {
             "credit_ledger.ai_call_id", "NO ACTION: the ledger rows are deleted first by BillingDeletionHandler",
             "notification_log.saved_search_id", "SET NULL: the log row is itself deleted through its own user_id",
             "trial_identity_claims.user_id", "SET NULL: trial-eligibility fingerprints (keyed hashes only) are "
-                    + "unlinked, not erased, so a deleted account cannot claim the trial again (ADR 0042)");
+                    + "unlinked, not erased, so a deleted account cannot claim the trial again (ADR 0042)",
+            "trial_review_decisions.user_id", "SET NULL: an admin's decision on a trial and the note are kept "
+                    + "24 months for fraud-prevention disputes, unlinked from the person on deletion (ADR 0047)");
 
     /** Every user-owned table and the export file that carries its content, or the reason it is not exported. */
     private static final Map<String, String> EXPORT = Map.ofEntries(
@@ -82,7 +84,9 @@ class AccountDeletionCompletenessTests extends ResumeTestSupport {
 
     private static final Map<String, String> NOT_EXPORTED = Map.of(
             "refresh_tokens", "session secrets (hashes) and no personal data of their own",
-            "email_tokens", "single-use link secrets (hashes) and no personal data of their own");
+            "email_tokens", "single-use link secrets (hashes) and no personal data of their own",
+            "trial_review_decisions", "an admin's audit trail of fraud-prevention decisions on the person's trial "
+                    + "(ADR 0047): internal records, like the claims' hashes; found by user id on request");
 
     @Autowired
     private AiUsageGate gate;
@@ -219,6 +223,9 @@ class AccountDeletionCompletenessTests extends ResumeTestSupport {
         jdbc.update("insert into trial_identity_claims (kind, digest, key_version, user_id, claimed_milestones, "
                 + "first_claimed_at, last_seen_at, expires_at) values ('EMAIL', decode(md5(random()::text) || "
                 + "md5(random()::text), 'hex'), 1, ?, 1, now(), now(), now() + interval '365 days')", userId);
+        // An admin's decision on the trial (kept, unlinked, on deletion: ADR 0047).
+        jdbc.update("insert into trial_review_decisions (user_id, admin_id, action, state_before, note, decided_at) "
+                + "values (?, ?, 'APPROVE', 'DENIED', ?, now())", userId, UUID.randomUUID(), "erase-note-" + userId);
         return resumes;
     }
 
@@ -249,6 +256,9 @@ class AccountDeletionCompletenessTests extends ResumeTestSupport {
             assertThat(zip.keySet()).as("export file of " + table.getKey())
                     .contains("jobfinder-export/" + table.getValue());
         }
+        assertThat(new String(zip.get("jobfinder-export/billing/trial.json"), java.nio.charset.StandardCharsets.UTF_8))
+                .as("the export of the trial").contains("risk_score").doesNotContain("decision_reasons")
+                .doesNotContain("review_decision");
         assertThat(before.values().stream().filter(n -> n > 0).count()).as("tables seeded for the user")
                 .isGreaterThanOrEqualTo(14);
         assertThat(objectsUnder("resumes/" + userId + "/")).isEqualTo(2);
@@ -270,6 +280,8 @@ class AccountDeletionCompletenessTests extends ResumeTestSupport {
                 resumes.get(1))).isZero();
         assertThat(count("select count(*) from ai_calls where feature = 'tailor_resume' and user_id is null "
                 + "and request_key like 'erase-%'")).isPositive();
+        assertThat(count("select count(*) from trial_review_decisions where user_id is null and note = ?",
+                "erase-note-" + userId)).isEqualTo(1);
         assertThat(objectsUnder("resumes/" + userId + "/")).isZero();
         assertThat(objectsUnder("renders/" + userId + "/")).isZero();
         assertThat(redisKeysFor(userId)).isZero();
