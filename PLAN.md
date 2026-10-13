@@ -394,4 +394,4 @@ Scraper worker for approved local sources, recruiter side, voice mock interviews
 - [x] Phase 4
 - [x] Phase 5
 - [ ] Phase 6
-- [ ] Phase G
+- [x] Phase G
