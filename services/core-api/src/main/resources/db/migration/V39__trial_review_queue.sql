@@ -22,12 +22,13 @@ UPDATE trial_accounts
 CREATE INDEX trial_accounts_review_queue_idx ON trial_accounts (created_at, user_id)
     WHERE state IN ('HOLD', 'DENIED') AND review_decision IS NULL;
 
--- 2. Audit of admin decisions. Append-only. user_id and admin_id carry no foreign key on purpose: deleting either account
---    must neither rewrite nor block the trail. note: the admin's reason, 1 to 1000 characters, no personal data by
---    instruction. Kept 24 months (730 days), then purged by the retention task.
+-- 2. Audit of admin decisions. Append-only. user_id is set to NULL (not erased) when the person deletes the account, so the
+--    decision stays but no longer names anyone; admin_id has no foreign key on purpose (staff ids are kept as they were).
+--    note: the admin's reason, 1 to 1000 characters, no personal data by instruction. Kept 24 months (730 days), then
+--    purged by the retention task.
 CREATE TABLE trial_review_decisions (
     id              UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id         UUID          NOT NULL,
+    user_id         UUID          NULL REFERENCES users (id) ON DELETE SET NULL,
     admin_id        UUID          NOT NULL,
     action          VARCHAR(7)    NOT NULL CHECK (action IN ('APPROVE', 'DENY')),
     state_before    VARCHAR(10)   NOT NULL CHECK (state_before IN ('HOLD', 'DENIED')),
@@ -38,11 +39,18 @@ CREATE TABLE trial_review_decisions (
 CREATE INDEX trial_review_decisions_user_idx    ON trial_review_decisions (user_id, decided_at);
 CREATE INDEX trial_review_decisions_decided_idx ON trial_review_decisions (decided_at);
 
--- Append-only: no UPDATE, no TRUNCATE, and DELETE only for rows past the 730-day retention.
+-- Append-only: no TRUNCATE, no DELETE before the 730-day retention is over, and the only UPDATE is the foreign key's own
+-- ON DELETE SET NULL of user_id (every other column unchanged).
 CREATE FUNCTION trial_review_decisions_guard() RETURNS trigger AS $$
 BEGIN
     IF TG_OP = 'DELETE' AND OLD.decided_at < now() - interval '730 days' THEN
         RETURN OLD;
+    END IF;
+    IF TG_OP = 'UPDATE' AND OLD.user_id IS NOT NULL AND NEW.user_id IS NULL
+       AND (NEW.id, NEW.admin_id, NEW.action, NEW.state_before, NEW.note, NEW.credits_granted, NEW.decided_at)
+           IS NOT DISTINCT FROM
+           (OLD.id, OLD.admin_id, OLD.action, OLD.state_before, OLD.note, OLD.credits_granted, OLD.decided_at) THEN
+        RETURN NEW;
     END IF;
     RAISE EXCEPTION 'trial_review_decisions is append-only (% refused)', TG_OP USING ERRCODE = 'integrity_constraint_violation';
 END;

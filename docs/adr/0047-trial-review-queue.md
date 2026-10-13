@@ -77,9 +77,10 @@ by this change.
 
 `trial_review_decisions` (Flyway V39): id, user id, admin id, action, state before, note, credits granted, decided at.
 Append-only, enforced in the database by a trigger: UPDATE and TRUNCATE are always refused, DELETE is refused for rows
-younger than 730 days. A decision and its ledger lines are written in one transaction under the user's ledger lock, which
-the gate also takes, so a decision is never audited without its effect or the reverse. User id and admin id are plain UUID
-columns without foreign keys: deleting either account must not rewrite the audit trail.
+younger than 730 days; the one UPDATE it allows is the foreign key's own `ON DELETE SET NULL` of `user_id`, with every other
+column unchanged. A decision and its ledger lines are written in one transaction under the user's ledger lock, which the gate
+also takes, so a decision is never audited without its effect or the reverse. `user_id` references `users` with
+`ON DELETE SET NULL`; `admin_id` is a plain UUID so that removing a staff account does not touch the trail.
 
 ### 5. Privacy and retention
 
@@ -91,12 +92,15 @@ columns without foreign keys: deleting either account must not rewrite the audit
   in ADR 0042 (fraud prevention, defending a decision the person disputes), but kept longer than the claims' 12 months so that a
   late complaint can still be answered. This is a deliberate, disclosed exception to "deletion erases everything" (ADR 0040):
   when a user deletes the account, `trial_accounts` (state, reasons, reached milestones) is erased as before, but the
-  audit rows stay until the purge. They hold a user id that no longer points to anything and no email.
+  audit rows stay until the purge with `user_id` set to NULL (like the claims of ADR 0042), so they no longer name the
+  person. They hold no email. The account-deletion guard tests list the exception.
 - The privacy policy section 7 bullet from ADR 0042 needs one more sentence: *Trial review decisions (the decision, the date and
   an administrator's note): 24 months after the decision.* Counsel confirms this together with the open points in ADR 0042
   before the score is enforced.
-- Export: while the account exists, the data export does not list review decisions (they concern the service's own fraud
-  controls, not the user's content), consistent with the claims; the person can ask, and the rows are found by user id.
+- Export: the data export does not list review decisions or the recorded reasons (they concern the service's own fraud
+  controls, and the reasons would tell the person which signal fired, which ADR 0042 §4 forbids). `billing/trial.json` now
+  selects its columns explicitly so the new `trial_accounts` columns stay out. A person who asks is answered case by case;
+  the rows are found by user id.
 - Logs: the controller logs admin id, user id and action, never the note.
 
 ### 6. Rollout and safety

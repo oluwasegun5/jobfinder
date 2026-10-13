@@ -39,8 +39,13 @@ class BillingDataExporter implements UserDataExporter {
                 "select t.* from ai_calls t where t.user_id = :userId order by t.created_at, t.id", userId));
         // The trial (docs/adr/0042): its state, and the eligibility claims by kind and date. The keyed hashes are left
         // out: they say nothing to the user, and a person can have their rows found by giving the email or phone.
-        bundle.json("trial", UserDataJson.rows(jdbc,
-                "select t.* from trial_accounts t where t.user_id = :userId", userId));
+        // Explicit columns: the reasons and the admin review (ADR 0047) stay out, so the export is not a way to learn which
+        // signal fired.
+        bundle.json("trial", UserDataJson.rows(jdbc, """
+                select t.user_id, t.state, t.milestones, t.risk_score, t.started_at, t.expires_at, t.ended_at,
+                       t.created_at, t.updated_at
+                  from trial_accounts t where t.user_id = :userId
+                """, userId));
         bundle.json("trial-claims", UserDataJson.rows(jdbc, """
                 select t.kind, t.first_claimed_at, t.last_seen_at, t.expires_at from trial_identity_claims t
                  where t.user_id = :userId order by t.first_claimed_at, t.kind

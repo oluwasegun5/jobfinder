@@ -357,9 +357,22 @@ class TrialReviewTests extends TrialTestSupport {
     }
 
     @Test
+    void deletingTheUserKeepsTheDecisionButUnlinksIt() {
+        UUID id = deniedAtSignup();
+        reviews.approve(id, admin, NOTE);
+
+        jdbc.update("delete from users where id = ?", id);
+
+        assertThat(count("select count(*) from trial_review_decisions where user_id is null and admin_id = ? "
+                + "and note = ?", admin, NOTE)).isEqualTo(1);
+        assertThatThrownBy(() -> jdbc.update("update trial_review_decisions set note = 'edited' where admin_id = ?",
+                admin)).isInstanceOf(DataAccessException.class).hasMessageContaining("append-only");
+    }
+
+    @Test
     void theRetentionTaskPurgesDecisionsOlderThanTheRetentionOnly() {
-        UUID oldUser = UUID.randomUUID();
-        UUID recentUser = UUID.randomUUID();
+        UUID oldUser = bareVerifiedUser();
+        UUID recentUser = bareVerifiedUser();
         jdbc.update("""
                 insert into trial_review_decisions (user_id, admin_id, action, state_before, note, decided_at)
                 values (?, ?, 'DENY', 'DENIED', 'old', now() - interval '800 days'),
