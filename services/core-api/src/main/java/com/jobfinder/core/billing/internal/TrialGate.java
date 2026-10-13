@@ -30,6 +30,7 @@ import com.jobfinder.core.activation.FirstMatchesViewed;
 import com.jobfinder.core.activation.IdentityDigest;
 import com.jobfinder.core.activation.OnboardingCompleted;
 import com.jobfinder.core.activation.ResumeParsed;
+import com.jobfinder.core.billing.TrialReviews.Reason;
 import com.jobfinder.core.billing.internal.TrialAccountStore.State;
 import com.jobfinder.core.billing.internal.TrialAccountStore.TrialAccount;
 import com.jobfinder.core.billing.internal.TrialClaimStore.Claim;
@@ -69,17 +70,19 @@ class TrialGate {
     private final TrialProperties properties;
     private final TrialAccountStore accounts;
     private final TrialClaimStore claims;
+    private final TrialReviewStore reviews;
     private final CreditLedgerStore ledger;
     private final DisposableDomains disposable;
     private final JdbcClient jdbc;
     private final TransactionTemplate tx;
     private final Clock clock;
 
-    TrialGate(TrialProperties properties, TrialAccountStore accounts, TrialClaimStore claims, CreditLedgerStore ledger,
-            DisposableDomains disposable, JdbcClient jdbc, PlatformTransactionManager transactions, Clock clock) {
+    TrialGate(TrialProperties properties, TrialAccountStore accounts, TrialClaimStore claims, TrialReviewStore reviews,
+            CreditLedgerStore ledger, DisposableDomains disposable, JdbcClient jdbc, PlatformTransactionManager transactions, Clock clock) {
         this.properties = properties;
         this.accounts = accounts;
         this.claims = claims;
+        this.reviews = reviews;
         this.ledger = ledger;
         this.disposable = disposable;
         this.jdbc = jdbc;
@@ -157,10 +160,13 @@ class TrialGate {
         if (milestone == TrialMilestone.EMAIL_VERIFIED && candidates.isEmpty()) {
             // No usable claim key (the normaliser could not read the address): no trial rather than an unbounded one.
             accounts.save(new TrialAccount(userId, State.DENIED, 0, 0, at, null, null), now);
+            reviews.markReached(userId, milestone.bit());
+            reviews.addReasons(userId, List.of(new Reason("no-claim-key", 0, true)));
             log.info("Trial denied: user={} milestone={} rule=no-claim-key", userId, milestone.code());
             return Outcome.DENIED;
         }
         if (found.isPresent() && !eligible(found.get(), milestone, at, now)) {
+            rememberReachedWhileDenied(found.get(), milestone, at);
             return Outcome.SKIPPED;
         }
         TrialAccount account = found.orElse(null);
@@ -173,6 +179,7 @@ class TrialGate {
         String hardRule = null;
         int points = 0;
         List<String> signals = new ArrayList<>();
+        List<Reason> reasons = new ArrayList<>();
         if (milestone == TrialMilestone.EMAIL_VERIFIED && domain != null && disposable.isDisposable(domain)) {
             hardRule = "disposable-domain";
         }
@@ -204,6 +211,7 @@ class TrialGate {
                             } else if (claim.claimantCount() > 1 && !signals.contains("cv-file-shared")) {
                                 signals.add("cv-file-shared");
                                 points += properties.score().cvFileShared();
+                                reasons.add(new Reason("cv-file-shared", properties.score().cvFileShared(), false));
                             }
                         }
                     }
@@ -226,23 +234,28 @@ class TrialGate {
         if (cvEmailOfOther) {
             signals.add("cv-email");
             points += properties.score().cvEmail();
+            reasons.add(new Reason("cv-email", properties.score().cvEmail(), false));
         }
         if (cvEmailIsOwn) {
             signals.add("cv-email-is-account-email");
             points += properties.score().cvEmailIsAccountEmail();
+            reasons.add(new Reason("cv-email-is-account-email", properties.score().cvEmailIsAccountEmail(), false));
         }
         if (cvPhoneOfOther) {
             signals.add("cv-phone");
             points += properties.score().cvPhone();
+            reasons.add(new Reason("cv-phone", properties.score().cvPhone(), false));
         }
         if (viaGoogle) {
             signals.add("google-sign-in");
             points += properties.score().googleSignIn();
+            reasons.add(new Reason("google-sign-in", properties.score().googleSignIn(), false));
         }
         if (milestone == TrialMilestone.ONBOARDING_COMPLETED && account != null && account.startedAt() != null
                 && at.isBefore(account.startedAt().plus(properties.score().fastOnboardingWithin()))) {
             signals.add("fast-onboarding");
             points += properties.score().fastOnboarding();
+            reasons.add(new Reason("fast-onboarding", properties.score().fastOnboarding(), false));
         }
         int score = (account == null ? 0 : account.riskScore()) + points;
         Instant claimExpiry = now.plus(properties.claimRetention());
@@ -252,8 +265,13 @@ class TrialGate {
         Instant trialExpires = account == null ? at.plus(properties.validity()) : account.expiresAt();
         int milestones = account == null ? 0 : account.milestones();
 
-        if (hardRule != null) {
+        // An admin's approval (ADR 0047) overrules the hard rules and the score for the account's later milestones.
+        boolean approvedByAdmin = reviews.approved(userId);
+        if (hardRule != null && !approvedByAdmin) {
             accounts.save(new TrialAccount(userId, State.DENIED, milestones, score, startedAt, null, null), now);
+            reviews.markReached(userId, milestone.bit());
+            reasons.add(new Reason(hardRule, 0, true));
+            reviews.addReasons(userId, reasons);
             log.info("Trial denied: user={} milestone={} rule={}", userId, milestone.code(), hardRule);
             return Outcome.DENIED;
         }
@@ -264,6 +282,12 @@ class TrialGate {
         boolean onHold = account != null && account.state() == State.HOLD;
         if ((tripped || onHold) && byScore == Outcome.GRANTED) {
             byScore = Outcome.HELD; // a held trial stays held until reviewed
+            if (tripped) {
+                reasons.add(new Reason("hourly-ceiling", 0, false));
+            }
+        }
+        if (approvedByAdmin) {
+            byScore = Outcome.GRANTED;
         }
         if (!signals.isEmpty() || byScore != Outcome.GRANTED) {
             log.info("Trial score: user={} milestone={} score={} signals={} breaker={} outcome={} enforced={}", userId,
@@ -272,6 +296,8 @@ class TrialGate {
         Outcome outcome = properties.scoreEnforced() ? byScore : Outcome.GRANTED;
         if (outcome == Outcome.DENIED) {
             accounts.save(new TrialAccount(userId, State.DENIED, milestones, score, startedAt, null, null), now);
+            reviews.markReached(userId, milestone.bit());
+            reviews.addReasons(userId, reasons);
             return Outcome.DENIED;
         }
         State state = account != null && account.state() == State.HOLD ? State.HOLD : State.GRANTED;
@@ -279,6 +305,8 @@ class TrialGate {
             state = State.HOLD;
             if (milestone != TrialMilestone.EMAIL_VERIFIED) {
                 accounts.save(new TrialAccount(userId, state, milestones, score, startedAt, trialExpires, null), now);
+                reviews.markReached(userId, milestone.bit());
+                reviews.addReasons(userId, reasons);
                 log.info("Trial tranche held: user={} milestone={}", userId, milestone.code());
                 return Outcome.HELD;
             }
@@ -290,12 +318,30 @@ class TrialGate {
         }
         claims.markOwn(userId, bit, now, claimExpiry);
         accounts.save(new TrialAccount(userId, state, milestones | bit, score, startedAt, trialExpires, null), now);
+        reviews.markReached(userId, bit);
+        reviews.addReasons(userId, reasons);
         BigDecimal tranche = properties.tranche(milestone);
         if (tranche.signum() > 0) {
             ledger.append(userId, tranche, LedgerReason.TRIAL_GRANT, null, grantKey(userId, milestone), now);
         }
         log.info("Trial tranche granted: user={} milestone={} credits={}", userId, milestone.code(), tranche);
         return state == State.HOLD ? Outcome.HELD : Outcome.GRANTED;
+    }
+
+    /**
+     * A denied account stays denied, but the milestones it goes on to reach are remembered (never granted) so that an
+     * admin's approval can release them (docs/adr/0047-trial-review-queue.md). Same rules as a grant: once, and M4 only
+     * on a later UTC day than M1.
+     */
+    private void rememberReachedWhileDenied(TrialAccount account, TrialMilestone milestone, Instant at) {
+        if (account.state() != State.DENIED || account.endedAt() != null || account.startedAt() == null) {
+            return;
+        }
+        if (milestone == TrialMilestone.MATCHES_VIEWED
+                && !at.atZone(ZoneOffset.UTC).toLocalDate().isAfter(account.startedAt().atZone(ZoneOffset.UTC).toLocalDate())) {
+            return;
+        }
+        reviews.markReached(account.userId(), milestone.bit());
     }
 
     /**
